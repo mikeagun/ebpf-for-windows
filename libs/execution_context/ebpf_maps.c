@@ -2316,6 +2316,18 @@ Exit:
 }
 
 static void
+_ebpf_perf_event_array_map_cancel_async_query(_In_ _Frees_ptr_ void* cancel_context)
+{
+    UNREFERENCED_PARAMETER(cancel_context);
+}
+
+static _Requires_lock_held_(perf_event_array_map->lock) void _ebpf_perf_event_array_map_signal_async_query_complete(
+    _Inout_ ebpf_core_perf_event_array_map_t* perf_event_array_map)
+{
+    UNREFERENCED_PARAMETER(perf_event_array_map);
+}
+
+static void
 _delete_perf_event_array_map(_In_ _Post_invalid_ ebpf_core_map_t* map)
 {
     UNREFERENCED_PARAMETER(map);
@@ -2327,21 +2339,53 @@ _create_perf_event_array_map(
     ebpf_handle_t inner_map_handle,
     _Outptr_ ebpf_core_map_t** map)
 {
-    UNREFERENCED_PARAMETER(map_definition);
-    UNREFERENCED_PARAMETER(inner_map_handle);
-    UNREFERENCED_PARAMETER(map);
-    return EBPF_OPERATION_NOT_SUPPORTED;
+    ebpf_result_t result = EBPF_SUCCESS;
+    ebpf_core_perf_event_array_map_t* perf_event_array_map = NULL;
+    ebpf_perf_event_array_t* perf_event_array = NULL;
+
+    EBPF_LOG_ENTRY();
+
+    *map = NULL;
+
+    if (inner_map_handle != ebpf_handle_invalid) {
+        result = EBPF_INVALID_ARGUMENT;
+        goto Exit;
+    }
+
+    perf_event_array_map = ebpf_epoch_allocate_with_tag(sizeof(ebpf_core_perf_event_array_map_t), EBPF_POOL_TAG_MAP);
+    if (perf_event_array_map == NULL) {
+        result = EBPF_NO_MEMORY;
+        goto Exit;
+    }
+    memset(perf_event_array_map, 0, sizeof(ebpf_core_perf_event_array_map_t));
+
+    perf_event_array_map->core_map.ebpf_map_definition = *map_definition;
+
+    ebpf_perf_event_array_opts_t opts = {0};
+    result = ebpf_perf_event_array_create(
+        (ebpf_perf_event_array_t**)&perf_event_array_map->core_map.data, map_definition->max_entries, &opts);
+    if (result != EBPF_SUCCESS) {
+        goto Exit;
+    }
+    perf_event_array = (ebpf_perf_event_array_t*)perf_event_array_map->core_map.data;
+
+    ebpf_list_initialize(&perf_event_array_map->async_contexts);
+
+    *map = &perf_event_array_map->core_map;
+    perf_event_array = NULL;
+    perf_event_array_map = NULL;
+
+Exit:
+    ebpf_perf_event_array_destroy(perf_event_array);
+    ebpf_epoch_free(perf_event_array_map);
+
+    EBPF_RETURN_RESULT(result);
 }
 
 _Must_inspect_result_ ebpf_result_t
 ebpf_perf_event_output(
     _In_ void* ctx, _Inout_ ebpf_map_t* map, uint64_t flags, _In_reads_bytes_(length) uint8_t* data, size_t length)
 {
-    UNREFERENCED_PARAMETER(ctx);
-    UNREFERENCED_PARAMETER(map);
-    UNREFERENCED_PARAMETER(flags);
-    UNREFERENCED_PARAMETER(data);
-    UNREFERENCED_PARAMETER(length);
     uint32_t cpu = (uint32_t)(flags & EBPF_MAP_FLAG_INDEX_MASK);
     uint32_t current_cpu = ebpf_get_current_cpu();
     if (cpu == EBPF_MAP_FLAG_CURRENT_CPU) {
@@ -2349,13 +2393,30 @@ ebpf_perf_event_output(
     } else if (cpu != current_cpu) {
         return EBPF_INVALID_ARGUMENT;
     }
-    return EBPF_OPERATION_NOT_SUPPORTED;
-}
+    // return EBPF_OPERATION_NOT_SUPPORTED;
 
-static void
-_ebpf_perf_event_array_map_cancel_async_query(_In_ _Frees_ptr_ void* cancel_context)
-{
-    UNREFERENCED_PARAMETER(cancel_context);
+    ebpf_result_t result = EBPF_SUCCESS;
+
+    EBPF_LOG_ENTRY();
+
+    // Explicitly set cpu so we can signal for correct ring
+    flags = (flags & ~EBPF_MAP_FLAG_INDEX_MASK) | cpu;
+
+    result = ebpf_perf_event_array_output(ctx, (ebpf_perf_event_array_t*)map->data, flags, data, length);
+    if (result != EBPF_SUCCESS) {
+        goto Exit;
+    }
+
+    // ebpf_core_ring_buffer_map_t* ring_buffer_map = EBPF_FROM_FIELD(ebpf_core_ring_buffer_map_t, core_map, map);
+    ebpf_core_perf_event_array_map_t* perf_event_array_map =
+        EBPF_FROM_FIELD(ebpf_core_perf_event_array_map_t, core_map, map);
+
+    ebpf_lock_state_t state = ebpf_lock_lock(&perf_event_array_map->lock);
+    _ebpf_perf_event_array_map_signal_async_query_complete(perf_event_array_map);
+    ebpf_lock_unlock(&perf_event_array_map->lock, state);
+
+Exit:
+    EBPF_RETURN_RESULT(result);
 }
 
 _Must_inspect_result_ ebpf_result_t
@@ -2388,12 +2449,6 @@ ebpf_perf_event_array_map_async_query(
     UNREFERENCED_PARAMETER(async_query_result);
     UNREFERENCED_PARAMETER(async_context);
     return EBPF_OPERATION_NOT_SUPPORTED;
-}
-
-static _Requires_lock_held_(perf_event_array_map->lock) void _ebpf_perf_event_array_map_signal_async_query_complete(
-    _Inout_ ebpf_core_perf_event_array_map_t* perf_event_array_map)
-{
-    UNREFERENCED_PARAMETER(perf_event_array_map);
 }
 
 const ebpf_map_metadata_table_t ebpf_map_metadata_tables[] = {

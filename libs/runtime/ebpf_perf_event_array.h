@@ -49,7 +49,7 @@ ebpf_perf_event_array_destroy(_Frees_ptr_opt_ ebpf_perf_event_array_t* perf_even
  */
 _Must_inspect_result_ ebpf_result_t
 ebpf_perf_event_array_output(
-    _Inout_ void* ctx,
+    _In_ void* ctx,
     _Inout_ ebpf_perf_event_array_t* perf_event_array,
     uint64_t flags,
     _In_reads_bytes_(length) uint8_t* data,

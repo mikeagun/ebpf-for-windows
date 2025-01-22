@@ -1565,6 +1565,8 @@ ebpf_program_invoke(
 
     // High volume call - Skip entry/exit logging.
     const ebpf_program_t* current_program = program;
+    execution_state->context_descriptor =
+        current_program->extension_program_data->program_info->program_type_descriptor->context_descriptor;
 
     // If context header is supported, store the execution state in the context.
     if (use_context_header) {

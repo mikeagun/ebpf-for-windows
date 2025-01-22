@@ -415,6 +415,8 @@ struct bpf_prog_info
 
 /* BPF_FUNC_perf_event_output flags. */
 #define EBPF_MAP_FLAG_INDEX_MASK 0xffffffffULL
+#define EBPF_MAP_FLAG_INDEX_SHIFT 0
 #define EBPF_MAP_FLAG_CURRENT_CPU EBPF_MAP_FLAG_INDEX_MASK
 /* BPF_FUNC_perf_event_output for program types with data pointer in context */
-#define EBPF_MAP_FLAG_CTXLEN_MASK (0xfffffULL << 32)
+#define EBPF_MAP_FLAG_CTXLEN_SHIFT 32
+#define EBPF_MAP_FLAG_CTXLEN_MASK (0xfffffULL << EBPF_MAP_FLAG_CTXLEN_SHIFT)

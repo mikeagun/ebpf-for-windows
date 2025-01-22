@@ -2530,12 +2530,7 @@ static int
 _ebpf_core_perf_event_output(
     _In_ void* ctx, _Inout_ ebpf_map_t* map, uint64_t flags, _In_reads_bytes_(length) uint8_t* data, size_t length)
 {
-    UNREFERENCED_PARAMETER(ctx);
-    UNREFERENCED_PARAMETER(map);
-    UNREFERENCED_PARAMETER(flags);
-    UNREFERENCED_PARAMETER(data);
-    UNREFERENCED_PARAMETER(length);
-    return EBPF_OPERATION_NOT_SUPPORTED;
+    return -ebpf_perf_event_output(ctx, map, flags, data, length);
 }
 
 static int
