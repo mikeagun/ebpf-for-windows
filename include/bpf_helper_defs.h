@@ -497,10 +497,10 @@ EBPF_HELPER(uint64_t, bpf_ktime_get_ms, ());
 #endif
 
 /**
- * @brief Copy data into the ring buffer map.
+ * @brief Copy data into perf event array map.
  *
- * @param[in, out] map Pointer to ring buffer map.
- * @param[in] data Data to copy into ring buffer map.
+ * @param[in, out] map Pointer to perf event array map.
+ * @param[in] data Data to copy into perf event array map.
  * @param[in] size Length of data.
  * @param[in] flags Flags indicating if notification for new data availability should be sent.
  * @returns 0 on success and a negative value on error.

@@ -18,6 +18,7 @@ typedef struct _ebpf_perf_ring
     size_t producer_offset;
     uint8_t* shared_buffer;
     ebpf_ring_descriptor_t* ring_descriptor;
+    size_t drops;
     // TODO: cacheline padding
 } ebpf_perf_ring_t;
 typedef struct _ebpf_perf_event_array
@@ -26,6 +27,18 @@ typedef struct _ebpf_perf_event_array
     uint32_t ring_count;
     // TODO: cacheline padding
 } ebpf_perf_event_array_t;
+
+inline static size_t
+_perf_array_record_size(size_t data_size)
+{
+    return EBPF_OFFSET_OF(ebpf_perf_event_array_record_t, data) + data_size;
+}
+
+inline static size_t
+_perf_array_padded_size(size_t size)
+{
+    return (size + 7) & ~7;
+}
 
 inline static size_t
 _perf_array_get_length(_In_ const ebpf_perf_event_array_t* perf_event_array, uint32_t cpu_id)
@@ -86,14 +99,15 @@ _perf_event_array_acquire_record(
     _Inout_ ebpf_perf_event_array_t* perf_event_array, uint32_t cpu_id, size_t requested_length)
 {
     ebpf_perf_event_array_record_t* record = NULL;
-    requested_length += EBPF_OFFSET_OF(ebpf_perf_event_array_record_t, data);
+    requested_length = _perf_array_record_size(requested_length);
+    size_t padded_length = _perf_array_padded_size(requested_length);
     ebpf_perf_ring_t* ring = &perf_event_array->rings[cpu_id];
     size_t remaining_space = ring->length - (ring->producer_offset - ring->consumer_offset);
 
-    if (remaining_space > requested_length) {
+    if (remaining_space > padded_length) {
         record = _perf_array_record_at_offset(
             perf_event_array, cpu_id, _perf_array_get_producer_offset(perf_event_array, cpu_id));
-        _perf_array_advance_producer_offset(perf_event_array, cpu_id, requested_length);
+        _perf_array_advance_producer_offset(perf_event_array, cpu_id, padded_length);
         record->header.length = (uint32_t)requested_length;
         record->header.locked = 1;
         record->header.discarded = 0;
@@ -122,6 +136,7 @@ ebpf_perf_event_array_create(
     for (uint32_t i = 0; i < ring_count; i++) {
         ebpf_perf_ring_t* ring = &local_perf_event_array->rings[i];
         ring->length = capacity;
+        ring->drops = 0;
 
         ring->ring_descriptor = ebpf_allocate_ring_buffer_memory(capacity);
         if (!ring->ring_descriptor) {
@@ -179,6 +194,7 @@ _ebpf_perf_event_output(
 
     if (record == NULL) {
         result = EBPF_OUT_OF_SPACE;
+        perf_event_array->rings[cpu_id].drops++;
         goto Done;
     }
 
@@ -220,68 +236,40 @@ ebpf_perf_event_array_output(
 
     if (capture_length != 0) {
         // Caller requested data capture
-        const ebpf_context_descriptor_t* ctx_descriptor = NULL;
 
-        ebpf_execution_context_state_t* state = NULL;
-        // if (program->context_header_support == CONTEXT_HEADER_SUPPORTED) {
-        ebpf_program_get_runtime_state(ctx, &state);
-        //} else {
-        //    result = ebpf_state_load(ebpf_program_get_state_index(), (uintptr_t*)&state);
-        //    if (result != EBPF_SUCCESS) {
-        //        return result;
-        //    }
-        //}
-        ctx_descriptor = state->context_descriptor;
-
-        // const ebpf_program_t *program = NULL; // TODO: how to get program (ultimately we just need ctx descriptor)?
-
-        // ebpf_handle_t program_handle = 0;
-        // result = ebpf_core_get_handle_by_id(EBPF_OBJECT_PROGRAM, program_id, &program_handle);
-        // if (result != EBPF_SUCCESS) {
-        //     return result;
-        // }
-
-        // ebpf_core_object_t* program_obj = NULL;
-        // result = EBPF_OBJECT_REFERENCE_BY_HANDLE(program_handle, EBPF_OBJECT_PROGRAM, &program_obj);
-        // if (result != EBPF_SUCCESS) {
-        //     goto Done;
-        // }
-        // EBPF_OBJECT_RELEASE_REFERENCE(program);
-
-        //// ctx descriptor is in
-        /// prog->extension_program_data->program_info->program_type_descriptor->context_descriptor
-        // ebpf_program_info_t *program_info = NULL;
-
-        // result = ebpf_program_get_program_info(program, &program_info);
-        // if (result != EBPF_SUCCESS) {
-        //     return result;
-        // }
-        // ctx_descriptor = program_info->program_type_descriptor->context_descriptor;
-
-        if (ctx_descriptor == NULL) {
-            return EBPF_INVALID_ARGUMENT;
-        } else if (ctx_descriptor->data < 0 || ctx_descriptor->end < 0) {
-            return EBPF_INVALID_ARGUMENT;
-        }
-        ebpf_assert(
-            (ctx_descriptor->data + 8) <= ctx_descriptor->size && (ctx_descriptor->end + 8) <= ctx_descriptor->size);
-
-        const uint8_t* ctx_data_end = *(const uint8_t**)((char*)ctx + ctx_descriptor->end);
-        const uint8_t* ctx_data = *(const uint8_t**)((char*)ctx + ctx_descriptor->data);
+        uint8_t *ctx_data_start, *ctx_data_end;
+        ebpf_program_get_context_data(ctx, &ctx_data_start, &ctx_data_end);
 
         // Verify ctx data pointers are valid.
-        ebpf_assert((ctx_data != NULL) && (ctx_data_end >= ctx_data));
+        ebpf_assert((ctx_data_start != NULL) && (ctx_data_end >= ctx_data_end));
 
-        if ((uint64_t)(ctx_data_end - ctx_data) < (uint64_t)capture_length) {
+        if ((uint64_t)(ctx_data_end - ctx_data_start) < (uint64_t)capture_length) {
             // Requested capture length larger than data.
             return EBPF_INVALID_ARGUMENT;
         }
 
-        extra_data = ctx_data;
+        extra_data = ctx_data_start;
         extra_length = capture_length;
     }
 
     return _ebpf_perf_event_output(perf_event_array, cpu_id, data, length, extra_data, extra_length);
+}
+
+uint32_t
+ebpf_perf_event_array_get_ring_count(_In_ const ebpf_perf_event_array_t* perf_event_array)
+{
+    return perf_event_array->ring_count;
+}
+
+size_t
+ebpf_perf_event_array_get_reset_drop_count(_In_ ebpf_perf_event_array_t* perf_event_array, uint32_t cpu_id)
+{
+    ebpf_perf_ring_t* ring = &perf_event_array->rings[cpu_id];
+    ebpf_lock_state_t state = ebpf_lock_lock(&ring->lock);
+    size_t drop_count = ring->drops;
+    ring->drops = 0;
+    ebpf_lock_unlock(&ring->lock, state);
+    return drop_count;
 }
 
 void
@@ -299,6 +287,8 @@ _Must_inspect_result_ ebpf_result_t
 ebpf_perf_event_array_return(_Inout_ ebpf_perf_event_array_t* perf_event_array, uint32_t cpu_id, size_t length)
 {
     EBPF_LOG_ENTRY();
+    length = _perf_array_padded_size(length);
+
     ebpf_result_t result;
     ebpf_perf_ring_t* ring = &perf_event_array->rings[cpu_id];
     ebpf_lock_state_t state = ebpf_lock_lock(&ring->lock);
@@ -320,11 +310,12 @@ ebpf_perf_event_array_return(_Inout_ ebpf_perf_event_array_t* perf_event_array, 
     // Verify count.
     while (local_length != 0) {
         ebpf_perf_event_array_record_t* record = _perf_array_record_at_offset(perf_event_array, cpu_id, offset);
-        if (local_length < record->header.length) {
+        size_t padded_record_length = _perf_array_padded_size(record->header.length);
+        if (local_length < padded_record_length) {
             break;
         }
-        offset += record->header.length;
-        local_length -= record->header.length;
+        offset += padded_record_length;
+        local_length -= padded_record_length;
     }
     // Did it end on a record boundary?
     if (local_length != 0) {

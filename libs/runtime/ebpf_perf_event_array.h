@@ -16,6 +16,11 @@ typedef struct _ebpf_perf_event_array_opts
 } ebpf_perf_event_array_opts_t;
 #define perf_event_array_opts__last_field sz
 
+typedef enum _perf_event_array_flags
+{
+    PERF_ARRAY_FLAG_AUTO_CALLBACK = (uint64_t)1 << 0 /* Automatically invoke callback for each record */
+} perf_event_array_flags_t;
+
 /**
  * @brief Allocate a perf_event_array with capacity.
  *
@@ -54,6 +59,23 @@ ebpf_perf_event_array_output(
     uint64_t flags,
     _In_reads_bytes_(length) uint8_t* data,
     size_t length);
+
+/**
+ * @brief Get the number of rings in the perf event array.
+ * @param[in] perf_event_array Perf event array to query.
+ * @return Number of rings in the perf event array.
+ */
+uint32_t
+ebpf_perf_event_array_get_ring_count(_In_ const ebpf_perf_event_array_t* perf_event_array);
+
+/**
+ * @brief Get the number of dropped records in a perf event ring and reset the count.
+ * @param[in] perf_event_array Perf event array to query.
+ * @param[in] cpu_id CPU ring to query.
+ * @return Number of dropped records in the ring.
+ */
+size_t
+ebpf_perf_event_array_get_reset_drop_count(_In_ ebpf_perf_event_array_t* perf_event_array, uint32_t cpu_id);
 
 /**
  * @brief Query the current ready and free offsets from the ring buffer.

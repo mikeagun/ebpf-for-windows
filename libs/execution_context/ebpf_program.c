@@ -1565,12 +1565,11 @@ ebpf_program_invoke(
 
     // High volume call - Skip entry/exit logging.
     const ebpf_program_t* current_program = program;
-    execution_state->context_descriptor =
-        current_program->extension_program_data->program_info->program_type_descriptor->context_descriptor;
 
     // If context header is supported, store the execution state in the context.
     if (use_context_header) {
         ebpf_program_set_runtime_state(execution_state, context);
+        ebpf_program_set_header_program(current_program, context);
     }
 
     // Top-level tail caller(1) + tail callees(33).
@@ -2697,4 +2696,51 @@ ebpf_program_get_runtime_state(_In_ const void* program_context, _Outptr_ const 
     // slot [0] contains the execution context state.
     ebpf_context_header_t* header = CONTAINING_RECORD(program_context, ebpf_context_header_t, context);
     *state = (ebpf_execution_context_state_t*)header->context_header[0];
+}
+
+void
+ebpf_program_set_header_program(_In_ const ebpf_program_t* program, _Inout_ void* program_context)
+{
+    // slot [1] contains the program info.
+    ebpf_context_header_t* header = CONTAINING_RECORD(program_context, ebpf_context_header_t, context);
+    // header->context_header[1] = (uint64_t)program;
+
+    // Just storing context descriptor for testing.
+    const ebpf_context_descriptor_t* context_descriptor =
+        program->extension_program_data->program_info->program_type_descriptor->context_descriptor;
+    header->context_header[1] = (uint64_t)context_descriptor;
+}
+
+// void
+// ebpf_program_get_header_program(_In_ const void* program_context, _Outptr_ const ebpf_program_t** program)
+//{
+//     // slot [1] contains the program info.
+//     ebpf_context_header_t* header = CONTAINING_RECORD(program_context, ebpf_context_header_t, context);
+//     *program = (ebpf_program_t*)header->context_header[1];
+// }
+
+void
+ebpf_program_get_header_context_descriptor(
+    _In_ const void* program_context, _Outptr_ const ebpf_context_descriptor_t** context_descriptor)
+{
+    ebpf_context_header_t* header = CONTAINING_RECORD(program_context, ebpf_context_header_t, context);
+    // ebpf_program_t *program = (ebpf_program_t*)header->context_header[1];
+    //*context_descriptor =
+    //     program->extension_program_data->program_info->program_type_descriptor->context_descriptor;
+
+    // Just storing context descriptor for testing.
+    *context_descriptor = (ebpf_context_descriptor_t*)header->context_header[1];
+}
+
+void
+ebpf_program_get_context_data(
+    _In_ const void* program_context, _Outptr_ const uint8_t** data_start, _Outptr_ const uint8_t** data_end)
+{
+    ebpf_context_descriptor_t* context_descriptor;
+    ebpf_program_get_header_context_descriptor(program_context, &context_descriptor);
+    ebpf_assert(
+        (context_descriptor->data + 8) <= context_descriptor->size &&
+        (context_descriptor->end + 8) <= context_descriptor->size);
+    *data_start = *(const uint8_t**)((char*)program_context + context_descriptor->data);
+    *data_end = *(const uint8_t**)((char*)program_context + context_descriptor->end);
 }

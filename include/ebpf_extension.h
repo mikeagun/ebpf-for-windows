@@ -125,7 +125,6 @@ typedef struct _ebpf_execution_context_state
         const void* next_program;
         uint32_t count;
     } tail_call_state;
-    const ebpf_context_descriptor_t* context_descriptor; // What level of granularity for execution context state entry?
 } ebpf_execution_context_state_t;
 
 #define EBPF_CONTEXT_HEADER uint64_t context_header[8]
