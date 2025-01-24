@@ -1389,7 +1389,7 @@ TEST_CASE("perf_event_output", "[platform][perf_event_array]")
     ebpf_perf_event_array_query(perf_event_array, cpu_id, &consumer, &producer);
     REQUIRE(ebpf_perf_event_array_return(perf_event_array, cpu_id, (producer - consumer) % size) == EBPF_SUCCESS);
 
-    data.resize(size - _perf_record_size(0) - 1);
+    data.resize((size - _perf_record_size(0) - 1) & ~7); // remaining space rounded down to multiple of 8
     // Fill ring
     REQUIRE(ebpf_perf_event_array_output(ctx, perf_event_array, flags, data.data(), data.size()) == EBPF_SUCCESS);
 
