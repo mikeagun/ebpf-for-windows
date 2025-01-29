@@ -10,6 +10,7 @@
 #include "bpf2c.h"
 #include "device_helper.hpp"
 #include "ebpf_api.h"
+#include "ebpf_perf_event_array_record.h"
 #include "ebpf_protocol.h"
 #include "ebpf_ring_buffer_record.h"
 #include "ebpf_serialize.h"
@@ -4839,6 +4840,8 @@ _ebpf_perf_event_array_map_async_query_completion(_Inout_ void* completion_conte
         }
         for (;;) {
             auto record = ebpf_ring_buffer_next_record(subscription->buffer, perf_event_array_size, consumer, producer);
+            auto record =
+                ebpf_perf_event_array_next_record(subscription->buffer, perf_event_array_size, consumer, producer);
 
             if (record == nullptr) {
                 // No more records.

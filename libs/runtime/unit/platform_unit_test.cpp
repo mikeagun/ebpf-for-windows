@@ -10,8 +10,10 @@
 #include "ebpf_epoch.h"
 #include "ebpf_hash_table.h"
 #include "ebpf_nethooks.h"
+#include "ebpf_perf_event_array.h"
 #include "ebpf_pinning_table.h"
 #include "ebpf_platform.h"
+#include "ebpf_program.h"
 #include "ebpf_program_types.h"
 #include "ebpf_random.h"
 #include "ebpf_ring_buffer.h"
@@ -199,6 +201,23 @@ typedef class _ebpf_epoch_scope
     ebpf_epoch_state_t epoch_state;
     bool in_epoch;
 } ebpf_epoch_scope_t;
+
+struct scoped_cpu_affinity
+{
+    scoped_cpu_affinity(uint32_t i) : old_affinity_mask{}
+    {
+        affinity_set = ebpf_set_current_thread_cpu_affinity(i, &old_affinity_mask) == EBPF_SUCCESS;
+        REQUIRE(affinity_set);
+    }
+    ~scoped_cpu_affinity()
+    {
+        if (affinity_set) {
+            ebpf_restore_current_thread_cpu_affinity(&old_affinity_mask);
+        }
+    }
+    GROUP_AFFINITY old_affinity_mask;
+    bool affinity_set = false;
+};
 
 TEST_CASE("hash_table_test", "[platform]")
 {

@@ -2304,6 +2304,85 @@ _ebpf_core_map_find_element(ebpf_map_t* map, const uint8_t* key)
     }
 }
 
+static ebpf_result_t
+_ebpf_core_protocol_perf_event_array_map_async_query(
+    _In_ const ebpf_operation_perf_event_array_map_async_query_request_t* request,
+    _Inout_ ebpf_operation_perf_event_array_map_async_query_reply_t* reply,
+    uint16_t reply_length,
+    _Inout_ void* async_context)
+{
+    UNREFERENCED_PARAMETER(reply_length);
+
+    ebpf_map_t* map = NULL;
+    bool reference_taken = FALSE;
+
+    ebpf_result_t result =
+        EBPF_OBJECT_REFERENCE_BY_HANDLE(request->map_handle, EBPF_OBJECT_MAP, (ebpf_core_object_t**)&map);
+    if (result != EBPF_SUCCESS) {
+        goto Exit;
+    }
+    reference_taken = TRUE;
+
+    if (ebpf_map_get_definition(map)->type != BPF_MAP_TYPE_PERF_EVENT_ARRAY) {
+        result = EBPF_INVALID_ARGUMENT;
+        EBPF_LOG_MESSAGE_ERROR(
+            EBPF_TRACELOG_LEVEL_ERROR,
+            EBPF_TRACELOG_KEYWORD_CORE,
+            "perf event array async query operation called on a map that is not of the perf event array type.",
+            result);
+        goto Exit;
+    }
+
+    // Return buffer already consumed by caller in previous notification.
+    result = ebpf_perf_event_array_map_return_buffer(map, request->cpu_id, request->consumer_offset);
+    if (result != EBPF_SUCCESS) {
+        goto Exit;
+    }
+
+    reply->header.id = EBPF_OPERATION_PERF_EVENT_ARRAY_MAP_ASYNC_QUERY;
+    reply->header.length = sizeof(ebpf_operation_ring_buffer_map_async_query_reply_t);
+    result = ebpf_perf_event_array_map_async_query(map, request->cpu_id, &reply->async_query_result, async_context);
+
+Exit:
+    if (reference_taken) {
+        EBPF_OBJECT_RELEASE_REFERENCE((ebpf_core_object_t*)map);
+    }
+    return result;
+}
+
+static ebpf_result_t
+_ebpf_core_protocol_perf_event_array_map_write_data(
+    _In_ const ebpf_operation_perf_event_array_map_write_data_request_t* request)
+{
+    ebpf_map_t* map = NULL;
+    size_t data_length = 0;
+    ebpf_result_t result =
+        EBPF_OBJECT_REFERENCE_BY_HANDLE(request->map_handle, EBPF_OBJECT_MAP, (ebpf_core_object_t**)&map);
+    if (result != EBPF_SUCCESS) {
+        goto Exit;
+    }
+    if (ebpf_map_get_definition(map)->type != BPF_MAP_TYPE_PERF_EVENT_ARRAY) {
+        result = EBPF_INVALID_ARGUMENT;
+        EBPF_LOG_MESSAGE_ERROR(
+            EBPF_TRACELOG_LEVEL_ERROR,
+            EBPF_TRACELOG_KEYWORD_CORE,
+            "perf event array write data operation called on a map that is not of the perf event array type.",
+            result);
+        goto Exit;
+    }
+    result = ebpf_safe_size_t_subtract(
+        request->header.length,
+        EBPF_OFFSET_OF(ebpf_operation_perf_event_array_map_write_data_request_t, data),
+        &data_length);
+    if (result != EBPF_SUCCESS) {
+        goto Exit;
+    }
+    result = ebpf_perf_event_output(NULL, map, EBPF_MAP_FLAG_CURRENT_CPU, (uint8_t*)request->data, data_length);
+Exit:
+    EBPF_OBJECT_RELEASE_REFERENCE((ebpf_core_object_t*)map);
+    EBPF_RETURN_RESULT(result);
+}
+
 static int64_t
 _ebpf_core_map_update_element(ebpf_map_t* map, const uint8_t* key, const uint8_t* value, uint64_t flags)
 {
