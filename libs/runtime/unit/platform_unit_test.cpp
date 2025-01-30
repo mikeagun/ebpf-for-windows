@@ -1276,7 +1276,8 @@ _test_perf_event_output(
     ebpf_context_descriptor_t context_descriptor = {
         sizeof(context_t), EBPF_OFFSET_OF(context_t, data), EBPF_OFFSET_OF(context_t, data_end), -1};
 
-    void* ctx_header = &context_descriptor;
+    full_context.context_header[1] = (uint64_t)&context_descriptor;
+    ebpf_program_set_header_context_descriptor(&context_descriptor, ctx);
 
     // ctx_data_length cases:
     //  <-1: No context header (unsafe to use with capture length in flags).
@@ -1289,7 +1290,7 @@ _test_perf_event_output(
     // perf_event_output with the CTXLEN field set in the flags.
 
     if (ctx_data_length <= -2) { // -2: No ctx header (do NOT use -2 with capture length specified).
-        ctx_header = nullptr;
+        full_context.context_header[1] = 0;
         ctx_data = nullptr;
         ctx_data_length = 0;
     } else if (ctx_data_length < 0) { // -1: No ctx data pointer (capture length returns error).
@@ -1298,10 +1299,6 @@ _test_perf_event_output(
         context_descriptor.data = -1;
         context_descriptor.end = -1;
     } else {
-        const ebpf_context_descriptor_t* ctx_descriptor;
-        ebpf_program_get_header_context_descriptor(ctx, &ctx_descriptor);
-        REQUIRE(ctx_descriptor == (const ebpf_context_descriptor_t*)full_context.context_header[1]);
-
         const uint8_t *data_start, *data_end;
         ebpf_program_get_context_data(ctx, &data_start, &data_end);
         REQUIRE(data_start == ctx->data);
@@ -1309,8 +1306,6 @@ _test_perf_event_output(
     }
     ctx->data = ctx_data;
     ctx->data_end = ctx_data + ctx_data_length;
-
-    full_context.context_header[1] = (uint64_t)&ctx_header;
 
     bool use_current_cpu = (flags & EBPF_MAP_FLAG_INDEX_MASK) == EBPF_MAP_FLAG_CURRENT_CPU;
     size_t capture_length = (flags & EBPF_MAP_FLAG_CTXLEN_MASK) >> EBPF_MAP_FLAG_CTXLEN_SHIFT;

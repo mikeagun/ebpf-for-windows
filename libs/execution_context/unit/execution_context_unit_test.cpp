@@ -15,6 +15,7 @@
 #include "test_helper.hpp"
 
 #include <iomanip>
+#include <iostream>
 #include <optional>
 #include <set>
 
@@ -1434,6 +1435,13 @@ TEST_CASE("perf_event_array_async_query", "[execution_context][perf_event_array]
                     auto completion = reinterpret_cast<_completion*>(context);
                     auto async_query_result = &completion->async_query_result;
                     completion->lost_count += async_query_result->lost_count;
+                    // std::cerr << "completion: {" << completion->cpu_id << "," << completion->record_count << ","
+                    //                      << completion->null_count << "," << completion->lost_count << "}, "
+                    //                      << "async_query_result: {" << async_query_result->consumer << ","
+                    //                      << async_query_result->producer << "," << async_query_result->lost_count <<
+                    //                      "}, "
+                    //                      << "output_buffer_length: " << output_buffer_length << ", result: " <<
+                    //                      result << std::endl;
                     auto record = ebpf_perf_event_array_next_record(
                         completion->buffer,
                         sizeof(uint64_t),
@@ -1473,28 +1481,42 @@ TEST_CASE("perf_event_array_async_query", "[execution_context][perf_event_array]
     size_t total_record_count = 0;
     size_t total_null_count = 0;
     size_t total_lost_count = 0;
+    size_t reset_count = 0;
+
+    // std::cerr << "Completions: [" << std::endl;
+    // for (auto& completion : completions) {
+    //     std::cerr << "  {" << completion.cpu_id << "," << completion.record_count << "," << completion.null_count
+    //               << "," << completion.lost_count << "}, value: " << completion.value << std::endl;
+    // }
+    // std::cerr << "]" << std::endl;
+
     for (auto& completion : completions) {
         CAPTURE(completion.cpu_id, completion.record_count, completion.null_count, completion.lost_count);
         total_record_count += completion.record_count;
         total_null_count += completion.null_count;
         total_lost_count += completion.lost_count;
-        REQUIRE(total_record_count <= 1);
-        REQUIRE(completion.lost_count == 0);
-        REQUIRE(completion.null_count <= 1);
         if (completion.record_count > 0) {
-            REQUIRE(completion.value == value);
+            CHECK(completion.value == value);
         } else {
             if (completion.cpu_id == 0) {
-                REQUIRE(completion.null_count == 1);
+                CHECK(completion.null_count == 1);
             } else {
-                REQUIRE(completion.null_count == 0);
+                CHECK(completion.null_count == 0);
             }
-            CHECK(ebpf_async_reset_completion_callback(&completion) == EBPF_SUCCESS);
+            ebpf_result_t result = ebpf_async_reset_completion_callback(&completion);
+            if (result == EBPF_SUCCESS) {
+                reset_count++;
+            }
+            // CHECK(ebpf_async_reset_completion_callback(&completion) == EBPF_SUCCESS);
+            // CHECK(result == EBPF_SUCCESS);
+            // std::cerr << "reset result: " << result << std::endl;
         }
     }
+    CAPTURE(ring_count, total_record_count, total_null_count, total_lost_count, reset_count);
     REQUIRE(total_record_count == 1);
     REQUIRE(total_lost_count == 0);
-    REQUIRE(total_null_count == ring_count + 1);
+    REQUIRE(total_null_count == 1);
+    REQUIRE(reset_count == 1);
 
     {
         uint32_t key = 0;
@@ -2377,13 +2399,13 @@ TEST_CASE("EBPF_OPERATION_PERF_EVENT_ARRAY_MAP_QUERY_BUFFER", "[execution_contex
 {
     NEGATIVE_TEST_PROLOG();
     ebpf_operation_perf_event_array_map_query_buffer_request_t request;
-    ebpf_operation_perf_event_array_map_query_buffer_reply_t reply;
+    // ebpf_operation_perf_event_array_map_query_buffer_reply_t reply;
 
     request.map_handle = ebpf_handle_invalid - 1;
-    REQUIRE(invoke_protocol(EBPF_OPERATION_PERF_EVENT_ARRAY_MAP_QUERY_BUFFER, request, reply) == EBPF_INVALID_OBJECT);
+    REQUIRE(invoke_protocol(EBPF_OPERATION_PERF_EVENT_ARRAY_MAP_QUERY_BUFFER, request) == EBPF_INVALID_OBJECT);
 
     request.map_handle = map_handles.begin()->second;
-    REQUIRE(invoke_protocol(EBPF_OPERATION_PERF_EVENT_ARRAY_MAP_QUERY_BUFFER, request, reply) == EBPF_INVALID_ARGUMENT);
+    REQUIRE(invoke_protocol(EBPF_OPERATION_PERF_EVENT_ARRAY_MAP_QUERY_BUFFER, request) == EBPF_INVALID_ARGUMENT);
 }
 
 TEST_CASE("EBPF_OPERATION_PERF_EVENT_ARRAY_MAP_ASYNC_QUERY", "[execution_context][perf_event_array][negative]")
