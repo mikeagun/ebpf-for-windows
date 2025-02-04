@@ -230,21 +230,27 @@ ebpf_perf_event_array_output(
     _Inout_ ebpf_perf_event_array_t* perf_event_array,
     uint64_t flags,
     _In_reads_bytes_(length) uint8_t* data,
-    size_t length)
+    size_t length,
+    _Out_opt_ uint32_t* cpu_id)
 {
     // UNREFERENCED_PARAMETER(ctx);
     // ebpf_result_t result;
-    uint32_t cpu_id = (flags & EBPF_MAP_FLAG_INDEX_MASK) >> EBPF_MAP_FLAG_INDEX_SHIFT;
+    uint32_t _cpu_id = (flags & EBPF_MAP_FLAG_INDEX_MASK) >> EBPF_MAP_FLAG_INDEX_SHIFT;
     uint32_t capture_length = (uint32_t)((flags & EBPF_MAP_FLAG_CTXLEN_MASK) >> EBPF_MAP_FLAG_CTXLEN_SHIFT);
     uint32_t current_cpu = ebpf_get_current_cpu();
     const void* extra_data = NULL;
     size_t extra_length = 0;
 
-    if (cpu_id == EBPF_MAP_FLAG_CURRENT_CPU) {
-        cpu_id = current_cpu;
-    } else if (cpu_id != current_cpu) {
+    if (_cpu_id == EBPF_MAP_FLAG_CURRENT_CPU) {
+        _cpu_id = current_cpu;
+        if (cpu_id != NULL) {
+            *cpu_id = _cpu_id;
+        }
+    } else if (_cpu_id != current_cpu) {
         // We only support writes to the current CPU.
         return EBPF_INVALID_ARGUMENT;
+    } else if (cpu_id != NULL) {
+        *cpu_id = _cpu_id;
     }
 
     if (capture_length != 0) {
@@ -266,7 +272,7 @@ ebpf_perf_event_array_output(
         extra_length = capture_length;
     }
 
-    return _ebpf_perf_event_array_output(perf_event_array, cpu_id, data, length, extra_data, extra_length);
+    return _ebpf_perf_event_array_output(perf_event_array, _cpu_id, data, length, extra_data, extra_length);
 }
 
 uint32_t

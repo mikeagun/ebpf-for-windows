@@ -67,6 +67,7 @@ ebpf_perf_event_array_output_simple(
  * @param[in] flags perf event output flags.
  * @param[in] data Data to copy into record.
  * @param[in] length Length of data to copy.
+ * @param[out] cpu_id CPU ring that was written to.
  * @retval EBPF_SUCCESS Successfully wrote record ring buffer.
  * @retval EBPF_OUT_OF_SPACE Unable to output to ring buffer due to inadequate space.
  */
@@ -76,7 +77,8 @@ ebpf_perf_event_array_output(
     _Inout_ ebpf_perf_event_array_t* perf_event_array,
     uint64_t flags,
     _In_reads_bytes_(length) uint8_t* data,
-    size_t length);
+    size_t length,
+    _Out_opt_ uint32_t* cpu_id);
 
 /**
  * @brief Get the number of rings in the perf event array.

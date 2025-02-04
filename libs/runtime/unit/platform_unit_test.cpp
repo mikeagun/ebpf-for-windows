@@ -1331,7 +1331,7 @@ _test_perf_event_output(
         context_descriptor.size,
         context_descriptor.data,
         context_descriptor.end);
-    REQUIRE(ebpf_perf_event_array_output(ctx, perf_event_array, flags, data, length) == expected_result);
+    REQUIRE(ebpf_perf_event_array_output(ctx, perf_event_array, flags, data, length, NULL) == expected_result);
 
     ebpf_perf_event_array_query(perf_event_array, cpu_id, &new_consumer, &new_producer);
 
@@ -1396,7 +1396,7 @@ TEST_CASE("perf_event_output", "[platform][perf_event_array]")
     REQUIRE(producer == consumer);
     REQUIRE(consumer == 0);
 
-    REQUIRE(ebpf_perf_event_array_output(ctx, perf_event_array, flags, data.data(), data.size()) == EBPF_SUCCESS);
+    REQUIRE(ebpf_perf_event_array_output(ctx, perf_event_array, flags, data.data(), data.size(), NULL) == EBPF_SUCCESS);
     ebpf_perf_event_array_query(perf_event_array, cpu_id, &consumer, &producer);
 
     // Ring is not empty
@@ -1419,7 +1419,7 @@ TEST_CASE("perf_event_output", "[platform][perf_event_array]")
     size_t write_count = 0;
 
     data.resize(1023);
-    while (ebpf_perf_event_array_output(ctx, perf_event_array, flags, data.data(), data.size()) == EBPF_SUCCESS) {
+    while (ebpf_perf_event_array_output(ctx, perf_event_array, flags, data.data(), data.size(), NULL) == EBPF_SUCCESS) {
         if (++write_count > 1000) {
             INFO("Too many writes to perf_event_array.");
             REQUIRE(false);
@@ -1431,7 +1431,7 @@ TEST_CASE("perf_event_output", "[platform][perf_event_array]")
 
     data.resize((size - _perf_record_size(0) - 1) & ~7); // remaining space rounded down to multiple of 8
     // Fill ring
-    REQUIRE(ebpf_perf_event_array_output(ctx, perf_event_array, flags, data.data(), data.size()) == EBPF_SUCCESS);
+    REQUIRE(ebpf_perf_event_array_output(ctx, perf_event_array, flags, data.data(), data.size(), NULL) == EBPF_SUCCESS);
 
     ebpf_perf_event_array_destroy(perf_event_array);
     perf_event_array = nullptr;
@@ -1460,7 +1460,8 @@ TEST_CASE("perf_event_output_percpu", "[platform][perf_event_array]")
         scoped_cpu_affinity affinity(cpu_id);
 
         // Output an event.
-        REQUIRE(ebpf_perf_event_array_output(ctx, perf_event_array, flags, data.data(), data.size()) == EBPF_SUCCESS);
+        REQUIRE(
+            ebpf_perf_event_array_output(ctx, perf_event_array, flags, data.data(), data.size(), NULL) == EBPF_SUCCESS);
 
         // Query all CPU buffers and ensure only the current CPU has data.
         for (uint32_t query_cpu_id = 0; query_cpu_id < cpu_count; query_cpu_id++) {
