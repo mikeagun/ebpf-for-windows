@@ -16,12 +16,6 @@ extern "C"
 #define EBPF_MAP_FLAG_HELPER 0x01      /* Called by an eBPF program. */
 #define EBPF_MAP_FIND_FLAG_DELETE 0x02 /* Perform a find and delete. */
 
-    ///* BPF_FUNC_perf_event_output flags. */
-    // #define EBPF_MAP_FLAG_INDEX_MASK 0xffffffffULL
-    // #define EBPF_MAP_FLAG_CURRENT_CPU EBPF_MAP_FLAG_INDEX_MASK
-    ///* BPF_FUNC_perf_event_output for program types with data pointer in context */
-    // #define EBPF_MAP_FLAG_CTXLEN_MASK (0xfffffULL << 32)
-
     typedef struct _ebpf_core_map ebpf_map_t;
 
     /**
