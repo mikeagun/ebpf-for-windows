@@ -19,14 +19,19 @@ typedef struct _ebpf_perf_ring
     uint8_t* shared_buffer;
     ebpf_ring_descriptor_t* ring_descriptor;
     size_t lost_records;
-    // TODO: cacheline padding
+    uint64_t pad;
 } ebpf_perf_ring_t;
 typedef struct _ebpf_perf_event_array
 {
-    ebpf_perf_ring_t rings[1];
     uint32_t ring_count;
-    // TODO: cacheline padding
+    uint32_t pad1;
+    uint64_t pad2[7];
+    ebpf_perf_ring_t rings[1];
 } ebpf_perf_event_array_t;
+
+static_assert(sizeof(ebpf_perf_ring_t) % EBPF_CACHE_LINE_SIZE == 0, "ebpf_perf_ring_t is not cache aligned.");
+static_assert(
+    sizeof(ebpf_perf_event_array_t) % EBPF_CACHE_LINE_SIZE == 0, "ebpf_perf_event_array_t is not cache aligned.");
 
 inline static size_t
 _perf_array_record_size(size_t data_size)
@@ -254,7 +259,7 @@ ebpf_perf_event_array_output(
     }
 
     if (capture_length != 0) {
-        // Caller requested data capture
+        // Caller requested data capture.
         ebpf_assert(ctx != NULL);
 
         uint8_t *ctx_data_start, *ctx_data_end;

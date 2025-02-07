@@ -111,9 +111,6 @@ This is required for all extensions to support for runtime state needed by helpe
 To support this, the extension can use the macro `EBPF_CONTEXT_HEADER` to include
 the context header at the start of the program context structure. The context pointer passed to the
 eBPF program should point immediately after the context header.
-
-*Example*
-
 Below is an example of a sample extension including the eBPF context header at the start of the original
 context structure:
 
