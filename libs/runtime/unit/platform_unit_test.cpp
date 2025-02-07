@@ -1284,7 +1284,7 @@ _test_perf_event_output(
     //   -1: No context data pointer.
     //  >=0: Data pointer in context.
 
-    // if ctx_data_length is < -1, then there is no context header.
+    // If ctx_data_length is < -1, then there is no context header.
     // perf_event_output has no way to know if the context header is present or not,
     // so only programs where the extension has context header support can call
     // perf_event_output with the CTXLEN field set in the flags.
@@ -1384,22 +1384,20 @@ TEST_CASE("perf_event_output", "[platform][perf_event_array]")
     void* ctx = nullptr;
     uint32_t cpu_id = 0;
     uint64_t flags = EBPF_MAP_FLAG_CURRENT_CPU;
-    // uint32_t caplen = 1024;
-    // flags |= (caplen << EBPF_MAP_FLAG_CTXLEN_SHIFT) & EBPF_MAP_FLAG_CTXLEN_MASK;
 
     REQUIRE(ebpf_perf_event_array_create(&perf_event_array, size, opts) == EBPF_SUCCESS);
     REQUIRE(ebpf_perf_event_array_map_buffer(perf_event_array, cpu_id, &buffer) == EBPF_SUCCESS);
 
     ebpf_perf_event_array_query(perf_event_array, cpu_id, &consumer, &producer);
 
-    // Ring is empty
+    // Ring is empty.
     REQUIRE(producer == consumer);
     REQUIRE(consumer == 0);
 
     REQUIRE(ebpf_perf_event_array_output(ctx, perf_event_array, flags, data.data(), data.size(), NULL) == EBPF_SUCCESS);
     ebpf_perf_event_array_query(perf_event_array, cpu_id, &consumer, &producer);
 
-    // Ring is not empty
+    // Ring is not empty.
     REQUIRE(producer == _perf_pad_size(_perf_record_size(data.size())));
     REQUIRE(consumer == 0);
 
@@ -1430,7 +1428,7 @@ TEST_CASE("perf_event_output", "[platform][perf_event_array]")
     REQUIRE(ebpf_perf_event_array_return(perf_event_array, cpu_id, (producer - consumer) % size) == EBPF_SUCCESS);
 
     data.resize((size - _perf_record_size(0) - 1) & ~7); // remaining space rounded down to multiple of 8
-    // Fill ring
+    // Fill ring.
     REQUIRE(ebpf_perf_event_array_output(ctx, perf_event_array, flags, data.data(), data.size(), NULL) == EBPF_SUCCESS);
 
     ebpf_perf_event_array_destroy(perf_event_array);
@@ -1495,7 +1493,7 @@ TEST_CASE("perf_event_output_capture", "[platform][perf_event_array]")
     std::vector<uint8_t*> buffers;
     std::vector<uint8_t> data(1024);
     std::vector<uint8_t> ctx_data(1024);
-    // Initialize data
+    // Initialize data.
     for (int i = 0; i < data.size(); i++) {
         data[i] = static_cast<uint8_t>(0 + i % 64);
     }
@@ -1542,7 +1540,15 @@ TEST_CASE("perf_event_output_capture", "[platform][perf_event_array]")
      expected,                                                                                                        \
      "Line " STRINGIZE(__LINE__) ": {" #cpu ", " #use_current_cpu ", " #ctx_data_len ", " #data_len ", " #capture_len \
                                  ", " #expected "}"}
-        // Auto CPU tests with no ctx_data
+        // Tests with no context header.
+        // - Note: Context headers are now required for all extensions,
+        //   so these tests just validate that without CTXLEN the context header isn't used.
+        PERF_TEST_CASE(0, true, -2, 0, 0, EBPF_SUCCESS),
+        PERF_TEST_CASE(0, true, -2, 1, 0, EBPF_SUCCESS),
+        PERF_TEST_CASE(1, true, -2, 8, 0, EBPF_SUCCESS),
+        PERF_TEST_CASE(1, false, -2, 10, 0, EBPF_SUCCESS),
+        PERF_TEST_CASE(0, false, -2, 1024, 0, EBPF_SUCCESS),
+        // Auto CPU tests with no ctx_data.
         PERF_TEST_CASE(0, true, -1, 0, 0, EBPF_SUCCESS),
         PERF_TEST_CASE(1, true, -1, 0, 0, EBPF_SUCCESS),
         PERF_TEST_CASE(0, true, -1, 1, 0, EBPF_SUCCESS),
@@ -1551,31 +1557,31 @@ TEST_CASE("perf_event_output_capture", "[platform][perf_event_array]")
         PERF_TEST_CASE(0, true, -1, 1024, 0, EBPF_SUCCESS),
         PERF_TEST_CASE(1, true, -1, 10, 0, EBPF_SUCCESS),
         PERF_TEST_CASE(1, true, -1, 1024, 0, EBPF_SUCCESS),
-        // Manual CPU tests (no ctx_data)
+        // Manual CPU selection tests (no ctx_data).
         PERF_TEST_CASE(0, false, -1, 10, 0, EBPF_SUCCESS),
         PERF_TEST_CASE(1, false, -1, 10, 0, EBPF_SUCCESS),
-        // empty ctx_data tests
+        // Empty ctx_data tests.
         PERF_TEST_CASE(0, true, 0, 10, 0, EBPF_SUCCESS),
         PERF_TEST_CASE(0, true, 0, 1024, 0, EBPF_SUCCESS),
         PERF_TEST_CASE(1, true, 0, 1024, 0, EBPF_SUCCESS),
-        // tests with ctx_data but no capture
+        // Tests with ctx_data but no capture request.
         PERF_TEST_CASE(0, true, 8, 10, 0, EBPF_SUCCESS),
         PERF_TEST_CASE(0, true, 8, 1024, 0, EBPF_SUCCESS),
         PERF_TEST_CASE(1, false, 8, 1024, 0, EBPF_SUCCESS),
-        // tests with no data but with capture
+        // Tests with no data but with capture.
         PERF_TEST_CASE(0, true, 8, 0, 8, EBPF_SUCCESS),
         PERF_TEST_CASE(0, true, 1024, 0, 8, EBPF_SUCCESS),
         PERF_TEST_CASE(0, false, 1024, 0, 1024, EBPF_SUCCESS),
-        // tests with data and capture
+        // Tests with data and capture.
         PERF_TEST_CASE(0, true, 8, 10, 8, EBPF_SUCCESS),
         PERF_TEST_CASE(0, true, 1024, 1024, 8, EBPF_SUCCESS),
         PERF_TEST_CASE(0, true, 1024, 1024, 1024, EBPF_SUCCESS),
         PERF_TEST_CASE(1, true, 1024, 1024, 8, EBPF_SUCCESS),
         PERF_TEST_CASE(1, false, 1024, 1024, 8, EBPF_SUCCESS),
-        // invalid data length tests
+        // Invalid data length tests.
         PERF_TEST_CASE(0, true, 0, size, 0, EBPF_OUT_OF_SPACE),
         PERF_TEST_CASE(0, true, 0, size + 1, 0, EBPF_OUT_OF_SPACE),
-        // invalid capture requests
+        // Invalid capture requests.
         PERF_TEST_CASE(0, true, -1, 10, 1, EBPF_OPERATION_NOT_SUPPORTED),
         PERF_TEST_CASE(0, true, 0, 10, 1, EBPF_INVALID_ARGUMENT),
         PERF_TEST_CASE(1, true, 0, 10, 1, EBPF_INVALID_ARGUMENT),
@@ -1592,7 +1598,6 @@ TEST_CASE("perf_event_output_capture", "[platform][perf_event_array]")
         auto* test = &test_params[test_index];
         const char* test_string = test->test_string;
         CAPTURE(test_index, test_string);
-        // TODO: refactor the test param shuffling to a single location (use int64_t for ctx_data_len)
         uint64_t test_flags = test->use_current_cpu ? EBPF_MAP_FLAG_CURRENT_CPU : test->cpu_id;
         if (test->capture_length > 0) {
             test_flags |= ((uint64_t)test->capture_length << EBPF_MAP_FLAG_CTXLEN_SHIFT) & EBPF_MAP_FLAG_CTXLEN_MASK;
@@ -1610,7 +1615,7 @@ TEST_CASE("perf_event_output_capture", "[platform][perf_event_array]")
             test->expected_result);
     }
 
-    // Ensure all rings are empty
+    // Ensure all rings are empty.
     for (uint32_t cpu_id = 0; cpu_id < ring_count; cpu_id++) {
         CAPTURE(cpu_id);
         size_t consumer, producer;

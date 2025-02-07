@@ -503,7 +503,12 @@ EBPF_HELPER(uint64_t, bpf_ktime_get_ms, ());
  * @param[in] data Data to copy into perf event array map.
  * @param[in] size Length of data.
  * @param[in] flags Flags indicating if notification for new data availability should be sent.
- * @returns 0 on success and a negative value on error.
+ * @retval 0 The operation was successful.
+ * @retval -EBPF_INVALID_ARGUMENT One or more parameters are invalid.
+ * @retval -EBPF_OPERATION_NOT_SUPPORTED Operation not supported on this program or map.
+ * @retval -EBPF_NO_MEMORY Unable to allocate resources for this.
+ *  entry.
+ * @retval -EBPF_OUT_OF_SPACE Map is full.
  */
 EBPF_HELPER(int, bpf_perf_event_output, (void* ctx, void* perf_event_array, uint64_t flags, void* data, uint64_t size));
 #ifndef __doxygen

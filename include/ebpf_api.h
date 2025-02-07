@@ -583,7 +583,7 @@ extern "C"
      * @brief Write data into the perf event array map.
      *
      * @param [in] perf_event_array_map_fd perf event array map file descriptor.
-     * @param [in]  data Pointer to data to be written.
+     * @param [in] data Pointer to data to be written.
      * @param [in] data_length Length of data to be written.
      * @retval EPBF_SUCCESS Successfully wrote record into perf event array.
      * @retval EBPF_OUT_OF_SPACE Unable to output to perf event array due to inadequate space.

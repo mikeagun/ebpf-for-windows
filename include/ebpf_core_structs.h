@@ -34,7 +34,6 @@ typedef struct _ebpf_ring_buffer_map_async_query_result
 
 typedef struct _ebpf_perf_event_array_map_async_query_result
 {
-    // uint32_t cpu_id;
     size_t producer;
     size_t consumer;
     size_t lost_count;

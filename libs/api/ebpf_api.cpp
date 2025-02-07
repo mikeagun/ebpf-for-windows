@@ -4657,8 +4657,8 @@ _ebpf_perf_event_array_map_async_query_completion(_Inout_ void* completion_conte
         std::scoped_lock lock{subscription->lock};
 
         if (subscription->unsubscribed) {
-            //  If the user has unsubscribed, this is the final callback. Mark the
-            //  subscription context for deletion.
+            // If the user has unsubscribed, this is the final callback. Mark the
+            // subscription context for deletion.
             result = EBPF_CANCELED;
             free_subscription = true;
         } else {

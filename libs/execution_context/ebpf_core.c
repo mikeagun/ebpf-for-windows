@@ -2247,7 +2247,7 @@ _ebpf_core_map_find_element(ebpf_map_t* map, const uint8_t* key)
 static ebpf_result_t
 _ebpf_core_protocol_perf_event_array_map_async_query(
     _In_ const ebpf_operation_perf_event_array_map_async_query_request_t* request,
-    _Inout_ ebpf_operation_perf_event_array_map_async_query_reply_t* reply,
+    _Inout_updates_bytes_(reply_length) ebpf_operation_perf_event_array_map_async_query_reply_t* reply,
     uint16_t reply_length,
     _Inout_ void* async_context)
 {
