@@ -676,7 +676,7 @@ _ebpf_program_get_bpf_prog_type(_In_ const ebpf_program_t* program)
  * _ebpf_program_free. This function will block until the provider has finished
  * detaching.
  *
- * Note: This function runs outside of any epoch.
+ * @note This function runs outside of any epoch.
  *
  * @param[in] context Pointer to the ebpf_program_t passed as context in the
  * work-item.
