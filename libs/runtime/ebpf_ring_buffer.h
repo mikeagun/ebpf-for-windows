@@ -8,7 +8,16 @@
 
 CXPLAT_EXTERN_C_BEGIN
 
-typedef struct _ebpf_ring_buffer ebpf_ring_buffer_t;
+// typedef struct _ebpf_ring_buffer ebpf_ring_buffer_t;
+typedef struct _ebpf_ring_buffer
+{
+    ebpf_lock_t lock;
+    size_t length;
+    size_t consumer_offset;
+    size_t producer_offset;
+    uint8_t* shared_buffer;
+    ebpf_ring_descriptor_t* ring_descriptor;
+} ebpf_ring_buffer_t;
 
 /**
  * @brief Allocate a ring_buffer with capacity.

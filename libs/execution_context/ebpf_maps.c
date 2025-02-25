@@ -256,7 +256,6 @@ typedef struct _ebpf_core_perf_event_ring
 
 typedef struct _ebpf_core_perf_event_array_map
 {
-    // TODO: Current placeholder copied from ring buffer map.
     ebpf_core_map_t core_map;
     ebpf_lock_t lock;
     // Flag that is set the first time an async operation is queued to the map.
@@ -2354,7 +2353,7 @@ static _Requires_lock_held_(perf_event_array_map->lock) void _ebpf_perf_event_ar
             EBPF_FROM_FIELD(ebpf_core_perf_event_array_map_async_query_context_t, entry, ring->async_contexts.Flink);
         ebpf_perf_event_array_map_async_query_result_t* async_query_result = context->async_query_result;
         async_query_result->lost_count =
-            ebpf_perf_event_array_get_reset_lost_count((ebpf_perf_event_array_t*)map->data, context->cpu_id);
+            ebpf_perf_event_array_get_lost_count((ebpf_perf_event_array_t*)map->data, context->cpu_id);
         ebpf_perf_event_array_query(
             (ebpf_perf_event_array_t*)map->data,
             context->cpu_id,
@@ -2374,7 +2373,7 @@ _delete_perf_event_array_map(_In_ _Post_invalid_ ebpf_core_map_t* map)
 {
     EBPF_LOG_ENTRY();
     uint32_t ring_count = ebpf_perf_event_array_get_ring_count((ebpf_perf_event_array_t*)map->data);
-    // Free the rings
+    // Free the rings.
     ebpf_perf_event_array_destroy((ebpf_perf_event_array_t*)map->data);
 
     ebpf_core_perf_event_array_map_t* perf_event_array_map =
@@ -2502,17 +2501,9 @@ ebpf_perf_event_array_map_query_buffer(
 _Must_inspect_result_ ebpf_result_t
 ebpf_perf_event_array_map_return_buffer(_In_ const ebpf_map_t* map, uint32_t cpu_id, size_t consumer_offset)
 {
-    size_t producer_offset;
-    size_t old_consumer_offset;
-    size_t consumed_data_length;
     EBPF_LOG_ENTRY();
-    ebpf_perf_event_array_query((ebpf_perf_event_array_t*)map->data, cpu_id, &old_consumer_offset, &producer_offset);
-    ebpf_result_t result = ebpf_safe_size_t_subtract(consumer_offset, old_consumer_offset, &consumed_data_length);
-    if (result != EBPF_SUCCESS) {
-        goto Exit;
-    }
-    result = ebpf_perf_event_array_return((ebpf_perf_event_array_t*)map->data, cpu_id, consumed_data_length);
-Exit:
+    ebpf_result_t result =
+        ebpf_perf_event_array_return_buffer((ebpf_perf_event_array_t*)map->data, cpu_id, consumer_offset);
     EBPF_RETURN_RESULT(result);
 }
 

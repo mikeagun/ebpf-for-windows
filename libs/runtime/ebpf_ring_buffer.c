@@ -6,16 +6,6 @@
 #include "ebpf_ring_buffer_record.h"
 #include "ebpf_tracelog.h"
 
-typedef struct _ebpf_ring_buffer
-{
-    ebpf_lock_t lock;
-    size_t length;
-    size_t consumer_offset;
-    size_t producer_offset;
-    uint8_t* shared_buffer;
-    ebpf_ring_descriptor_t* ring_descriptor;
-} ebpf_ring_buffer_t;
-
 inline static size_t
 _ring_get_length(_In_ const ebpf_ring_buffer_t* ring)
 {

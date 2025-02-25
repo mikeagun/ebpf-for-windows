@@ -2715,11 +2715,6 @@ ebpf_program_get_header_context_descriptor(
     _In_ const void* program_context, _Outptr_ const ebpf_context_descriptor_t** context_descriptor)
 {
     ebpf_context_header_t* header = CONTAINING_RECORD(program_context, ebpf_context_header_t, context);
-    // ebpf_program_t *program = (ebpf_program_t*)header->context_header[1];
-    //*context_descriptor =
-    //     program->extension_program_data->program_info->program_type_descriptor->context_descriptor;
-
-    // Just storing context descriptor for testing.
     *context_descriptor = (ebpf_context_descriptor_t*)header->context_header[1];
 }
 
