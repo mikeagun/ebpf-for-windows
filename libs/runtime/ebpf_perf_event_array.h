@@ -89,13 +89,13 @@ uint32_t
 ebpf_perf_event_array_get_ring_count(_In_ const ebpf_perf_event_array_t* perf_event_array);
 
 /**
- * @brief Get the number of dropped records in a perf event ring and reset the count.
+ * @brief Get the total number of dropped records for a ring.
  * @param[in] perf_event_array Perf event array to query.
  * @param[in] cpu_id CPU ring to query.
  * @return Number of dropped records in the ring.
  */
 size_t
-ebpf_perf_event_array_get_reset_lost_count(_In_ ebpf_perf_event_array_t* perf_event_array, uint32_t cpu_id);
+ebpf_perf_event_array_get_lost_count(_In_ ebpf_perf_event_array_t* perf_event_array, uint32_t cpu_id);
 
 /**
  * @brief Query the current ready and free offsets from the ring buffer.
@@ -114,12 +114,13 @@ ebpf_perf_event_array_query(
  *
  * @param[in, out] perf_event_array Perf event array to update.
  * @param[in] cpu_id CPU ID to query.
- * @param[in] length Length of bytes to return to the ring buffer.
+ * @param[in] consumer_offset New consumer offset to advance to.
  * @retval EBPF_SUCCESS Successfully returned records to the ring buffer.
  * @retval EBPF_INVALID_ARGUMENT Unable to return records to the ring buffer.
  */
 _Must_inspect_result_ ebpf_result_t
-ebpf_perf_event_array_return(_Inout_ ebpf_perf_event_array_t* perf_event_array, uint32_t cpu_id, size_t length);
+ebpf_perf_event_array_return_buffer(
+    _Inout_ ebpf_perf_event_array_t* perf_event_array, uint32_t cpu_id, size_t consumer_offset);
 
 /**
  * @brief Get pointer to the ring buffer shared data.
