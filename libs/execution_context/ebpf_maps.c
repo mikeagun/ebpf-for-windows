@@ -297,7 +297,7 @@ typedef struct _ebpf_core_perf_event_array_map
     // This flag only transitions from off -> on. When this flag is set,
     // updates to the map acquire the lock and check the async_contexts list.
     // Note that queueing an async operation thus causes a perf degradation
-    // for all subsequent updates, so should only be allowed to admin.
+    // for all subsequent updates, so should only be allowed by admin.
     // Note that we use a single trip wire for the perf array, so once
     // one ring receives an async request the whole perf array uses async.
     bool async_contexts_trip_wire;

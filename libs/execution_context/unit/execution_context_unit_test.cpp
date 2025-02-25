@@ -2874,7 +2874,6 @@ TEST_CASE("EBPF_OPERATION_PERF_EVENT_ARRAY_MAP_QUERY_BUFFER", "[execution_contex
 {
     NEGATIVE_TEST_PROLOG();
     ebpf_operation_perf_event_array_map_query_buffer_request_t request;
-    // ebpf_operation_perf_event_array_map_query_buffer_reply_t reply;
 
     request.map_handle = ebpf_handle_invalid - 1;
     REQUIRE(invoke_protocol(EBPF_OPERATION_PERF_EVENT_ARRAY_MAP_QUERY_BUFFER, request) == EBPF_INVALID_OBJECT);
