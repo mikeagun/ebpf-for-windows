@@ -31,6 +31,9 @@
     <ClCompile Include="..\ebpf_object.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\ebpf_perf_event_array.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\ebpf_pinning_table.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -88,6 +91,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\ebpf_object.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ebpf_perf_event_array.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\ebpf_pinning_table.h">
