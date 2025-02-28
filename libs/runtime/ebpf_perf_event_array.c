@@ -33,6 +33,9 @@ ebpf_perf_event_array_create(
 {
     EBPF_LOG_ENTRY();
     UNREFERENCED_PARAMETER(opts);
+
+    *perf_event_array = NULL;
+
     ebpf_result_t result;
     ebpf_perf_event_array_t* local_perf_event_array = NULL;
     uint32_t ring_count = ebpf_get_cpu_count();
@@ -84,7 +87,7 @@ _ebpf_perf_event_array_output(
     size_t length,
     _In_reads_bytes_(extra_length) const uint8_t* extra_data,
     size_t extra_length,
-    uint32_t* cpu_id)
+    _Out_opt_ uint32_t* cpu_id)
 {
 
     KIRQL irql_at_enter = KeGetCurrentIrql();
@@ -134,11 +137,12 @@ Done:
 _Must_inspect_result_ ebpf_result_t
 ebpf_perf_event_array_output_simple(
     _Inout_ ebpf_perf_event_array_t* perf_event_array,
-    uint32_t cpu_id,
+    uint32_t target_cpu,
     _In_reads_bytes_(length) uint8_t* data,
-    size_t length)
+    size_t length,
+    _Out_opt_ uint32_t* cpu_id)
 {
-    return _ebpf_perf_event_array_output(perf_event_array, cpu_id, data, length, NULL, 0, NULL);
+    return _ebpf_perf_event_array_output(perf_event_array, target_cpu, data, length, NULL, 0, cpu_id);
 }
 
 _Must_inspect_result_ ebpf_result_t

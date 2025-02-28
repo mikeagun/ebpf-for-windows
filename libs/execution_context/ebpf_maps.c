@@ -2338,7 +2338,7 @@ _ebpf_perf_event_array_map_cancel_async_query(_In_ _Frees_ptr_ void* cancel_cont
     EBPF_LOG_EXIT();
 }
 
-static _Requires_lock_held_(perf_event_array_map->lock) void _ebpf_perf_event_array_map_signal_async_query_complete(
+static _Requires_lock_held_(perf_event_array_map->rings[cpu_id].lock) void _ebpf_perf_event_array_map_signal_async_query_complete(
     _Inout_ ebpf_core_perf_event_array_map_t* perf_event_array_map, uint32_t cpu_id)
 {
     EBPF_LOG_ENTRY();
@@ -2461,6 +2461,32 @@ Exit:
 }
 
 _Must_inspect_result_ ebpf_result_t
+ebpf_perf_event_output_simple(
+    _Inout_ ebpf_map_t* map, uint32_t cpu_id, _In_reads_bytes_(length) uint8_t* data, size_t length)
+{
+    ebpf_result_t result = EBPF_SUCCESS;
+
+    EBPF_LOG_ENTRY();
+
+    uint32_t written_cpu;
+    result =
+        ebpf_perf_event_array_output_simple((ebpf_perf_event_array_t*)map->data, cpu_id, data, length, &written_cpu);
+    if (result != EBPF_SUCCESS) {
+        goto Exit;
+    }
+
+    ebpf_core_perf_event_array_map_t* perf_event_array_map =
+        EBPF_FROM_FIELD(ebpf_core_perf_event_array_map_t, core_map, map);
+
+    ebpf_lock_state_t state = ebpf_lock_lock(&perf_event_array_map->rings[written_cpu].lock);
+    _ebpf_perf_event_array_map_signal_async_query_complete(perf_event_array_map, written_cpu);
+    ebpf_lock_unlock(&perf_event_array_map->rings[written_cpu].lock, state);
+
+Exit:
+    EBPF_RETURN_RESULT(result);
+}
+
+_Must_inspect_result_ ebpf_result_t
 ebpf_perf_event_output(
     _In_ void* ctx, _Inout_ ebpf_map_t* map, uint64_t flags, _In_reads_bytes_(length) uint8_t* data, size_t length)
 {
@@ -2469,12 +2495,10 @@ ebpf_perf_event_output(
 
     EBPF_LOG_ENTRY();
 
-    if (ctx == NULL && (flags & EBPF_MAP_FLAG_CTXLEN_MASK) != 0) {
-        result = EBPF_OPERATION_NOT_SUPPORTED;
-        goto Exit;
-    }
-    uint32_t cpu_id; // After perf_event_array_output cpu_id contains the cpu_id we wrote to unless args are bad.
-    result = ebpf_perf_event_array_output(ctx, (ebpf_perf_event_array_t*)map->data, flags, data, length, &cpu_id);
+    ebpf_assert(ctx != NULL);
+    uint32_t
+        written_cpu; // After perf_event_array_output written_cpu contains the cpu id we wrote to unless args are bad.
+    result = ebpf_perf_event_array_output(ctx, (ebpf_perf_event_array_t*)map->data, flags, data, length, &written_cpu);
     if (result != EBPF_SUCCESS) {
         goto Exit;
     }
@@ -2482,9 +2506,9 @@ ebpf_perf_event_output(
     ebpf_core_perf_event_array_map_t* perf_event_array_map =
         EBPF_FROM_FIELD(ebpf_core_perf_event_array_map_t, core_map, map);
 
-    ebpf_lock_state_t state = ebpf_lock_lock(&perf_event_array_map->lock);
-    _ebpf_perf_event_array_map_signal_async_query_complete(perf_event_array_map, cpu_id);
-    ebpf_lock_unlock(&perf_event_array_map->lock, state);
+    ebpf_lock_state_t state = ebpf_lock_lock(&perf_event_array_map->rings[written_cpu].lock);
+    _ebpf_perf_event_array_map_signal_async_query_complete(perf_event_array_map, written_cpu);
+    ebpf_lock_unlock(&perf_event_array_map->rings[written_cpu].lock, state);
 
 Exit:
     EBPF_RETURN_RESULT(result);

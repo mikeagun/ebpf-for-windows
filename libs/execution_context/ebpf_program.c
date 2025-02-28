@@ -2725,7 +2725,7 @@ ebpf_program_set_flags(_Inout_ ebpf_program_t* program, uint64_t flags)
 
 void
 ebpf_program_set_header_context_descriptor(
-    const ebpf_context_descriptor_t* context_descriptor, _Inout_ void* program_context)
+    _In_ const ebpf_context_descriptor_t* context_descriptor, _Inout_ void* program_context)
 {
     // slot [1] contains the context_descriptor for the program.
     ebpf_context_header_t* header = CONTAINING_RECORD(program_context, ebpf_context_header_t, context);
@@ -2743,7 +2743,7 @@ ebpf_program_get_header_context_descriptor(
 
 void
 ebpf_program_get_context_data(
-    _In_ const void* program_context, _Outptr_ const uint8_t** data_start, _Outptr_ const uint8_t** data_end)
+    _In_ const void* program_context, _Out_ const uint8_t** data_start, _Out_ const uint8_t** data_end)
 {
     ebpf_context_descriptor_t* context_descriptor;
     ebpf_program_get_header_context_descriptor(program_context, &context_descriptor);

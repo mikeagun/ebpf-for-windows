@@ -4752,8 +4752,8 @@ typedef struct _ebpf_perf_event_array_subscription
 {
     _ebpf_perf_event_array_subscription()
         : unsubscribed(false), perf_event_array_map_handle(ebpf_handle_invalid), callback_context(nullptr),
-          sample_callback(nullptr), lost_callback(nullptr), buffer(nullptr), reply({}), async_ioctl_completion(nullptr),
-          async_ioctl_failed(false)
+          sample_callback(nullptr), lost_callback(nullptr), buffer(nullptr), cpu_id(0), reply({}),
+          async_ioctl_completion(nullptr), async_ioctl_failed(false)
     {
     }
     ~_ebpf_perf_event_array_subscription() { EBPF_LOG_ENTRY(); }
