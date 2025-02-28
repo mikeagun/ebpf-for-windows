@@ -1082,6 +1082,7 @@ TEST_CASE("ring_buffer_output", "[platform][ring_buffer]")
 
     auto record = ebpf_ring_buffer_next_record(buffer, size, consumer, producer);
     REQUIRE(record != nullptr);
+
     REQUIRE(record->header.length == data.size());
 
     REQUIRE(ebpf_ring_buffer_return_buffer(ring_buffer, total_record_size) == EBPF_SUCCESS);
@@ -1773,7 +1774,13 @@ _test_perf_event_output(
         context_descriptor.size,
         context_descriptor.data,
         context_descriptor.end);
-    REQUIRE(ebpf_perf_event_array_output(ctx, perf_event_array, flags, data, length, NULL) == expected_result);
+    if (use_current_cpu) {
+        REQUIRE(ebpf_perf_event_array_output(ctx, perf_event_array, flags, data, length, NULL) == expected_result);
+    } else {
+        KIRQL old_irql = ebpf_raise_irql(DISPATCH_LEVEL);
+        REQUIRE(ebpf_perf_event_array_output(ctx, perf_event_array, flags, data, length, NULL) == expected_result);
+        ebpf_lower_irql(old_irql);
+    }
 
     ebpf_perf_event_array_query(perf_event_array, cpu_id, &new_consumer, &new_producer);
 
@@ -1787,11 +1794,14 @@ _test_perf_event_output(
         // Verify the record just written.
         auto record = ebpf_ring_buffer_next_record(buffer, size, new_consumer, new_producer);
         REQUIRE(record != nullptr);
-        REQUIRE(record->header.length == _perf_record_size(length + capture_length));
+        REQUIRE(!ebpf_ring_buffer_record_is_locked(record));
+        size_t record_length = ebpf_ring_buffer_record_length(record);
+        size_t record_size = ebpf_ring_buffer_record_total_size(record);
+        REQUIRE(record_length == (length + capture_length));
+        REQUIRE(record_size == _perf_record_size(length + capture_length));
         REQUIRE(memcmp(record->data, data, length) == 0);
         REQUIRE(memcmp(record->data + length, ctx_data, capture_length) == 0);
 
-        size_t record_size = _perf_record_size(record->header.length);
         if (consume) {
             REQUIRE(
                 ebpf_perf_event_array_return_buffer(perf_event_array, cpu_id, new_consumer + record_size) ==
@@ -1849,8 +1859,11 @@ TEST_CASE("perf_event_output", "[platform][perf_event_array]")
 
     auto record = ebpf_ring_buffer_next_record(buffer, size, consumer, producer);
     REQUIRE(record != nullptr);
+    REQUIRE(!ebpf_ring_buffer_record_is_locked(record));
 
-    size_t record_size = _perf_record_size(record->header.length);
+    size_t record_length = ebpf_ring_buffer_record_length(record);
+
+    size_t record_size = _perf_record_size(record_length);
     REQUIRE(record->header.length == data.size());
 
     REQUIRE(ebpf_perf_event_array_return_buffer(perf_event_array, cpu_id, record_size) == EBPF_SUCCESS);
@@ -1992,15 +2005,14 @@ TEST_CASE("perf_event_output_capture", "[platform][perf_event_array]")
         // Tests with no context header.
         // - Note: Context headers are now required for all extensions,
         //   so these tests just validate that without CTXLEN the context header isn't used.
-        PERF_TEST_CASE(0, true, -2, 0, 0, EBPF_SUCCESS),
+        PERF_TEST_CASE(0, true, -2, 0, 0, EBPF_INVALID_ARGUMENT),
         PERF_TEST_CASE(0, true, -2, 1, 0, EBPF_SUCCESS),
         PERF_TEST_CASE(1, true, -2, 8, 0, EBPF_SUCCESS),
         PERF_TEST_CASE(1, false, -2, 10, 0, EBPF_SUCCESS),
         PERF_TEST_CASE(0, false, -2, 1024, 0, EBPF_SUCCESS),
         // Auto CPU tests with no ctx_data.
-        PERF_TEST_CASE(0, true, -1, 0, 0, EBPF_SUCCESS),
-        PERF_TEST_CASE(1, true, -1, 0, 0, EBPF_SUCCESS),
         PERF_TEST_CASE(0, true, -1, 1, 0, EBPF_SUCCESS),
+        PERF_TEST_CASE(1, true, -1, 1, 0, EBPF_SUCCESS),
         PERF_TEST_CASE(0, true, -1, 8, 0, EBPF_SUCCESS),
         PERF_TEST_CASE(0, true, -1, 10, 0, EBPF_SUCCESS),
         PERF_TEST_CASE(0, true, -1, 1024, 0, EBPF_SUCCESS),
@@ -2028,8 +2040,8 @@ TEST_CASE("perf_event_output_capture", "[platform][perf_event_array]")
         PERF_TEST_CASE(1, true, 1024, 1024, 8, EBPF_SUCCESS),
         PERF_TEST_CASE(1, false, 1024, 1024, 8, EBPF_SUCCESS),
         // Invalid data length tests.
-        PERF_TEST_CASE(0, true, 0, size, 0, EBPF_OUT_OF_SPACE),
-        PERF_TEST_CASE(0, true, 0, size + 1, 0, EBPF_OUT_OF_SPACE),
+        PERF_TEST_CASE(0, true, 0, size, 0, EBPF_INVALID_ARGUMENT),
+        PERF_TEST_CASE(0, true, 0, size + 1, 0, EBPF_INVALID_ARGUMENT),
         // Invalid capture requests.
         PERF_TEST_CASE(0, true, -1, 10, 1, EBPF_OPERATION_NOT_SUPPORTED),
         PERF_TEST_CASE(0, true, 0, 10, 1, EBPF_INVALID_ARGUMENT),

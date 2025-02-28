@@ -4844,11 +4844,10 @@ _ebpf_perf_event_array_map_async_query_completion(_Inout_ void* completion_conte
                 break;
             }
 
-            // while (ebpf_ring_buffer_record_locked(record)) {
-            //     added in #4204
-            //     // writes happen at dispatch level, so we shouldn't wait long.
-            //     // the lock bit check read-acquires the header, so spinning will get a fresh value..
-            // }
+            while (ebpf_ring_buffer_record_is_locked(record)) {
+                // writes happen at dispatch level, so we shouldn't wait long.
+                // the lock bit check read-acquires the header, so spinning will get a fresh value..
+            }
 
             // Note: the ring buffer record supports discards, but perf event array does not so we skip the check.
 
