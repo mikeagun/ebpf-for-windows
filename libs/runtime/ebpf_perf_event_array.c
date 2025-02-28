@@ -130,8 +130,10 @@ ebpf_perf_event_array_create(
 
     for (uint32_t i = 0; i < ring_count; i++) {
         ebpf_perf_ring_t* ring = &local_perf_event_array->rings[i];
-        ebpf_ring_buffer_initialize_ring(&ring->ring, capacity);
-        ring->lost_records = 0;
+        result = ebpf_ring_buffer_initialize_ring(&ring->ring, capacity);
+        if (result != EBPF_SUCCESS) {
+            goto Error;
+        }
     }
 
     *perf_event_array = local_perf_event_array;
@@ -150,19 +152,10 @@ ebpf_perf_event_array_destroy(_Frees_ptr_opt_ ebpf_perf_event_array_t* perf_even
         EBPF_LOG_ENTRY();
         uint32_t ring_count = perf_event_array->ring_count;
         for (uint32_t i = 0; i < ring_count; i++) {
-            ebpf_ring_buffer_free_ring(&perf_event_array->rings[i].ring);
+            ebpf_ring_buffer_free_ring_memory(&perf_event_array->rings[i].ring);
         }
         ebpf_epoch_free(perf_event_array);
         EBPF_RETURN_VOID();
-    }
-}
-
-// In ebpf_platform.h after ringbuf refactor PR #4204 merges.
-void
-ebpf_lower_irql_from_dispatch_if_needed(KIRQL irql_at_enter)
-{
-    if (irql_at_enter < DISPATCH_LEVEL) {
-        ebpf_lower_irql(irql_at_enter);
     }
 }
 
@@ -179,7 +172,7 @@ _ebpf_perf_event_array_output(
 
     KIRQL irql_at_enter = KeGetCurrentIrql();
     if (irql_at_enter < DISPATCH_LEVEL) {
-        if (target_cpu != EBPF_MAP_FLAG_CURRENT_CPU) {
+        if (target_cpu != (uint32_t)EBPF_MAP_FLAG_CURRENT_CPU) {
             return EBPF_INVALID_ARGUMENT;
         }
         irql_at_enter = ebpf_raise_irql(DISPATCH_LEVEL);
@@ -189,7 +182,7 @@ _ebpf_perf_event_array_output(
     uint32_t current_cpu = ebpf_get_current_cpu();
 
     uint32_t _cpu_id = target_cpu;
-    if (target_cpu == EBPF_MAP_FLAG_CURRENT_CPU) {
+    if (target_cpu == (uint32_t)EBPF_MAP_FLAG_CURRENT_CPU) {
         _cpu_id = current_cpu;
     } else if (_cpu_id != current_cpu) {
         // We only support writes to the current CPU.
@@ -204,7 +197,8 @@ _ebpf_perf_event_array_output(
     uint8_t* record;
     ebpf_perf_ring_t* ring = &perf_event_array->rings[_cpu_id];
 
-    result = ebpf_ring_buffer_exclusive_reserve(&ring->ring, &record, length + extra_length);
+    // We write to a per-cpu ring at dispatch, so can use the faster exclusive reserve function.
+    result = ebpf_ring_buffer_reserve_exclusive(&ring->ring, &record, length + extra_length);
     if (result != EBPF_SUCCESS) {
         ring->lost_records++;
         goto Done;
@@ -288,9 +282,7 @@ _Must_inspect_result_ ebpf_result_t
 ebpf_perf_event_array_return_buffer(
     _Inout_ ebpf_perf_event_array_t* perf_event_array, uint32_t cpu_id, size_t consumer_offset)
 {
-    // Correct command below (for after ringbuf refactor merges).
-    return ebpf_ring_buffer_return(&perf_event_array->rings[cpu_id].ring, consumer_offset);
-    // return ebpf_ring_buffer_return_buffer(&perf_event_array->rings[cpu_id].ring, consumer_offset);
+    return ebpf_ring_buffer_return_buffer(&perf_event_array->rings[cpu_id].ring, consumer_offset);
 }
 
 _Must_inspect_result_ ebpf_result_t

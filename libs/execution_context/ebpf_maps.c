@@ -3236,7 +3236,7 @@ ebpf_perf_event_output(
         result = EBPF_OPERATION_NOT_SUPPORTED;
         goto Exit;
     }
-    uint32_t cpu_id; // After perf_event_array_output cpu_id contains the cpu_id we wrote to.
+    uint32_t cpu_id; // After perf_event_array_output cpu_id contains the cpu_id we wrote to unless args are bad.
     result = ebpf_perf_event_array_output(ctx, (ebpf_perf_event_array_t*)map->data, flags, data, length, &cpu_id);
     if (result != EBPF_SUCCESS) {
         goto Exit;

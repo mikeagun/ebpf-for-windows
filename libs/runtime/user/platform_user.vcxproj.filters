@@ -49,39 +49,6 @@
     <ClCompile Include="..\ebpf_pinning_table.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\ebpf_trampoline.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ebpf_handle_user.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ebpf_platform_user.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ebpf_state.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ebpf_bitmap.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ebpf_async.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ebpf_ring_buffer.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ebpf_error.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ebpf_native_user.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ebpf_interlocked.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ebpf_crypto_hash.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\ebpf_platform.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -152,7 +119,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\external\usersim\cxplat\inc\cxplat.h">
->>>>>>> a5f97110 (WIP perf event arrays.)
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\ebpf_work_queue.h">

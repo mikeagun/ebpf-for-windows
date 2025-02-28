@@ -10,7 +10,6 @@ CXPLAT_EXTERN_C_BEGIN
 
 // typedef struct _ebpf_ring_buffer ebpf_ring_buffer_t;
 // TODO: temporarily moved from ebpf_ring_buffer.h for perf array testing until PR #4204 is merged.
->>>>>>> 36e55576 (comment fixes.)
 typedef struct _ebpf_ring_buffer
 {
     size_t length;

@@ -2432,7 +2432,6 @@ _ebpf_program_test_run_work_item(_In_ cxplat_preemptible_work_item_t* work_item,
     const ebpf_context_descriptor_t* context_descriptor =
         context->program_data->program_info->program_type_descriptor->context_descriptor;
     ebpf_program_set_header_context_descriptor(context_descriptor, program_context);
-
     uint64_t start_time = cxplat_query_time_since_boot_precise(false);
     // Use a counter instead of performing a modulus operation to determine when to start a new epoch.
     // This is because the modulus operation is expensive and we want to minimize the overhead of

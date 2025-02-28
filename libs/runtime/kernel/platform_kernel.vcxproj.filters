@@ -126,6 +126,9 @@
     <ClInclude Include="..\ebpf_object.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\ebpf_perf_event_array.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\ebpf_pinning_table.h">
       <Filter>Header Files</Filter>
     </ClInclude>
