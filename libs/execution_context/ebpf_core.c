@@ -175,7 +175,7 @@ static const NPI_PROVIDER_CHARACTERISTICS _ebpf_global_helper_function_provider_
     _ebpf_general_helper_function_provider_detach_client,
     NULL,
     {
-        EBPF_PROGRAM_DATA_CURRENT_VERSION,
+        0,
         sizeof(NPI_REGISTRATION_INSTANCE),
         &EBPF_PROGRAM_INFO_EXTENSION_IID,
         &ebpf_general_helper_function_module_id,
@@ -553,6 +553,39 @@ Done:
     }
 
     EBPF_OBJECT_RELEASE_REFERENCE((ebpf_core_object_t*)program);
+    EBPF_RETURN_RESULT(return_value);
+}
+
+_Must_inspect_result_ ebpf_result_t
+ebpf_core_resolve_map_value_address(
+    uint32_t count_of_maps,
+    _In_reads_(count_of_maps) const ebpf_handle_t* map_handles,
+    _Out_writes_(count_of_maps) uintptr_t* map_addresses)
+{
+    EBPF_LOG_ENTRY();
+    uint32_t map_index = 0;
+    ebpf_result_t return_value = EBPF_SUCCESS;
+
+    for (map_index = 0; map_index < count_of_maps; map_index++) {
+        ebpf_map_t* map;
+        return_value =
+            EBPF_OBJECT_REFERENCE_BY_HANDLE(map_handles[map_index], EBPF_OBJECT_MAP, (ebpf_core_object_t**)&map);
+
+        if (return_value != EBPF_SUCCESS) {
+            goto Done;
+        }
+
+        return_value = ebpf_map_get_value_address(map, &map_addresses[map_index]);
+
+        // First release the map reference, then check the return value.
+        EBPF_OBJECT_RELEASE_REFERENCE((ebpf_core_object_t*)map);
+
+        if (return_value != EBPF_SUCCESS) {
+            goto Done;
+        }
+    }
+
+Done:
     EBPF_RETURN_RESULT(return_value);
 }
 
@@ -1985,15 +2018,61 @@ _ebpf_core_protocol_get_next_pinned_program_path(
     }
     start_path.length = path_length;
     start_path.value = (uint8_t*)request->start_path;
-    next_path.length = reply_length - EBPF_OFFSET_OF(ebpf_operation_get_next_pinned_program_path_reply_t, next_path);
+
+    result = ebpf_safe_size_t_subtract(
+        reply_length, EBPF_OFFSET_OF(ebpf_operation_get_next_pinned_program_path_reply_t, next_path), &path_length);
+    if (result != EBPF_SUCCESS) {
+        EBPF_RETURN_RESULT(result);
+    }
+    next_path.length = path_length;
     next_path.value = (uint8_t*)reply->next_path;
 
-    result =
-        ebpf_pinning_table_get_next_path(_ebpf_core_map_pinning_table, EBPF_OBJECT_PROGRAM, &start_path, &next_path);
+    ebpf_object_type_t object_type = EBPF_OBJECT_PROGRAM;
+    result = ebpf_pinning_table_get_next_path(_ebpf_core_map_pinning_table, &object_type, &start_path, &next_path);
 
     if (result == EBPF_SUCCESS) {
         reply->header.length =
             (uint16_t)next_path.length + EBPF_OFFSET_OF(ebpf_operation_get_next_pinned_program_path_reply_t, next_path);
+    }
+    EBPF_RETURN_RESULT(result);
+}
+
+static ebpf_result_t
+_ebpf_core_protocol_get_next_pinned_object_path(
+    _In_ const ebpf_operation_get_next_pinned_object_path_request_t* request,
+    _Out_ ebpf_operation_get_next_pinned_object_path_reply_t* reply,
+    uint16_t reply_length)
+{
+    EBPF_LOG_ENTRY();
+    cxplat_utf8_string_t start_path;
+    cxplat_utf8_string_t next_path;
+
+    size_t path_length;
+    ebpf_result_t result = ebpf_safe_size_t_subtract(
+        request->header.length,
+        EBPF_OFFSET_OF(ebpf_operation_get_next_pinned_object_path_request_t, start_path),
+        &path_length);
+    if (result != EBPF_SUCCESS) {
+        EBPF_RETURN_RESULT(result);
+    }
+    start_path.length = path_length;
+    start_path.value = (uint8_t*)request->start_path;
+
+    result = ebpf_safe_size_t_subtract(
+        reply_length, EBPF_OFFSET_OF(ebpf_operation_get_next_pinned_object_path_reply_t, next_path), &path_length);
+    if (result != EBPF_SUCCESS) {
+        EBPF_RETURN_RESULT(result);
+    }
+    next_path.length = path_length;
+    next_path.value = (uint8_t*)reply->next_path;
+
+    ebpf_object_type_t object_type = request->type;
+    result = ebpf_pinning_table_get_next_path(_ebpf_core_map_pinning_table, &object_type, &start_path, &next_path);
+
+    if (result == EBPF_SUCCESS) {
+        reply->header.length =
+            (uint16_t)next_path.length + EBPF_OFFSET_OF(ebpf_operation_get_next_pinned_object_path_reply_t, next_path);
+        reply->type = object_type;
     }
     EBPF_RETURN_RESULT(result);
 }
@@ -2187,6 +2266,8 @@ _ebpf_core_protocol_ring_buffer_map_async_query(
     if (result != EBPF_SUCCESS) {
         goto Exit;
     }
+    // Initialize reply consumer offset to ensure we never get an older value.
+    reply->async_query_result.consumer = request->consumer_offset;
 
     reply->header.id = EBPF_OPERATION_RING_BUFFER_MAP_ASYNC_QUERY;
     reply->header.length = sizeof(ebpf_operation_ring_buffer_map_async_query_reply_t);
@@ -2228,6 +2309,30 @@ _ebpf_core_protocol_ring_buffer_map_write_data(_In_ const ebpf_operation_ring_bu
     result = ebpf_ring_buffer_map_output(map, (uint8_t*)request->data, data_length);
 Exit:
     EBPF_OBJECT_RELEASE_REFERENCE((ebpf_core_object_t*)map);
+    EBPF_RETURN_RESULT(result);
+}
+
+static ebpf_result_t
+_ebpf_core_protocol_program_set_flags(_In_ const ebpf_operation_program_set_flags_request_t* request)
+{
+    EBPF_LOG_ENTRY();
+
+    ebpf_program_t* program = NULL;
+
+    ebpf_result_t result =
+        EBPF_OBJECT_REFERENCE_BY_HANDLE(request->program_handle, EBPF_OBJECT_PROGRAM, (ebpf_core_object_t**)&program);
+
+    if (result != EBPF_SUCCESS) {
+        goto Exit;
+    }
+
+    ebpf_program_set_flags(program, request->flags);
+
+Exit:
+    if (program) {
+        EBPF_OBJECT_RELEASE_REFERENCE((ebpf_core_object_t*)program);
+    }
+
     EBPF_RETURN_RESULT(result);
 }
 
@@ -2317,7 +2422,9 @@ _ebpf_core_protocol_perf_event_array_map_write_data(
     if (result != EBPF_SUCCESS) {
         goto Exit;
     }
-    result = ebpf_perf_event_output(NULL, map, EBPF_MAP_FLAG_CURRENT_CPU, (uint8_t*)request->data, data_length);
+    result =
+        ebpf_perf_event_output_simple(map, (uint32_t)EBPF_MAP_FLAG_CURRENT_CPU, (uint8_t*)request->data, data_length);
+
 Exit:
     EBPF_OBJECT_RELEASE_REFERENCE((ebpf_core_object_t*)map);
     EBPF_RETURN_RESULT(result);
@@ -2879,6 +2986,9 @@ static ebpf_protocol_handler_t _ebpf_protocol_handlers[] = {
     DECLARE_PROTOCOL_HANDLER_VARIABLE_REQUEST_FIXED_REPLY(map_delete_element_batch, keys, PROTOCOL_ALL_MODES),
     DECLARE_PROTOCOL_HANDLER_VARIABLE_REQUEST_VARIABLE_REPLY(
         map_get_next_key_value_batch, previous_key, data, PROTOCOL_ALL_MODES),
+    DECLARE_PROTOCOL_HANDLER_FIXED_REQUEST_NO_REPLY(program_set_flags, PROTOCOL_ALL_MODES),
+    DECLARE_PROTOCOL_HANDLER_VARIABLE_REQUEST_VARIABLE_REPLY(
+        get_next_pinned_object_path, start_path, next_path, PROTOCOL_ALL_MODES),
 };
 
 _Must_inspect_result_ ebpf_result_t

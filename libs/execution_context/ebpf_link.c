@@ -59,7 +59,7 @@ static const NPI_CLIENT_CHARACTERISTICS _ebpf_link_client_characteristics = {
     _ebpf_link_client_detach_provider,
     NULL,
     {
-        EBPF_ATTACH_CLIENT_DATA_CURRENT_VERSION,
+        0,
         sizeof(NPI_REGISTRATION_INSTANCE),
         &EBPF_HOOK_EXTENSION_IID,
         NULL,
@@ -105,18 +105,8 @@ _ebpf_link_instance_invoke_batch_end(_Inout_ void* state);
 static ebpf_result_t
 _ebpf_link_instance_invoke_batch_end_with_context_header(_Inout_ void* state);
 
-// Dispatch table when program information provider does not support context header.
-static const ebpf_extension_program_dispatch_table_t _ebpf_link_dispatch_table = {
-    EBPF_LINK_DISPATCH_TABLE_VERSION_CURRENT,
-    EBPF_LINK_DISPATCH_TABLE_FUNCTION_COUNT_CURRENT, // Count of functions. This should be updated when new functions
-                                                     // are added.
-    _ebpf_link_instance_invoke,
-    _ebpf_link_instance_invoke_batch_begin,
-    _ebpf_link_instance_invoke_batch,
-    _ebpf_link_instance_invoke_batch_end,
-};
-
 // Dispatch table when program information provider supports context header.
+// Note: Context header support is now mandatory.
 static const ebpf_extension_program_dispatch_table_t _ebpf_link_dispatch_table_with_context_header = {
     EBPF_LINK_DISPATCH_TABLE_VERSION_CURRENT,
     EBPF_LINK_DISPATCH_TABLE_FUNCTION_COUNT_CURRENT, // Count of functions. This should be updated when new functions
@@ -211,14 +201,13 @@ _ebpf_link_client_attach_provider(
     link->link_type = attach_provider_data->link_type;
     link->bpf_attach_type = attach_provider_data->bpf_attach_type;
 
-    if (ebpf_program_supports_context_header(link->program)) {
-        client_dispatch_table = (void*)&_ebpf_link_dispatch_table_with_context_header;
-    } else {
-        client_dispatch_table = (void*)&_ebpf_link_dispatch_table;
-        // TODO: Before merging perf event array context headers must be required.
-        // status = STATUS_INVALID_PARAMETER;
-        // goto Done;
+    if (!ebpf_program_supports_context_header(link->program)) {
+        EBPF_LOG_MESSAGE(
+            EBPF_TRACELOG_LEVEL_ERROR, EBPF_TRACELOG_KEYWORD_LINK, "Attach provider does not support context headers.");
+        status = STATUS_INVALID_PARAMETER;
+        goto Done;
     }
+    client_dispatch_table = (void*)&_ebpf_link_dispatch_table_with_context_header;
 
     ebpf_lock_unlock(&link->lock, state);
     lock_held = false;
@@ -257,7 +246,7 @@ _ebpf_link_client_detach_provider(void* client_binding_context)
 }
 
 static void
-_ebpf_link_free(_Frees_ptr_ ebpf_core_object_t* object)
+_ebpf_link_free(_In_ _Frees_ptr_ ebpf_core_object_t* object)
 {
     ebpf_link_t* link = (ebpf_link_t*)object;
     ebpf_free((void*)link->client_data.data);
@@ -293,7 +282,9 @@ ebpf_link_create(
     ebpf_lock_state_t state = ebpf_lock_lock(&local_link->lock);
     lock_held = true;
 
-    local_link->client_data.header.size = context_data_length;
+    ebpf_extension_header_t header = EBPF_ATTACH_CLIENT_DATA_HEADER_VERSION;
+
+    local_link->client_data.header = header;
 
     if (context_data_length > 0) {
         local_link->client_data.data = ebpf_allocate_with_tag(context_data_length, EBPF_POOL_TAG_LINK);
@@ -302,6 +293,7 @@ ebpf_link_create(
             goto Exit;
         }
         memcpy((void*)local_link->client_data.data, context_data, context_data_length);
+        local_link->client_data.data_size = context_data_length;
     }
 
     local_link->module_id.Guid = module_id;
@@ -368,6 +360,7 @@ ebpf_link_attach_program(_Inout_ ebpf_link_t* link, _Inout_ ebpf_program_t* prog
 
     link->program = program;
     link->program_type = ebpf_program_type_uuid(link->program);
+    link->client_data.prog_attach_flags = ebpf_program_get_flags(link->program);
 
     // Attach the program to the link.
     ebpf_program_attach_link(program, link);
@@ -482,7 +475,7 @@ ebpf_link_detach_program(_Inout_ ebpf_link_t* link)
     ebpf_free((void*)link->client_data.data);
 
     link->client_data.data = NULL;
-    link->client_data.header.size = 0;
+    link->client_data.data_size = 0;
     link->program = NULL;
 
 Done:
@@ -663,10 +656,10 @@ ebpf_link_get_info(
 
     // Copy any additional parameters.
     size_t size = sizeof(struct bpf_link_info) - FIELD_OFFSET(struct bpf_link_info, attach_data);
-    if ((link->client_data.header.size > 0) && (link->client_data.header.size <= size)) {
-        memcpy(&info->attach_data, link->client_data.data, link->client_data.header.size);
-    }
 
+    if ((link->client_data.data_size > 0) && (link->client_data.data_size <= size)) {
+        memcpy(&info->attach_data, link->client_data.data, link->client_data.data_size);
+    }
     ebpf_lock_unlock((ebpf_lock_t*)&link->lock, state);
 
     *info_size = sizeof(*info);

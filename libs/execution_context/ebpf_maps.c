@@ -2010,9 +2010,14 @@ _next_lpm_map_key_and_value(
 {
     ebpf_core_lpm_map_t* trie_map = EBPF_FROM_FIELD(ebpf_core_lpm_map_t, core_map, map);
     ebpf_core_lpm_key_t* lpm_key = (ebpf_core_lpm_key_t*)next_key;
+    ebpf_core_lpm_key_t* previous_lpm_key = (ebpf_core_lpm_key_t*)previous_key;
 
     // Validate prefix length.
     if (!lpm_key || lpm_key->prefix_length > trie_map->max_prefix) {
+        return EBPF_INVALID_ARGUMENT;
+    }
+
+    if (previous_lpm_key && previous_lpm_key->prefix_length > trie_map->max_prefix) {
         return EBPF_INVALID_ARGUMENT;
     }
 
@@ -2124,8 +2129,12 @@ static _Requires_lock_held_(ring_buffer_map->lock) void _ebpf_ring_buffer_map_si
         ebpf_core_ring_buffer_map_async_query_context_t* context = EBPF_FROM_FIELD(
             ebpf_core_ring_buffer_map_async_query_context_t, entry, ring_buffer_map->async_contexts.Flink);
         ebpf_ring_buffer_map_async_query_result_t* async_query_result = context->async_query_result;
-        ebpf_ring_buffer_query(
-            (ebpf_ring_buffer_t*)map->data, &async_query_result->consumer, &async_query_result->producer);
+        size_t consumer;
+        ebpf_ring_buffer_query((ebpf_ring_buffer_t*)map->data, &consumer, &async_query_result->producer);
+        if (consumer > async_query_result->consumer) {
+            // We will normally already have the latest consumer value - only update if we see an increase.
+            async_query_result->consumer = consumer;
+        }
         ebpf_list_remove_entry(&context->entry);
         ebpf_operation_ring_buffer_map_async_query_reply_t* reply =
             EBPF_FROM_FIELD(ebpf_operation_ring_buffer_map_async_query_reply_t, async_query_result, async_query_result);
@@ -2257,18 +2266,7 @@ ebpf_ring_buffer_map_query_buffer(_In_ const ebpf_map_t* map, _Outptr_ uint8_t**
 _Must_inspect_result_ ebpf_result_t
 ebpf_ring_buffer_map_return_buffer(_In_ const ebpf_map_t* map, size_t consumer_offset)
 {
-    size_t producer_offset;
-    size_t old_consumer_offset;
-    size_t consumed_data_length;
-    EBPF_LOG_ENTRY();
-    ebpf_ring_buffer_query((ebpf_ring_buffer_t*)map->data, &old_consumer_offset, &producer_offset);
-    ebpf_result_t result = ebpf_safe_size_t_subtract(consumer_offset, old_consumer_offset, &consumed_data_length);
-    if (result != EBPF_SUCCESS) {
-        goto Exit;
-    }
-    result = ebpf_ring_buffer_return((ebpf_ring_buffer_t*)map->data, consumed_data_length);
-Exit:
-    EBPF_RETURN_RESULT(result);
+    return ebpf_ring_buffer_return_buffer((ebpf_ring_buffer_t*)map->data, consumer_offset);
 }
 
 _Must_inspect_result_ ebpf_result_t
@@ -2308,9 +2306,12 @@ ebpf_ring_buffer_map_async_query(
     ebpf_list_insert_tail(&ring_buffer_map->async_contexts, &context->entry);
     ring_buffer_map->async_contexts_trip_wire = true;
 
+    size_t consumer;
     // If there is already some data available in the ring buffer, indicate the results right away.
-    ebpf_ring_buffer_query(
-        (ebpf_ring_buffer_t*)map->data, &async_query_result->consumer, &async_query_result->producer);
+    ebpf_ring_buffer_query((ebpf_ring_buffer_t*)map->data, &consumer, &async_query_result->producer);
+    if (consumer > async_query_result->consumer) {
+        async_query_result->consumer = consumer;
+    }
 
     if (async_query_result->producer != async_query_result->consumer) {
         _ebpf_ring_buffer_map_signal_async_query_complete(ring_buffer_map);
@@ -2337,7 +2338,7 @@ _ebpf_perf_event_array_map_cancel_async_query(_In_ _Frees_ptr_ void* cancel_cont
     EBPF_LOG_EXIT();
 }
 
-static _Requires_lock_held_(perf_event_array_map->lock) void _ebpf_perf_event_array_map_signal_async_query_complete(
+static _Requires_lock_held_(perf_event_array_map->rings[cpu_id].lock) void _ebpf_perf_event_array_map_signal_async_query_complete(
     _Inout_ ebpf_core_perf_event_array_map_t* perf_event_array_map, uint32_t cpu_id)
 {
     EBPF_LOG_ENTRY();
@@ -2460,6 +2461,32 @@ Exit:
 }
 
 _Must_inspect_result_ ebpf_result_t
+ebpf_perf_event_output_simple(
+    _Inout_ ebpf_map_t* map, uint32_t cpu_id, _In_reads_bytes_(length) uint8_t* data, size_t length)
+{
+    ebpf_result_t result = EBPF_SUCCESS;
+
+    EBPF_LOG_ENTRY();
+
+    uint32_t written_cpu;
+    result =
+        ebpf_perf_event_array_output_simple((ebpf_perf_event_array_t*)map->data, cpu_id, data, length, &written_cpu);
+    if (result != EBPF_SUCCESS) {
+        goto Exit;
+    }
+
+    ebpf_core_perf_event_array_map_t* perf_event_array_map =
+        EBPF_FROM_FIELD(ebpf_core_perf_event_array_map_t, core_map, map);
+
+    ebpf_lock_state_t state = ebpf_lock_lock(&perf_event_array_map->rings[written_cpu].lock);
+    _ebpf_perf_event_array_map_signal_async_query_complete(perf_event_array_map, written_cpu);
+    ebpf_lock_unlock(&perf_event_array_map->rings[written_cpu].lock, state);
+
+Exit:
+    EBPF_RETURN_RESULT(result);
+}
+
+_Must_inspect_result_ ebpf_result_t
 ebpf_perf_event_output(
     _In_ void* ctx, _Inout_ ebpf_map_t* map, uint64_t flags, _In_reads_bytes_(length) uint8_t* data, size_t length)
 {
@@ -2468,12 +2495,10 @@ ebpf_perf_event_output(
 
     EBPF_LOG_ENTRY();
 
-    if (ctx == NULL && (flags & EBPF_MAP_FLAG_CTXLEN_MASK) != 0) {
-        result = EBPF_OPERATION_NOT_SUPPORTED;
-        goto Exit;
-    }
-    uint32_t cpu_id; // After perf_event_array_output cpu_id contains the cpu_id we wrote to.
-    result = ebpf_perf_event_array_output(ctx, (ebpf_perf_event_array_t*)map->data, flags, data, length, &cpu_id);
+    ebpf_assert(ctx != NULL);
+    uint32_t
+        written_cpu; // After perf_event_array_output written_cpu contains the cpu id we wrote to unless args are bad.
+    result = ebpf_perf_event_array_output(ctx, (ebpf_perf_event_array_t*)map->data, flags, data, length, &written_cpu);
     if (result != EBPF_SUCCESS) {
         goto Exit;
     }
@@ -2481,9 +2506,9 @@ ebpf_perf_event_output(
     ebpf_core_perf_event_array_map_t* perf_event_array_map =
         EBPF_FROM_FIELD(ebpf_core_perf_event_array_map_t, core_map, map);
 
-    ebpf_lock_state_t state = ebpf_lock_lock(&perf_event_array_map->lock);
-    _ebpf_perf_event_array_map_signal_async_query_complete(perf_event_array_map, cpu_id);
-    ebpf_lock_unlock(&perf_event_array_map->lock, state);
+    ebpf_lock_state_t state = ebpf_lock_lock(&perf_event_array_map->rings[written_cpu].lock);
+    _ebpf_perf_event_array_map_signal_async_query_complete(perf_event_array_map, written_cpu);
+    ebpf_lock_unlock(&perf_event_array_map->rings[written_cpu].lock, state);
 
 Exit:
     EBPF_RETURN_RESULT(result);
@@ -3311,4 +3336,16 @@ ebpf_map_get_next_key_and_value_batch(
     }
 
     return result;
+}
+
+_Must_inspect_result_ ebpf_result_t
+ebpf_map_get_value_address(_In_ const ebpf_map_t* map, _Out_ uintptr_t* value_address)
+{
+    if (map->ebpf_map_definition.type != BPF_MAP_TYPE_ARRAY) {
+        return EBPF_INVALID_ARGUMENT;
+    } else {
+        ebpf_core_map_t* core_map = (ebpf_core_map_t*)map;
+        *value_address = (uintptr_t)core_map->data;
+    }
+    return EBPF_SUCCESS;
 }

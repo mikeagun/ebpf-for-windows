@@ -288,6 +288,20 @@ extern "C"
         _Inout_ void* async_context);
 
     /**
+     * @brief Write out a variable sized record to the perf event array.
+     *
+     * @param[in, out] perf_event_array Perf event array to write to.
+     * @param[in] cpu_id CPU ring to write to (or (uint32_t)-1 for auto).
+     * @param[in] data Data to copy into record.
+     * @param[in] length Length of data to copy.
+     * @retval EBPF_SUCCESS Successfully wrote record ring buffer.
+     * @retval EBPF_OUT_OF_SPACE Unable to output to ring buffer due to inadequate space.
+     */
+    _Must_inspect_result_ ebpf_result_t
+    ebpf_perf_event_output_simple(
+        _Inout_ ebpf_map_t* map, uint32_t cpu_id, _In_reads_bytes_(length) uint8_t* data, size_t length);
+
+    /**
      * @brief Write out a variable sized record to the perf event array map.
      *
      * @param[in, out] map Pointer to map of type EBPF_MAP_TYPE_PERF_EVENT_ARRAY.
@@ -379,6 +393,18 @@ extern "C"
         _Inout_ size_t* key_and_value_length,
         _Out_writes_bytes_to_(*key_and_value_length, *key_and_value_length) uint8_t* key_and_value,
         int flags);
+
+    /**
+     * @brief Get the address of the first value in the map if it is an array or
+     * return EBPF_INVALID_ARGUMENT if it is not an array map.
+     *
+     * @param[in] map Map to query.
+     * @param[out] value_address Map value address.
+     * @retval EBPF_SUCCESS The operation was successful.
+     * @retval EBPF_INVALID_ARGUMENT The provided map is not valid.
+     */
+    _Must_inspect_result_ ebpf_result_t
+    ebpf_map_get_value_address(_In_ const ebpf_map_t* map, _Out_ uintptr_t* value_address);
 
 #ifdef __cplusplus
 }

@@ -97,7 +97,7 @@ static const char* const _ebpf_pin_type_names[] = {
 };
 
 typedef uint32_t ebpf_id_t;
-#define EBPF_ID_NONE UINT32_MAX
+#define EBPF_ID_NONE 0
 
 /**
  * @brief eBPF Map Definition as it is stored in memory.
@@ -420,4 +420,5 @@ struct bpf_prog_info
 #define EBPF_MAP_FLAG_CURRENT_CPU EBPF_MAP_FLAG_INDEX_MASK
 /* BPF_FUNC_perf_event_output for program types with data pointer in context */
 #define EBPF_MAP_FLAG_CTXLEN_SHIFT 32
-#define EBPF_MAP_FLAG_CTXLEN_MASK (0xfffffULL << EBPF_MAP_FLAG_CTXLEN_SHIFT)
+#define EBPF_MAP_FLAG_CTXLEN_MAX (0xfffffULL)
+#define EBPF_MAP_FLAG_CTXLEN_MASK (EBPF_MAP_FLAG_CTXLEN_MAX << EBPF_MAP_FLAG_CTXLEN_SHIFT)

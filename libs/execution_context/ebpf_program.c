@@ -63,7 +63,7 @@ typedef struct _ebpf_program
         // EBPF_CODE_NATIVE
         struct
         {
-            const ebpf_native_module_binding_context_t* module;
+            ebpf_native_code_context_t code_context;
             const uint8_t* code_pointer;
         } native;
     } code_or_vm;
@@ -93,6 +93,7 @@ typedef struct _ebpf_program
     size_t helper_function_count;
     uint32_t* helper_function_ids;
     bool helper_ids_set;
+    uint64_t flags;
 
     // Lock protecting the fields below.
     ebpf_lock_t lock;
@@ -122,7 +123,7 @@ static const NPI_CLIENT_CHARACTERISTICS _ebpf_program_general_program_informatio
     _ebpf_program_general_program_information_detach_provider,
     NULL,
     {
-        EBPF_PROGRAM_INFORMATION_CLIENT_DATA_CURRENT_VERSION,
+        0,
         sizeof(NPI_REGISTRATION_INSTANCE),
         &EBPF_PROGRAM_INFO_EXTENSION_IID,
         NULL,
@@ -141,7 +142,7 @@ static const NPI_CLIENT_CHARACTERISTICS _ebpf_program_type_specific_program_info
     _ebpf_program_type_specific_program_information_detach_provider,
     NULL,
     {
-        EBPF_PROGRAM_INFORMATION_CLIENT_DATA_CURRENT_VERSION,
+        0,
         sizeof(NPI_REGISTRATION_INSTANCE),
         &EBPF_PROGRAM_INFO_EXTENSION_IID,
         NULL,
@@ -723,7 +724,10 @@ _IRQL_requires_max_(PASSIVE_LEVEL) static void _ebpf_program_free(_In_opt_ _Post
         break;
 #endif
     case EBPF_CODE_NATIVE:
-        ebpf_native_release_reference((ebpf_native_module_binding_context_t*)program->code_or_vm.native.module);
+        ebpf_native_release_reference(
+            (ebpf_native_module_binding_context_t*)program->code_or_vm.native.code_context.native_module_context);
+        program->code_or_vm.native.code_context.native_module_context = NULL;
+        program->code_or_vm.native.code_context.runtime_context = NULL;
         break;
     case EBPF_CODE_NONE:
         break;
@@ -1054,7 +1058,7 @@ Done:
 
 _Requires_lock_held_(program->lock) static ebpf_result_t _ebpf_program_load_machine_code(
     _Inout_ ebpf_program_t* program,
-    _In_opt_ const void* code_context,
+    _In_opt_ const ebpf_core_code_context_t* code_context,
     _In_reads_(machine_code_size) const uint8_t* machine_code,
     size_t machine_code_size)
 {
@@ -1099,11 +1103,12 @@ _Requires_lock_held_(program->lock) static ebpf_result_t _ebpf_program_load_mach
             goto Done;
         }
 
-        program->code_or_vm.native.module = code_context;
+        program->code_or_vm.native.code_context = code_context->native_code_context;
         program->code_or_vm.native.code_pointer = machine_code;
         // Acquire reference on the native module. This reference
         // will be released when the ebpf_program is freed.
-        ebpf_native_acquire_reference((ebpf_native_module_binding_context_t*)code_context);
+        ebpf_native_acquire_reference(
+            (ebpf_native_module_binding_context_t*)code_context->native_code_context.native_module_context);
     }
 
     return_value = EBPF_SUCCESS;
@@ -1457,7 +1462,8 @@ ebpf_program_load_code(
 
     case EBPF_CODE_JIT:
     case EBPF_CODE_NATIVE:
-        result = _ebpf_program_load_machine_code(program, code_context, code, code_size);
+        result =
+            _ebpf_program_load_machine_code(program, (const ebpf_core_code_context_t*)code_context, code, code_size);
         break;
 
     case EBPF_CODE_EBPF:
@@ -1578,16 +1584,26 @@ ebpf_program_invoke(
     for (execution_state->tail_call_state.count = 0; execution_state->tail_call_state.count < MAX_TAIL_CALL_CNT + 1;
          execution_state->tail_call_state.count++) {
 
-        if (current_program->parameters.code_type == EBPF_CODE_JIT ||
-            current_program->parameters.code_type == EBPF_CODE_NATIVE) {
-            EBPF_LOG_MESSAGE_UTF8_STRING(
-                EBPF_TRACELOG_LEVEL_VERBOSE,
-                EBPF_TRACELOG_KEYWORD_PROGRAM,
-                "Tail call program",
-                &current_program->parameters.program_name);
+        EBPF_LOG_MESSAGE_UTF8_STRING(
+            EBPF_TRACELOG_LEVEL_VERBOSE,
+            EBPF_TRACELOG_KEYWORD_PROGRAM,
+            "Tail call program",
+            &current_program->parameters.program_name);
+
+        if (current_program->parameters.code_type == EBPF_CODE_NATIVE) {
+            const program_runtime_context_t* runtime_context =
+                current_program->code_or_vm.native.code_context.runtime_context;
+            ebpf_program_native_entry_point_t function_pointer;
+            function_pointer = (ebpf_program_native_entry_point_t)(current_program->code_or_vm.native.code_pointer);
+            *result = (function_pointer)(context, runtime_context);
+        } else if (current_program->parameters.code_type == EBPF_CODE_JIT) {
+#if !defined(CONFIG_BPF_JIT_DISABLED)
             ebpf_program_entry_point_t function_pointer;
             function_pointer = (ebpf_program_entry_point_t)(current_program->code_or_vm.code.code_pointer);
             *result = (function_pointer)(context);
+#else
+            *result = 0;
+#endif
         } else {
 #if !defined(CONFIG_BPF_INTERPRETER_DISABLED)
             uint64_t out_value;
@@ -2456,13 +2472,8 @@ _ebpf_program_test_run_work_item(_In_ cxplat_preemptible_work_item_t* work_item,
     if (supports_context_header) {
         ebpf_program_set_runtime_state(&execution_context_state, program_context);
     } else {
-        ebpf_get_execution_context_state(&execution_context_state);
-        return_value = ebpf_state_store(
-            ebpf_program_get_state_index(), (uintptr_t)&execution_context_state, &execution_context_state);
-        if (return_value != EBPF_SUCCESS) {
-            goto Done;
-        }
-        state_stored = true;
+        result = EBPF_INVALID_ARGUMENT;
+        goto Done;
     }
 
     uint64_t start_time = cxplat_query_time_since_boot_precise(false);
@@ -2700,9 +2711,21 @@ ebpf_program_get_runtime_state(_In_ const void* program_context, _Outptr_ const 
     *state = (ebpf_execution_context_state_t*)header->context_header[0];
 }
 
+uint64_t
+ebpf_program_get_flags(_In_ const ebpf_program_t* program)
+{
+    return program->flags;
+}
+
+void
+ebpf_program_set_flags(_Inout_ ebpf_program_t* program, uint64_t flags)
+{
+    program->flags = flags;
+}
+
 void
 ebpf_program_set_header_context_descriptor(
-    const ebpf_context_descriptor_t* context_descriptor, _Inout_ void* program_context)
+    _In_ const ebpf_context_descriptor_t* context_descriptor, _Inout_ void* program_context)
 {
     // slot [1] contains the context_descriptor for the program.
     ebpf_context_header_t* header = CONTAINING_RECORD(program_context, ebpf_context_header_t, context);
@@ -2720,7 +2743,7 @@ ebpf_program_get_header_context_descriptor(
 
 void
 ebpf_program_get_context_data(
-    _In_ const void* program_context, _Outptr_ const uint8_t** data_start, _Outptr_ const uint8_t** data_end)
+    _In_ const void* program_context, _Out_ const uint8_t** data_start, _Out_ const uint8_t** data_end)
 {
     ebpf_context_descriptor_t* context_descriptor;
     ebpf_program_get_header_context_descriptor(program_context, &context_descriptor);

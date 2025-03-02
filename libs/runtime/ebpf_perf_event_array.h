@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "ebpf_perf_event_array_record.h"
 #include "ebpf_shared_framework.h"
 
 CXPLAT_EXTERN_C_BEGIN
@@ -46,18 +45,20 @@ ebpf_perf_event_array_destroy(_Frees_ptr_opt_ ebpf_perf_event_array_t* perf_even
  *
  * @param[in] ctx Context to write to.
  * @param[in, out] perf_event_array Perf event array to write to.
- * @param[in] cpu_id CPU ring to write to (or (uint32_t)-1 for auto).
+ * @param[in] target_cpu CPU ring to write to (or (uint32_t)-1 for auto).
  * @param[in] data Data to copy into record.
  * @param[in] length Length of data to copy.
+ * @param[out] cpu_id CPU ring that was written to.
  * @retval EBPF_SUCCESS Successfully wrote record ring buffer.
  * @retval EBPF_OUT_OF_SPACE Unable to output to ring buffer due to inadequate space.
  */
 _Must_inspect_result_ ebpf_result_t
 ebpf_perf_event_array_output_simple(
     _Inout_ ebpf_perf_event_array_t* perf_event_array,
-    uint32_t cpu_id,
+    uint32_t target_cpu,
     _In_reads_bytes_(length) uint8_t* data,
-    size_t length);
+    size_t length,
+    _Out_opt_ uint32_t* cpu_id);
 
 /**
  * @brief Write out a variable sized record to the perf event array.
