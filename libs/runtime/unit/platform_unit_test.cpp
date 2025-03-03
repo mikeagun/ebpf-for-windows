@@ -1699,14 +1699,14 @@ _test_perf_event_output(
     {
         uint8_t* data = (uint8_t*)((void*)42);
         uint8_t* data_end = (uint8_t*)((void*)47);
-        uint8_t ctx_extra[8];
+        uint8_t ctx_extra[8] = {0};
     };
     // full_context_t - Context with header (needed to find context descriptor).
     struct full_context_t
     {
         EBPF_CONTEXT_HEADER;
         context_t ctx;
-    } full_context;
+    } full_context = {0};
     // ctx points to the bpf-program accessible portion (just after the header).
     context_t* ctx = &full_context.ctx;
 
@@ -1800,7 +1800,9 @@ _test_perf_event_output(
         REQUIRE(record_length == (length + capture_length));
         REQUIRE(record_size == _perf_record_size(length + capture_length));
         REQUIRE(memcmp(record->data, data, length) == 0);
-        REQUIRE(memcmp(record->data + length, ctx_data, capture_length) == 0);
+        if (ctx_data) {
+            REQUIRE(memcmp(record->data + length, ctx_data, capture_length) == 0);
+        }
 
         if (consume) {
             REQUIRE(
@@ -1832,18 +1834,22 @@ TEST_CASE("perf_event_output", "[platform][perf_event_array]")
     size_t consumer;
     size_t producer;
     ebpf_perf_event_array_t* perf_event_array;
-    ebpf_perf_event_array_opts_t* opts = nullptr;
+    ebpf_perf_event_array_opts_t opts = {0};
 
     uint8_t* buffer;
     std::vector<uint8_t> data(10);
     size_t size = 64 * 1024;
-    void* ctx = nullptr;
+    struct
+    {
+        int x = 0;
+    } test_ctx;
+    void* ctx = &test_ctx;
     uint32_t cpu_id = 0;
     uint64_t flags = EBPF_MAP_FLAG_CURRENT_CPU;
 
-    REQUIRE(ebpf_perf_event_array_create(&perf_event_array, size, opts) == EBPF_SUCCESS);
+    REQUIRE(ebpf_perf_event_array_create(&perf_event_array, size, &opts) == EBPF_SUCCESS);
+    _Analysis_assume_(perf_event_array != nullptr); // This is missed by Analyze build, but asserted by REQUIRE above.
     REQUIRE(ebpf_perf_event_array_map_buffer(perf_event_array, cpu_id, &buffer) == EBPF_SUCCESS);
-
     ebpf_perf_event_array_query(perf_event_array, cpu_id, &consumer, &producer);
 
     // Ring is empty.
@@ -1903,15 +1909,20 @@ TEST_CASE("perf_event_output_percpu", "[platform][perf_event_array]")
     size_t consumer;
     size_t producer;
     ebpf_perf_event_array_t* perf_event_array;
-    ebpf_perf_event_array_opts_t* opts = nullptr;
+    ebpf_perf_event_array_opts_t opts = {0};
 
     uint8_t* buffer;
     std::vector<uint8_t> data(10);
     size_t size = 64 * 1024;
-    void* ctx = nullptr;
+    struct
+    {
+        int x = 0;
+    } test_ctx;
+    // There is no ctx header, but this test doesn't use ctx data anyways.
+    void* ctx = &test_ctx;
     uint64_t flags = EBPF_MAP_FLAG_CURRENT_CPU;
 
-    REQUIRE(ebpf_perf_event_array_create(&perf_event_array, size, opts) == EBPF_SUCCESS);
+    REQUIRE(ebpf_perf_event_array_create(&perf_event_array, size, &opts) == EBPF_SUCCESS);
 
     uint32_t cpu_count = ebpf_get_cpu_count();
     for (uint32_t cpu_id = 0; cpu_id < cpu_count; cpu_id++) {
@@ -1950,7 +1961,7 @@ TEST_CASE("perf_event_output_capture", "[platform][perf_event_array]")
     _test_helper test_helper;
     test_helper.initialize();
     ebpf_perf_event_array_t* perf_event_array;
-    ebpf_perf_event_array_opts_t* opts = nullptr;
+    ebpf_perf_event_array_opts_t opts = {0};
 
     std::vector<uint8_t*> buffers;
     std::vector<uint8_t> data(1024);
@@ -1965,7 +1976,7 @@ TEST_CASE("perf_event_output_capture", "[platform][perf_event_array]")
 
     size_t size = 64 * 1024;
 
-    REQUIRE(ebpf_perf_event_array_create(&perf_event_array, size, opts) == EBPF_SUCCESS);
+    REQUIRE(ebpf_perf_event_array_create(&perf_event_array, size, &opts) == EBPF_SUCCESS);
     uint32_t ring_count = ebpf_perf_event_array_get_ring_count(perf_event_array);
 
     for (uint32_t i = 0; i < ring_count; i++) {
