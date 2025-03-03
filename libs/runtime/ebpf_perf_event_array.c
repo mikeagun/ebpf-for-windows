@@ -112,12 +112,12 @@ ebpf_ring_buffer_free_ring(_Frees_ptr_opt_ ebpf_ring_buffer_t* ring)
 
 _Must_inspect_result_ ebpf_result_t
 ebpf_perf_event_array_create(
-    _Outptr_ ebpf_perf_event_array_t** perf_event_array, size_t capacity, _In_ ebpf_perf_event_array_opts_t* opts)
+    _Outptr_ _On_failure_(_Maybenull_) ebpf_perf_event_array_t** perf_event_array,
+    size_t capacity,
+    _In_ ebpf_perf_event_array_opts_t* opts)
 {
     EBPF_LOG_ENTRY();
     UNREFERENCED_PARAMETER(opts);
-
-    *perf_event_array = NULL;
 
     ebpf_result_t result;
     ebpf_perf_event_array_t* local_perf_event_array = NULL;
@@ -127,29 +127,34 @@ ebpf_perf_event_array_create(
     local_perf_event_array = ebpf_epoch_allocate_with_tag(total_size, EBPF_POOL_TAG_RING_BUFFER);
     if (!local_perf_event_array) {
         result = EBPF_NO_MEMORY;
-        goto Error;
+        goto Done;
     }
     local_perf_event_array->ring_count = ring_count;
 
-    for (uint32_t i = 0; i < ring_count; i++) {
-        ebpf_perf_ring_t* ring = &local_perf_event_array->rings[i];
+    uint32_t cpu_i;
+    for (cpu_i = 0; cpu_i < ring_count; cpu_i++) {
+        ebpf_perf_ring_t* ring = &local_perf_event_array->rings[cpu_i];
         result = ebpf_ring_buffer_initialize_ring(&ring->ring, capacity);
         if (result != EBPF_SUCCESS) {
-            goto Error;
+            // Failed to allocate ring, update ring count to ensure correct cleanup.
+            local_perf_event_array->ring_count = cpu_i;
+            goto Done;
         }
     }
 
     *perf_event_array = local_perf_event_array;
     local_perf_event_array = NULL;
-    return EBPF_SUCCESS;
+    result = EBPF_SUCCESS;
 
-Error:
-    ebpf_perf_event_array_destroy(local_perf_event_array);
+Done:
+    if (result != EBPF_SUCCESS) {
+        ebpf_perf_event_array_destroy(local_perf_event_array);
+    }
     EBPF_RETURN_RESULT(result);
 }
 
 void
-ebpf_perf_event_array_destroy(_Frees_ptr_opt_ ebpf_perf_event_array_t* perf_event_array)
+ebpf_perf_event_array_destroy(_In_opt_ _Frees_ptr_opt_ ebpf_perf_event_array_t* perf_event_array)
 {
     if (perf_event_array) {
         EBPF_LOG_ENTRY();
@@ -166,9 +171,9 @@ _Must_inspect_result_ ebpf_result_t
 _ebpf_perf_event_array_output(
     _Inout_ ebpf_perf_event_array_t* perf_event_array,
     uint32_t target_cpu,
-    _In_reads_bytes_(length) const uint8_t* data,
+    _In_reads_(length) const uint8_t* data,
     size_t length,
-    _In_reads_bytes_(extra_length) const uint8_t* extra_data,
+    _In_reads_(extra_length) const uint8_t* extra_data,
     size_t extra_length,
     _Out_opt_ uint32_t* cpu_id)
 {
@@ -221,7 +226,7 @@ _Must_inspect_result_ ebpf_result_t
 ebpf_perf_event_array_output_simple(
     _Inout_ ebpf_perf_event_array_t* perf_event_array,
     uint32_t target_cpu,
-    _In_reads_bytes_(length) uint8_t* data,
+    _In_reads_(length) uint8_t* data,
     size_t length,
     _Out_opt_ uint32_t* cpu_id)
 {
@@ -233,7 +238,7 @@ ebpf_perf_event_array_output(
     _In_ void* ctx,
     _Inout_ ebpf_perf_event_array_t* perf_event_array,
     uint64_t flags,
-    _In_reads_bytes_(length) uint8_t* data,
+    _In_reads_(length) uint8_t* data,
     size_t length,
     _Out_opt_ uint32_t* cpu_id)
 {

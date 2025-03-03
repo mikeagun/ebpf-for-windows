@@ -2153,8 +2153,14 @@ TEST_CASE("perf_event_array_async_query", "[execution_context][perf_event_array]
         REQUIRE(completion.callback_count == 0);
     }
 
+    struct
+    {
+        int x = 0;
+    } test_ctx;
+    // There is no ctx header, but this test doesn't use ctx data anyways.
+    void* ctx = &test_ctx;
+
     // Write a single record.
-    void* ctx = nullptr;
     uint64_t value = 1;
     uint64_t flags = EBPF_MAP_FLAG_CURRENT_CPU;
     REQUIRE(
