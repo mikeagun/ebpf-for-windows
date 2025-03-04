@@ -2941,6 +2941,9 @@ static ebpf_protocol_handler_t _ebpf_protocol_handlers[] = {
     DECLARE_PROTOCOL_HANDLER_FIXED_REQUEST_NO_REPLY(program_set_flags, PROTOCOL_ALL_MODES),
     DECLARE_PROTOCOL_HANDLER_VARIABLE_REQUEST_VARIABLE_REPLY(
         get_next_pinned_object_path, start_path, next_path, PROTOCOL_ALL_MODES),
+    DECLARE_PROTOCOL_HANDLER_FIXED_REQUEST_FIXED_REPLY(perf_event_array_map_query_buffer, PROTOCOL_ALL_MODES),
+    DECLARE_PROTOCOL_HANDLER_FIXED_REQUEST_FIXED_REPLY_ASYNC(perf_event_array_map_async_query, PROTOCOL_ALL_MODES),
+    DECLARE_PROTOCOL_HANDLER_VARIABLE_REQUEST_NO_REPLY(perf_event_array_map_write_data, data, PROTOCOL_ALL_MODES),
 };
 
 _Must_inspect_result_ ebpf_result_t
