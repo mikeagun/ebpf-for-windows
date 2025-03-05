@@ -490,7 +490,7 @@ droppacket_test(ebpf_execution_type_t execution_type)
     REQUIRE(hook.batch_begin(sizeof(state), state) == EBPF_SUCCESS);
     // Process 10 packets in batch mode.
     for (int i = 0; i < 10; i++) {
-        REQUIRE(hook.batch_invoke(&ctx0, &hook_result, state) == EBPF_SUCCESS);
+        REQUIRE(hook.batch_invoke(ctx0, &hook_result, state) == EBPF_SUCCESS);
         REQUIRE(hook_result == XDP_DROP);
     }
     REQUIRE(hook.batch_end(state) == EBPF_SUCCESS);
