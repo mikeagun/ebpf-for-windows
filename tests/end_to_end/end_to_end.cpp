@@ -83,6 +83,12 @@ CATCH_REGISTER_LISTENER(_watchdog)
     DECLARE_JIT_TEST(_name, _group, _function)           \
     DECLARE_NATIVE_TEST(_name, _group, _function)
 
+typedef struct _xdp_md_header
+{
+    EBPF_CONTEXT_HEADER;
+    xdp_md_t context;
+} xdp_md_header_t;
+
 std::vector<uint8_t>
 prepare_ip_packet(uint16_t ethernet_type)
 {
