@@ -331,11 +331,16 @@ net_ebpf_ext_xdp_unregister_providers()
  */
 typedef struct _net_ebpf_xdp_md
 {
-    EBPF_CONTEXT_HEADER;
     xdp_md_t base;
     NET_BUFFER_LIST* original_nbl;
     NET_BUFFER_LIST* cloned_nbl;
 } net_ebpf_xdp_md_t;
+
+typedef struct _net_ebpf_xdp_md_header
+{
+    EBPF_CONTEXT_HEADER;
+    net_ebpf_xdp_md_t context;
+} net_ebpf_xdp_md_header_t;
 
 //
 // NBL Clone Functions.
@@ -822,6 +827,7 @@ _ebpf_xdp_context_create(
 {
     NTSTATUS status = STATUS_SUCCESS;
     ebpf_result_t result;
+    net_ebpf_xdp_md_header_t* xdp_context_header = NULL;
     net_ebpf_xdp_md_t* new_context = NULL;
     MDL* mdl_chain = NULL;
     NET_BUFFER_LIST* new_nbl = NULL;
@@ -839,11 +845,13 @@ _ebpf_xdp_context_create(
         goto Exit;
     }
 
-    new_context = (net_ebpf_xdp_md_t*)ExAllocatePoolUninitialized(
-        NonPagedPoolNx, sizeof(net_ebpf_xdp_md_t), NET_EBPF_EXTENSION_POOL_TAG);
-    NET_EBPF_EXT_BAIL_ON_ALLOC_FAILURE_RESULT(NET_EBPF_EXT_TRACELOG_KEYWORD_XDP, new_context, "new_context", result);
+    xdp_context_header = (net_ebpf_xdp_md_header_t*)ExAllocatePoolUninitialized(
+        NonPagedPoolNx, sizeof(net_ebpf_xdp_md_header_t), NET_EBPF_EXTENSION_POOL_TAG);
+    NET_EBPF_EXT_BAIL_ON_ALLOC_FAILURE_RESULT(
+        NET_EBPF_EXT_TRACELOG_KEYWORD_XDP, xdp_context_header, "xdp_context_header", result);
 
-    memset(new_context, 0, sizeof(net_ebpf_xdp_md_t));
+    memset(xdp_context_header, 0, sizeof(net_ebpf_xdp_md_header_t));
+    new_context = &xdp_context_header->context;
 
     // Create a MDL with the packet buffer.
     mdl_chain = IoAllocateMdl((void*)data_in, (unsigned long)data_size_in, FALSE, FALSE, NULL);
@@ -914,6 +922,8 @@ _ebpf_xdp_context_delete(
         goto Exit;
     }
 
+    net_ebpf_xdp_md_header_t* xdp_context_header = EBPF_CONTAINING_RECORD(context, net_ebpf_xdp_md_header_t, context);
+
     // Copy the packet data to the output buffer.
     if (data_out != NULL && data_size_out != NULL && xdp_context->base.data != NULL) {
         size_t data_size = *data_size_out;
@@ -950,7 +960,7 @@ _ebpf_xdp_context_delete(
         _net_ebpf_ext_free_nbl(xdp_context->cloned_nbl, TRUE);
     }
 
-    ExFreePool(xdp_context);
+    ExFreePool(xdp_context_header);
 
 Exit:
     NET_EBPF_EXT_LOG_EXIT();
