@@ -331,6 +331,7 @@ net_ebpf_ext_xdp_unregister_providers()
  */
 typedef struct _net_ebpf_xdp_md
 {
+    EBPF_CONTEXT_HEADER;
     xdp_md_t base;
     NET_BUFFER_LIST* original_nbl;
     NET_BUFFER_LIST* cloned_nbl;
