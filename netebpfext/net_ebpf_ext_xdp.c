@@ -331,6 +331,7 @@ net_ebpf_ext_xdp_unregister_providers()
  */
 typedef struct _net_ebpf_xdp_md
 {
+    EBPF_CONTEXT_HEADER;
     xdp_md_t base;
     NET_BUFFER_LIST* original_nbl;
     NET_BUFFER_LIST* cloned_nbl;
@@ -658,6 +659,7 @@ net_ebpf_ext_layer_2_classify(
     uint8_t* packet_buffer;
     uint32_t result = 0;
     net_ebpf_xdp_md_t net_xdp_ctx = {0};
+    xdp_md_t* xdp_ctx = &net_xdp_ctx.base;
     net_ebpf_extension_xdp_wfp_filter_context_t* filter_context = NULL;
     uint32_t client_if_index;
     ebpf_result_t program_result;
@@ -738,7 +740,7 @@ net_ebpf_ext_layer_2_classify(
         net_xdp_ctx.base.data_end = packet_buffer + net_buffer->DataLength;
     }
 
-    program_result = net_ebpf_extension_hook_invoke_programs(&net_xdp_ctx, &filter_context->base, &result);
+    program_result = net_ebpf_extension_hook_invoke_programs(xdp_ctx, &filter_context->base, &result);
     if (program_result == EBPF_OBJECT_NOT_FOUND) {
         // No programs found.
         goto Exit;

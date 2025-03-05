@@ -437,6 +437,12 @@ typedef class _test_xdp_helper
     }
 } test_xdp_helper_t;
 
+typedef struct _xdp_md_header
+{
+    EBPF_CONTEXT_HEADER;
+    xdp_md_t context;
+} xdp_md_header_t;
+
 // These are test xdp context creation functions.
 static ebpf_result_t
 _xdp_context_create(
@@ -448,11 +454,13 @@ _xdp_context_create(
 {
     ebpf_result_t retval = EBPF_FAILED;
     *context = nullptr;
+    xdp_md_t* xdp_context = nullptr;
 
-    xdp_md_t* xdp_context = reinterpret_cast<xdp_md_t*>(malloc(sizeof(xdp_md_t)));
-    if (xdp_context == nullptr) {
+    xdp_md_header_t* xdp_context_header = reinterpret_cast<xdp_md_header_t*>(malloc(sizeof(xdp_md_header_t)));
+    if (xdp_context_header == nullptr) {
         goto Done;
     }
+    xdp_context = &xdp_context_header->context;
 
     if (context_in) {
         if (context_size_in < sizeof(xdp_md_t)) {
@@ -470,8 +478,8 @@ _xdp_context_create(
     xdp_context = nullptr;
     retval = EBPF_SUCCESS;
 Done:
-    free(xdp_context);
-    xdp_context = nullptr;
+    free(xdp_context_header);
+    xdp_context_header = nullptr;
     return retval;
 }
 
@@ -488,6 +496,7 @@ _xdp_context_destroy(
     }
 
     xdp_md_t* xdp_context = reinterpret_cast<xdp_md_t*>(context);
+    xdp_md_header_t* xdp_context_header = CONTAINING_RECORD(xdp_context, xdp_md_header_t, context);
     uint8_t* data = reinterpret_cast<uint8_t*>(xdp_context->data);
     uint8_t* data_end = reinterpret_cast<uint8_t*>(xdp_context->data_end);
     size_t data_length = data_end - data;
@@ -505,7 +514,7 @@ _xdp_context_destroy(
         *context_size_out = sizeof(xdp_md_t);
     }
 
-    free(context);
+    free(xdp_context_header);
 }
 
 typedef class _test_global_helper
