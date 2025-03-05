@@ -83,6 +83,12 @@ CATCH_REGISTER_LISTENER(_watchdog)
     DECLARE_JIT_TEST(_name, _group, _function)           \
     DECLARE_NATIVE_TEST(_name, _group, _function)
 
+typedef struct _xdp_md_header
+{
+    EBPF_CONTEXT_HEADER;
+    xdp_md_t context;
+} xdp_md_header_t;
+
 std::vector<uint8_t>
 prepare_ip_packet(uint16_t ethernet_type)
 {
@@ -438,10 +444,11 @@ droppacket_test(ebpf_execution_type_t execution_type)
     REQUIRE(bpf_map_update_elem(dropped_packet_map_fd, &key, &value, EBPF_ANY) == EBPF_SUCCESS);
 
     // Test that we drop the packet and increment the map
-    xdp_md_t ctx0{packet0.data(), packet0.data() + packet0.size(), 0, TEST_IFINDEX};
+    xdp_md_header_t ctx0_header{{0}, packet0.data(), packet0.data() + packet0.size(), 0, TEST_IFINDEX};
+    xdp_md_t* ctx0 = &ctx0_header.context;
 
     uint32_t hook_result;
-    REQUIRE(hook.fire(&ctx0, &hook_result) == EBPF_SUCCESS);
+    REQUIRE(hook.fire(ctx0, &hook_result) == EBPF_SUCCESS);
     REQUIRE(hook_result == XDP_DROP);
 
     REQUIRE(bpf_map_lookup_elem(dropped_packet_map_fd, &key, &value) == EBPF_SUCCESS);
@@ -454,10 +461,11 @@ droppacket_test(ebpf_execution_type_t execution_type)
 
     // Create a normal (not 0-byte) UDP packet.
     auto packet10 = prepare_udp_packet(10, ETHERNET_TYPE_IPV4);
-    xdp_md_t ctx10{packet10.data(), packet10.data() + packet10.size(), 0, TEST_IFINDEX};
+    xdp_md_header_t ctx10_header{packet10.data(), packet10.data() + packet10.size(), 0, TEST_IFINDEX};
+    xdp_md_t* ctx10 = &ctx10_header.context;
 
     // Test that we don't drop the normal packet.
-    REQUIRE(hook.fire(&ctx10, &hook_result) == EBPF_SUCCESS);
+    REQUIRE(hook.fire(ctx10, &hook_result) == EBPF_SUCCESS);
     REQUIRE(hook_result == XDP_PASS);
 
     REQUIRE(bpf_map_lookup_elem(dropped_packet_map_fd, &key, &value) == EBPF_SUCCESS);
@@ -469,7 +477,7 @@ droppacket_test(ebpf_execution_type_t execution_type)
     REQUIRE(hook.attach_link(program_fd, &if_index, sizeof(if_index), &link) == EBPF_SUCCESS);
 
     // Fire a 0-length UDP packet on the interface index in the map, which should be dropped.
-    REQUIRE(hook.fire(&ctx0, &hook_result) == EBPF_SUCCESS);
+    REQUIRE(hook.fire(ctx0, &hook_result) == EBPF_SUCCESS);
     REQUIRE(hook_result == XDP_DROP);
     REQUIRE(bpf_map_lookup_elem(dropped_packet_map_fd, &key, &value) == EBPF_SUCCESS);
     REQUIRE(value == 1);
@@ -499,8 +507,9 @@ droppacket_test(ebpf_execution_type_t execution_type)
     REQUIRE(bpf_map_delete_elem(dropped_packet_map_fd, &key) == EBPF_SUCCESS);
 
     // Fire a 0-length packet on any interface that is not in the map, which should be allowed.
-    xdp_md_t ctx4{packet0.data(), packet0.data() + packet0.size(), 0, if_index + 1};
-    REQUIRE(hook.fire(&ctx4, &hook_result) == EBPF_SUCCESS);
+    xdp_md_header_t ctx4_header{{0}, packet0.data(), packet0.data() + packet0.size(), 0, if_index + 1};
+    xdp_md_t* ctx4 = &ctx4_header.context;
+    REQUIRE(hook.fire(ctx4, &hook_result) == EBPF_SUCCESS);
     REQUIRE(hook_result == XDP_PASS);
     REQUIRE(bpf_map_lookup_elem(dropped_packet_map_fd, &key, &value) == EBPF_SUCCESS);
     REQUIRE(value == 0);
@@ -2102,13 +2111,14 @@ _xdp_reflect_packet_test(ebpf_execution_type_t execution_type, ADDRESS_FAMILY ad
     udp_packet_t packet(address_family);
     packet.set_destination_port(ntohs(REFLECTION_TEST_PORT));
 
-    xdp_md_t ctx{packet.data(), packet.data() + packet.size(), 0, TEST_IFINDEX};
+    xdp_md_header_t ctx_header{{0}, packet.data(), packet.data() + packet.size(), 0, TEST_IFINDEX};
+    xdp_md_t* ctx = &ctx_header.context;
 
     uint32_t hook_result;
-    REQUIRE(hook.fire(&ctx, &hook_result) == EBPF_SUCCESS);
+    REQUIRE(hook.fire(ctx, &hook_result) == EBPF_SUCCESS);
     REQUIRE(hook_result == XDP_TX);
 
-    ebpf::ETHERNET_HEADER* ethernet_header = reinterpret_cast<ebpf::ETHERNET_HEADER*>(ctx.data);
+    ebpf::ETHERNET_HEADER* ethernet_header = reinterpret_cast<ebpf::ETHERNET_HEADER*>(ctx->data);
     REQUIRE(memcmp(ethernet_header->Destination, _test_source_mac.data(), sizeof(ethernet_header->Destination)) == 0);
     REQUIRE(memcmp(ethernet_header->Source, _test_destination_mac.data(), sizeof(ethernet_header->Source)) == 0);
 
