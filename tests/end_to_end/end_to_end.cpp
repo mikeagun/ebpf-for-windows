@@ -455,7 +455,7 @@ droppacket_test(ebpf_execution_type_t execution_type)
 
     // Create a normal (not 0-byte) UDP packet.
     auto packet10 = prepare_udp_packet(10, ETHERNET_TYPE_IPV4);
-    xdp_md_header_t ctx10_header{packet10.data(), packet10.data() + packet10.size(), 0, TEST_IFINDEX};
+    xdp_md_header_t ctx10_header{{0}, packet10.data(), packet10.data() + packet10.size(), 0, TEST_IFINDEX};
     xdp_md_t* ctx10 = &ctx10_header.context;
 
     // Test that we don't drop the normal packet.
