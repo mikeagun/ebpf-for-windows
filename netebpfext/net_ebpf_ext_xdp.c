@@ -922,7 +922,7 @@ _ebpf_xdp_context_delete(
         goto Exit;
     }
 
-    net_ebpf_xdp_md_header_t* xdp_context_header = EBPF_CONTAINING_RECORD(context, net_ebpf_xdp_md_header_t, context);
+    net_ebpf_xdp_md_header_t* xdp_context_header = CONTAINING_RECORD(context, net_ebpf_xdp_md_header_t, context);
 
     // Copy the packet data to the output buffer.
     if (data_out != NULL && data_size_out != NULL && xdp_context->base.data != NULL) {
