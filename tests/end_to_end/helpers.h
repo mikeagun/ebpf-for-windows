@@ -918,13 +918,14 @@ _ebpf_sock_addr_context_create(
     ebpf_result_t retval;
     *context = nullptr;
 
+    bpf_sock_addr_t* sock_addr_context = nullptr;
     sock_addr_context_header_t* sock_addr_context_header =
         reinterpret_cast<sock_addr_context_header_t*>(ebpf_allocate(sizeof(sock_addr_context_header_t)));
     if (sock_addr_context_header == nullptr) {
         retval = EBPF_NO_MEMORY;
         goto Done;
     }
-    bpf_sock_addr_t* sock_addr_context = &sock_addr_context_header->context;
+    sock_addr_context = &sock_addr_context_header->context;
 
     if (context_in) {
         if (context_size_in < sizeof(bpf_sock_addr_t)) {
