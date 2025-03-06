@@ -2162,7 +2162,7 @@ _xdp_encap_reflect_packet_test(ebpf_execution_type_t execution_type, ADDRESS_FAM
     // Dummy context (not used by the eBPF program).
     xdp_md_helper_t ctx(packet.packet());
 
-    uint32_t hook_result;
+    uint32_t hook_result = 0;
     REQUIRE(hook.fire(ctx.get_ctx(), &hook_result) == EBPF_SUCCESS);
     REQUIRE(hook_result == XDP_TX);
 
