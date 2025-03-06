@@ -363,12 +363,18 @@ typedef class _single_instance_hook : public _hook_helper
     bpf_link* link_object = nullptr;
 } single_instance_hook_t;
 
-typedef class xdp_md_helper : public xdp_md_t
+typedef struct _xdp_md_header
+{
+    EBPF_CONTEXT_HEADER;
+    xdp_md_t context;
+} xdp_md_header_t;
+
+typedef class xdp_md_helper : public xdp_md_header_t
 {
   public:
     xdp_md_helper(std::vector<uint8_t>& packet)
-        : xdp_md_t{packet.data(), packet.data() + packet.size()}, _packet(&packet), _begin(0), _end(packet.size()),
-          cloned_nbl(nullptr)
+        : xdp_md_header_t{{0}, {packet.data(), packet.data() + packet.size()}}, _packet(&packet), _begin(0),
+          _end(packet.size()), cloned_nbl(nullptr)
     {
         original_nbl = &_original_nbl_storage;
         _original_nbl_storage.FirstNetBuffer = &_original_nb;
@@ -376,6 +382,18 @@ typedef class xdp_md_helper : public xdp_md_t
         _original_nb.MdlChain = &_original_mdl;
         _original_mdl.byte_count = (unsigned long)packet.size();
         _original_mdl.start_va = packet.data();
+    }
+
+    static xdp_md_helper_t*
+    from_ctx(xdp_md_t* ctx)
+    {
+        return (xdp_md_helper_t*)CONTAINING_RECORD(ctx, xdp_md_helper_t, context);
+    }
+
+    xdp_md_t*
+    get_ctx()
+    {
+        return &context;
     }
 
     int
@@ -433,15 +451,9 @@ typedef class _test_xdp_helper
     static int
     adjust_head(_In_ const xdp_md_t* ctx, int delta)
     {
-        return ((xdp_md_helper_t*)ctx)->adjust_head(delta);
+        return xdp_md_helper_t::from_ctx(ctx)->adjust_head(delta);
     }
 } test_xdp_helper_t;
-
-typedef struct _xdp_md_header
-{
-    EBPF_CONTEXT_HEADER;
-    xdp_md_t context;
-} xdp_md_header_t;
 
 // These are test xdp context creation functions.
 static ebpf_result_t
