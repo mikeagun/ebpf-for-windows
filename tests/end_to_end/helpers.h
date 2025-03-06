@@ -390,6 +390,12 @@ typedef class xdp_md_helper : public xdp_md_header_t
         return (xdp_md_helper*)CONTAINING_RECORD(ctx, xdp_md_header_t, context);
     }
 
+    static inline const xdp_md_helper*
+    from_ctx(const xdp_md_t* ctx)
+    {
+        return (xdp_md_helper*)CONTAINING_RECORD(ctx, xdp_md_header_t, context);
+    }
+
     xdp_md_t*
     get_ctx()
     {
@@ -428,8 +434,8 @@ typedef class xdp_md_helper : public xdp_md_header_t
             }
         }
         // Adjust xdp_md data pointers.
-        data = _packet->data() + _begin;
-        data_end = _packet->data() + _end;
+        context.data = _packet->data() + _begin;
+        context.data_end = _packet->data() + _end;
     Done:
         return return_value;
     }
