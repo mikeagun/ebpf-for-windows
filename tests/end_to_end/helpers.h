@@ -473,12 +473,6 @@ typedef class _test_xdp_helper
     }
 } test_xdp_helper_t;
 
-typedef struct _xdp_md_header
-{
-    EBPF_CONTEXT_HEADER;
-    xdp_md_t context;
-} xdp_md_header_t;
-
 // These are test xdp context creation functions.
 static ebpf_result_t
 _xdp_context_create(
