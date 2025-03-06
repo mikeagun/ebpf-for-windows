@@ -384,10 +384,10 @@ typedef class xdp_md_helper : public xdp_md_header_t
         _original_mdl.start_va = packet.data();
     }
 
-    static xdp_md_helper_t*
+    static inline xdp_md_helper*
     from_ctx(xdp_md_t* ctx)
     {
-        return (xdp_md_helper_t*)CONTAINING_RECORD(ctx, xdp_md_helper_t, context);
+        return (xdp_md_helper*)CONTAINING_RECORD(ctx, xdp_md_header_t, context);
     }
 
     xdp_md_t*
