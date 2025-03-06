@@ -506,6 +506,7 @@ _xdp_context_create(
 
     *context = xdp_context;
     xdp_context = nullptr;
+    xdp_context_header = nullptr;
     retval = EBPF_SUCCESS;
 Done:
     free(xdp_context_header);
@@ -681,6 +682,7 @@ _sample_test_context_create(
     }
 
     *context = sample_context;
+    sample_context = nullptr;
     context_header = nullptr;
     retval = EBPF_SUCCESS;
 
@@ -804,6 +806,7 @@ _ebpf_bind_context_create(
     }
 
     *context = bind_context;
+    bind_context = nullptr;
     bind_context_header = nullptr;
     retval = EBPF_SUCCESS;
 Done:
@@ -938,9 +941,10 @@ _ebpf_sock_addr_context_create(
 
     *context = sock_addr_context;
     sock_addr_context = nullptr;
+    sock_addr_context_header = nullptr;
     retval = EBPF_SUCCESS;
 Done:
-    ebpf_free(sock_addr_context);
+    ebpf_free(sock_addr_context_header);
     sock_addr_context = nullptr;
     return retval;
 }
