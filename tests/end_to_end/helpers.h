@@ -34,6 +34,18 @@ typedef struct _bind_context_header
     bind_md_t context;
 } bind_context_header_t;
 
+typedef struct _sock_addr_context_header
+{
+    EBPF_CONTEXT_HEADER;
+    bpf_sock_addr_t context;
+} sock_addr_context_header_t;
+
+typedef struct _sock_ops_context_header
+{
+    EBPF_CONTEXT_HEADER;
+    bpf_sock_ops_t context;
+} sock_ops_context_header_t;
+
 #define INITIALIZE_BIND_CONTEXT      \
     bind_context_header_t header{0}; \
     bind_md_t* ctx = &header.context;
@@ -765,12 +777,14 @@ _ebpf_bind_context_create(
 {
     ebpf_result_t retval;
     *context = nullptr;
-
-    bind_md_t* bind_context = reinterpret_cast<bind_md_t*>(ebpf_allocate(sizeof(bind_md_t)));
-    if (bind_context == nullptr) {
+    bind_md_t* bind_context = nullptr;
+    bind_context_header_t* bind_context_header =
+        reinterpret_cast<bind_context_header_t*>(ebpf_allocate(sizeof(bind_context_header_t)));
+    if (bind_context_header == nullptr) {
         retval = EBPF_NO_MEMORY;
         goto Done;
     }
+    bind_context = &bind_context_header->context;
 
     if (context_in) {
         if (context_size_in < sizeof(bind_md_t)) {
@@ -790,11 +804,11 @@ _ebpf_bind_context_create(
     }
 
     *context = bind_context;
-    bind_context = nullptr;
+    bind_context_header = nullptr;
     retval = EBPF_SUCCESS;
 Done:
-    ebpf_free(bind_context);
-    bind_context = nullptr;
+    ebpf_free(bind_context_header);
+    bind_context_header = nullptr;
     return retval;
 }
 
@@ -812,14 +826,15 @@ _ebpf_bind_context_destroy(
     }
 
     bind_md_t* bind_context = reinterpret_cast<bind_md_t*>(context);
+    bind_context_header_t* bind_context_header = CONTAINING_RECORD(bind_context, bind_context_header_t, context);
     if (context_out && *context_size_out >= sizeof(bind_md_t)) {
         bind_md_t* provided_context = (bind_md_t*)context_out;
         *provided_context = *bind_context;
         *context_size_out = sizeof(bind_md_t);
     }
 
-    ebpf_free(bind_context);
-    bind_context = nullptr;
+    ebpf_free(bind_context_header);
+    bind_context_header = nullptr;
 
     *data_size_out = 0;
     return;
@@ -903,11 +918,13 @@ _ebpf_sock_addr_context_create(
     ebpf_result_t retval;
     *context = nullptr;
 
-    bpf_sock_addr_t* sock_addr_context = reinterpret_cast<bpf_sock_addr_t*>(ebpf_allocate(sizeof(bpf_sock_addr_t)));
-    if (sock_addr_context == nullptr) {
+    sock_addr_context_header_t* sock_addr_context_header =
+        reinterpret_cast<sock_addr_context_header_t*>(ebpf_allocate(sizeof(sock_addr_context_header_t)));
+    if (sock_addr_context_header == nullptr) {
         retval = EBPF_NO_MEMORY;
         goto Done;
     }
+    bpf_sock_addr_t* sock_addr_context = &sock_addr_context_header->context;
 
     if (context_in) {
         if (context_size_in < sizeof(bpf_sock_addr_t)) {
@@ -941,14 +958,16 @@ _ebpf_sock_addr_context_destroy(
     }
 
     bpf_sock_addr_t* sock_addr_context = reinterpret_cast<bpf_sock_addr_t*>(context);
+    sock_addr_context_header_t* sock_addr_context_header =
+        CONTAINING_RECORD(sock_addr_context, sock_addr_context_header_t, context);
     if (context_out && *context_size_out >= sizeof(bpf_sock_addr_t)) {
         bpf_sock_addr_t* provided_context = (bpf_sock_addr_t*)context_out;
         *provided_context = *sock_addr_context;
         *context_size_out = sizeof(bpf_sock_addr_t);
     }
 
-    ebpf_free(sock_addr_context);
-    sock_addr_context = nullptr;
+    ebpf_free(sock_addr_context_header);
+    sock_addr_context_header = nullptr;
 
     *data_size_out = 0;
     return;
@@ -1023,11 +1042,14 @@ _ebpf_sock_ops_context_create(
     ebpf_result_t retval;
     *context = nullptr;
 
-    bpf_sock_ops_t* sock_ops_context = reinterpret_cast<bpf_sock_ops_t*>(ebpf_allocate(sizeof(bpf_sock_ops_t)));
-    if (sock_ops_context == nullptr) {
+    bpf_sock_ops_t* sock_ops_context = nullptr;
+    sock_ops_context_header_t* sock_ops_context_header =
+        reinterpret_cast<sock_ops_context_header_t*>(ebpf_allocate(sizeof(sock_ops_context_header_t)));
+    if (sock_ops_context_header == nullptr) {
         retval = EBPF_NO_MEMORY;
         goto Done;
     }
+    sock_ops_context = &sock_ops_context_header->context;
 
     if (context_in) {
         if (context_size_in < sizeof(bpf_sock_ops_t)) {
@@ -1061,13 +1083,16 @@ _ebpf_sock_ops_context_destroy(
     }
 
     bpf_sock_ops_t* sock_ops_context = reinterpret_cast<bpf_sock_ops_t*>(context);
+    sock_ops_context_header_t* sock_ops_context_header =
+        CONTAINING_RECORD(sock_ops_context, sock_ops_context_header_t, context);
     if (context_out && *context_size_out >= sizeof(bpf_sock_ops_t)) {
         bpf_sock_ops_t* provided_context = (bpf_sock_ops_t*)context_out;
         *provided_context = *sock_ops_context;
         *context_size_out = sizeof(bpf_sock_ops_t);
     }
 
-    ebpf_free(sock_ops_context);
+    ebpf_free(sock_ops_context_header);
+    sock_ops_context_header = nullptr;
 
     *data_size_out = 0;
     return;
