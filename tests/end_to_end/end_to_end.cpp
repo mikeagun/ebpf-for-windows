@@ -441,7 +441,7 @@ droppacket_test(ebpf_execution_type_t execution_type)
     xdp_md_header_t ctx0_header{{0}, {packet0.data(), packet0.data() + packet0.size(), 0, TEST_IFINDEX}};
     xdp_md_t* ctx0 = &ctx0_header.context;
 
-    uint32_t hook_result;
+    uint32_t hook_result = 0;
     REQUIRE(hook.fire(ctx0, &hook_result) == EBPF_SUCCESS);
     REQUIRE(hook_result == XDP_DROP);
 
@@ -547,7 +547,7 @@ divide_by_zero_test_um(ebpf_execution_type_t execution_type)
     // Empty context (not used by the eBPF program).
     INITIALIZE_SAMPLE_CONTEXT;
 
-    uint32_t hook_result;
+    uint32_t hook_result = 0;
     REQUIRE(hook.fire(ctx, &hook_result) == EBPF_SUCCESS);
     REQUIRE(hook_result == 0);
 
@@ -1030,7 +1030,7 @@ _utility_helper_functions_test(ebpf_execution_type_t execution_type)
     // Dummy context (not used by the eBPF program).
     INITIALIZE_SAMPLE_CONTEXT
 
-    uint32_t hook_result;
+    uint32_t hook_result = 0;
     REQUIRE(hook.fire(ctx, &hook_result) == EBPF_SUCCESS);
     REQUIRE(hook_result == 0);
 
@@ -1066,7 +1066,7 @@ map_test(ebpf_execution_type_t execution_type)
     REQUIRE(result == 0);
 
     REQUIRE(hook.attach_link(program_fd, nullptr, 0, &link) == EBPF_SUCCESS);
-    uint32_t hook_result;
+    uint32_t hook_result = 0;
     INITIALIZE_SAMPLE_CONTEXT
     REQUIRE(hook.fire(ctx, &hook_result) == EBPF_SUCCESS);
     // Program should return 0 if all the map tests pass.
@@ -1138,7 +1138,7 @@ global_variable_test(ebpf_execution_type_t execution_type)
     REQUIRE(value[1] == 40);
 
     REQUIRE(hook.attach_link(program_fd, nullptr, 0, &link) == EBPF_SUCCESS);
-    uint32_t hook_result;
+    uint32_t hook_result = 0;
     INITIALIZE_SAMPLE_CONTEXT
     REQUIRE(hook.fire(ctx, &hook_result) == EBPF_SUCCESS);
     // Program should return 0 if all the map tests pass.
@@ -1221,7 +1221,7 @@ global_variable_and_map_test(ebpf_execution_type_t execution_type)
     REQUIRE(bpf_map_update_elem(some_config_map_fd, &key, &value, EBPF_ANY) == EBPF_SUCCESS);
 
     REQUIRE(hook.attach_link(program_fd, nullptr, 0, &link) == EBPF_SUCCESS);
-    uint32_t hook_result;
+    uint32_t hook_result = 0;
     INITIALIZE_SAMPLE_CONTEXT
     REQUIRE(hook.fire(ctx, &hook_result) == EBPF_SUCCESS);
     // Program should return 0 if all the map tests pass.
@@ -2108,7 +2108,7 @@ _xdp_reflect_packet_test(ebpf_execution_type_t execution_type, ADDRESS_FAMILY ad
     xdp_md_header_t ctx_header{{0}, {packet.data(), packet.data() + packet.size(), 0, TEST_IFINDEX}};
     xdp_md_t* ctx = &ctx_header.context;
 
-    uint32_t hook_result;
+    uint32_t hook_result = 0;
     REQUIRE(hook.fire(ctx, &hook_result) == EBPF_SUCCESS);
     REQUIRE(hook_result == XDP_TX);
 
@@ -2294,7 +2294,7 @@ _xdp_decapsulate_permit_packet_test(ebpf_execution_type_t execution_type, ADDRES
     uint8_t* inner_ip_header = packet.packet().data() + offset;
     std::vector<uint8_t> inner_ip_datagram(inner_ip_header, packet.packet().data() + packet.packet().size());
 
-    uint32_t hook_result;
+    uint32_t hook_result = 0;
     xdp_md_helper_t ctx(packet.packet());
     REQUIRE(hook.fire(ctx.get_ctx(), &hook_result) == EBPF_SUCCESS);
     REQUIRE(hook_result == XDP_PASS);
@@ -2415,7 +2415,7 @@ _map_reuse_test(ebpf_execution_type_t execution_type)
     REQUIRE(info.name[0] == 0);
 
     INITIALIZE_SAMPLE_CONTEXT
-    uint32_t hook_result;
+    uint32_t hook_result = 0;
 
     REQUIRE(hook.fire(ctx, &hook_result) == EBPF_SUCCESS);
     REQUIRE(hook_result == 200);
@@ -2525,7 +2525,7 @@ _auto_pinned_maps_test(ebpf_execution_type_t execution_type)
     REQUIRE(port_map_fd > 0);
 
     INITIALIZE_SAMPLE_CONTEXT
-    uint32_t hook_result;
+    uint32_t hook_result = 0;
 
     REQUIRE(hook.fire(ctx, &hook_result) == EBPF_SUCCESS);
     REQUIRE(hook_result == 200);
@@ -2598,7 +2598,7 @@ TEST_CASE("auto_pinned_maps_custom_path", "[end_to_end]")
     REQUIRE(port_map_fd > 0);
 
     INITIALIZE_SAMPLE_CONTEXT
-    uint32_t hook_result;
+    uint32_t hook_result = 0;
 
     REQUIRE(hook.fire(ctx, &hook_result) == EBPF_SUCCESS);
     REQUIRE(hook_result == 200);
@@ -2709,7 +2709,7 @@ _map_reuse_2_test(ebpf_execution_type_t execution_type)
     program_helper.initialize(file_name, BPF_PROG_TYPE_SAMPLE, "lookup_update", EBPF_EXECUTION_ANY, nullptr, 0, hook);
 
     INITIALIZE_SAMPLE_CONTEXT
-    uint32_t hook_result;
+    uint32_t hook_result = 0;
 
     REQUIRE(hook.fire(ctx, &hook_result) == EBPF_SUCCESS);
     REQUIRE(hook_result == 200);
@@ -2785,7 +2785,7 @@ _map_reuse_3_test(ebpf_execution_type_t execution_type)
     program_helper.initialize(file_name, BPF_PROG_TYPE_SAMPLE, "lookup_update", EBPF_EXECUTION_ANY, nullptr, 0, hook);
 
     INITIALIZE_SAMPLE_CONTEXT
-    uint32_t hook_result;
+    uint32_t hook_result = 0;
 
     REQUIRE(hook.fire(ctx, &hook_result) == EBPF_SUCCESS);
     REQUIRE(hook_result == 200);
