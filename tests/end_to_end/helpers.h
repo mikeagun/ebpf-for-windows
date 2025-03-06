@@ -455,7 +455,7 @@ typedef class _test_xdp_helper
 {
   public:
     static int
-    adjust_head(_In_ const xdp_md_t* ctx, int delta)
+    adjust_head(_In_ xdp_md_t* ctx, int delta)
     {
         return xdp_md_helper_t::from_ctx(ctx)->adjust_head(delta);
     }
