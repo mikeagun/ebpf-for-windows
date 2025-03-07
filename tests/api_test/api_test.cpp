@@ -1080,7 +1080,7 @@ TEST_CASE("ioctl_stress", "[stress]")
                         EBPF_CONTEXT_HEADER;
                         bind_md_t context;
                     } ctx_header = {0};
-                    bind_md_t ctx = &ctx_header.context;
+                    bind_md_t* ctx = &ctx_header.context;
                     int result;
                     switch (test_case) {
                     case 0:
