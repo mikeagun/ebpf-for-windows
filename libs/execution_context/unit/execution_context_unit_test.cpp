@@ -1516,8 +1516,14 @@ TEST_CASE("perf_event_array_async_query", "[execution_context][perf_event_array]
         REQUIRE(completion.callback_count == 0);
     }
 
+    struct
+    {
+        int x = 0;
+    } test_ctx;
+    // There is no ctx header, but this test doesn't use ctx data anyways.
+    void* ctx = &test_ctx;
+
     // Write a single record.
-    void* ctx = nullptr;
     uint64_t value = 1;
     uint64_t flags = EBPF_MAP_FLAG_CURRENT_CPU;
     REQUIRE(
@@ -2411,12 +2417,14 @@ TEST_CASE("EBPF_OPERATION_PERF_EVENT_ARRAY_MAP_QUERY_BUFFER", "[execution_contex
 {
     NEGATIVE_TEST_PROLOG();
     ebpf_operation_perf_event_array_map_query_buffer_request_t request;
+    ebpf_operation_perf_event_array_map_query_buffer_reply_t reply;
 
     request.map_handle = ebpf_handle_invalid - 1;
-    REQUIRE(invoke_protocol(EBPF_OPERATION_PERF_EVENT_ARRAY_MAP_QUERY_BUFFER, request) == EBPF_INVALID_OBJECT);
+    request.cpu_id = 0;
+    REQUIRE(invoke_protocol(EBPF_OPERATION_PERF_EVENT_ARRAY_MAP_QUERY_BUFFER, request, reply) == EBPF_INVALID_OBJECT);
 
     request.map_handle = map_handles.begin()->second;
-    REQUIRE(invoke_protocol(EBPF_OPERATION_PERF_EVENT_ARRAY_MAP_QUERY_BUFFER, request) == EBPF_INVALID_ARGUMENT);
+    REQUIRE(invoke_protocol(EBPF_OPERATION_PERF_EVENT_ARRAY_MAP_QUERY_BUFFER, request, reply) == EBPF_INVALID_ARGUMENT);
 }
 
 TEST_CASE("EBPF_OPERATION_PERF_EVENT_ARRAY_MAP_ASYNC_QUERY", "[execution_context][perf_event_array][negative]")
@@ -2562,7 +2570,7 @@ TEST_CASE("INVALID_PROGRAM_DATA", "[execution_context][negative]")
         EBPF_HELPER_FUNCTION_ADDRESSES_HEADER, EBPF_COUNT_OF(helper_functions), (uint64_t*)helper_functions};
 
     ebpf_program_data_t _test_program_data = {
-        EBPF_PROGRAM_DATA_HEADER, &_test_program_info, &helper_function_addresses};
+        EBPF_PROGRAM_DATA_HEADER, &_test_program_info, &helper_function_addresses, nullptr, nullptr, nullptr, 0, true};
 
     auto provider_attach_client_callback =
         [](HANDLE, void*, const NPI_REGISTRATION_INSTANCE*, void*, const void*, void**, const void**) -> NTSTATUS {

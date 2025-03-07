@@ -23,14 +23,17 @@ typedef enum _perf_event_array_flags
 /**
  * @brief Allocate a perf_event_array with capacity.
  *
- * @param[out] perf_event_array Pointer to buffer that holds  buffer pointer on success.
+ * @param[out] perf_event_array Pointer to buffer that holds buffer pointer on success.
  * @param[in] capacity Size in bytes of ring buffer.
+ * @param[in] opts Options for creating the perf event array.
  * @retval EBPF_SUCCESS Successfully allocated ring buffer.
  * @retval EBPF_NO_MEMORY Unable to allocate ring buffer.
  */
 _Must_inspect_result_ ebpf_result_t
 ebpf_perf_event_array_create(
-    _Outptr_ ebpf_perf_event_array_t** perf_event_array, size_t capacity, _In_ ebpf_perf_event_array_opts_t* opts);
+    _Outptr_ _On_failure_(_Maybenull_) ebpf_perf_event_array_t** perf_event_array,
+    size_t capacity,
+    _In_ ebpf_perf_event_array_opts_t* opts);
 
 /**
  * @brief Free a ring buffer.
@@ -38,7 +41,7 @@ ebpf_perf_event_array_create(
  * @param[in] perf_event_array Perf event array to free.
  */
 void
-ebpf_perf_event_array_destroy(_Frees_ptr_opt_ ebpf_perf_event_array_t* perf_event_array);
+ebpf_perf_event_array_destroy(_In_opt_ _Frees_ptr_opt_ ebpf_perf_event_array_t* perf_event_array);
 
 /**
  * @brief Write out a variable sized record to the perf event array.
@@ -50,13 +53,15 @@ ebpf_perf_event_array_destroy(_Frees_ptr_opt_ ebpf_perf_event_array_t* perf_even
  * @param[in] length Length of data to copy.
  * @param[out] cpu_id CPU ring that was written to.
  * @retval EBPF_SUCCESS Successfully wrote record ring buffer.
- * @retval EBPF_OUT_OF_SPACE Unable to output to ring buffer due to inadequate space.
+ * @retval EBPF_INVALID_ARGUMENT The length is < 1, > 2^31 -1, or > ring capacity.
+ * @retval EBPF_INVALID_ARGUMENT target_cpu invalid or explictly specified below dispatch.
+ * @retval EBPF_NO_MEMORY Failed to reserve space for record (perf ring full).
  */
 _Must_inspect_result_ ebpf_result_t
 ebpf_perf_event_array_output_simple(
     _Inout_ ebpf_perf_event_array_t* perf_event_array,
     uint32_t target_cpu,
-    _In_reads_bytes_(length) uint8_t* data,
+    _In_reads_(length) uint8_t* data,
     size_t length,
     _Out_opt_ uint32_t* cpu_id);
 
@@ -70,14 +75,17 @@ ebpf_perf_event_array_output_simple(
  * @param[in] length Length of data to copy.
  * @param[out] cpu_id CPU ring that was written to.
  * @retval EBPF_SUCCESS Successfully wrote record ring buffer.
- * @retval EBPF_OUT_OF_SPACE Unable to output to ring buffer due to inadequate space.
+ * @retval EBPF_INVALID_ARGUMENT The length is < 1, > 2^31 -1, or > ring capacity.
+ * @retval EBPF_INVALID_ARGUMENT cpu id in flags is invalid or explictly specified below dispatch.
+ * @retval EBPF_INVALID_ARGUMENT context length in flags is non-zero without context data.
+ * @retval EBPF_NO_MEMORY Failed to reserve space for record (perf ring full).
  */
 _Must_inspect_result_ ebpf_result_t
 ebpf_perf_event_array_output(
     _In_ void* ctx,
     _Inout_ ebpf_perf_event_array_t* perf_event_array,
     uint64_t flags,
-    _In_reads_bytes_(length) uint8_t* data,
+    _In_reads_(length) uint8_t* data,
     size_t length,
     _Out_opt_ uint32_t* cpu_id);
 
