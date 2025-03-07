@@ -1,4 +1,4 @@
-// Copyright (c) eBPF for Windows contributors
+tests/libfuzzer/include/fuzz_helper_function.hpp// Copyright (c) eBPF for Windows contributors
 // SPDX-License-Identifier: MIT
 
 #pragma once
