@@ -28,6 +28,7 @@ static_assert(sizeof(ebpf_perf_ring_t) % EBPF_CACHE_LINE_SIZE == 0, "ebpf_perf_r
 static_assert(
     sizeof(ebpf_perf_event_array_t) % EBPF_CACHE_LINE_SIZE == 0, "ebpf_perf_event_array_t is not cache aligned.");
 
+
 /**
  * @brief Reserve a buffer in the ring buffer from a single exclusive producer.
  * Buffer is valid until either ebpf_ring_buffer_submit, ebpf_ring_buffer_discard, or the end of the current epoch.

@@ -600,6 +600,7 @@ ebpf_ring_buffer_reserve_exclusive(
     uint32_t record_header = (uint32_t)length | EBPF_RINGBUF_LOCK_BIT;
     size_t ring_capacity = _ring_get_length(ring);
     size_t total_record_size = _ring_record_size(length);
+
     if (total_record_size > ring_capacity || length == 0 || length >= EBPF_RINGBUF_MAX_RECORD_SIZE) {
         return EBPF_INVALID_ARGUMENT;
     }

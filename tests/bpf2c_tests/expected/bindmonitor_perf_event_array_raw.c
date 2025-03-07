@@ -47,10 +47,7 @@ _get_global_variable_sections(
 }
 
 static helper_function_entry_t bind_monitor_helpers[] = {
-<<<<<<< HEAD
     {6, "helper_id_6"},
-=======
->>>>>>> 1da24ed0 (Add generated perf array bind monitor bpf programs.)
     {32, "helper_id_32"},
 };
 
@@ -65,7 +62,6 @@ static uint16_t bind_monitor_maps[] = {
 #pragma code_seg(push, "bind")
 static uint64_t
 bind_monitor(void* context, const program_runtime_context_t* runtime_context)
-<<<<<<< HEAD
 #line 24 "sample/bindmonitor_perf_event_array.c"
 {
 #line 24 "sample/bindmonitor_perf_event_array.c"
@@ -125,7 +121,6 @@ bind_monitor(void* context, const program_runtime_context_t* runtime_context)
     // EBPF_OP_JNE_IMM pc=6 dst=r1 src=r0 offset=19 imm=0
 #line 29 "sample/bindmonitor_perf_event_array.c"
     if (r1 != IMMEDIATE(0)) {
-=======
 #line 27 "sample/bindmonitor_perf_event_array.c"
 {
 #line 27 "sample/bindmonitor_perf_event_array.c"
@@ -171,12 +166,10 @@ bind_monitor(void* context, const program_runtime_context_t* runtime_context)
     // EBPF_OP_JGE_REG pc=4 dst=r4 src=r5 offset=6 imm=0
 #line 29 "sample/bindmonitor_perf_event_array.c"
     if (r4 >= r5) {
->>>>>>> 1da24ed0 (Add generated perf array bind monitor bpf programs.)
 #line 29 "sample/bindmonitor_perf_event_array.c"
         goto label_1;
 #line 29 "sample/bindmonitor_perf_event_array.c"
     }
-<<<<<<< HEAD
     // EBPF_OP_LDXDW pc=7 dst=r1 src=r6 offset=8 imm=0
 #line 31 "sample/bindmonitor_perf_event_array.c"
     r1 = *(uint64_t*)(uintptr_t)(r6 + OFFSET(8));
@@ -243,7 +236,6 @@ label_1:
 #line 39 "sample/bindmonitor_perf_event_array.c"
     return r0;
 #line 24 "sample/bindmonitor_perf_event_array.c"
-=======
     // EBPF_OP_SUB64_REG pc=5 dst=r5 src=r4 offset=0 imm=0
 #line 31 "sample/bindmonitor_perf_event_array.c"
     r5 -= r4;
@@ -270,7 +262,6 @@ label_1:
 #line 38 "sample/bindmonitor_perf_event_array.c"
     return r0;
 #line 27 "sample/bindmonitor_perf_event_array.c"
->>>>>>> 1da24ed0 (Add generated perf array bind monitor bpf programs.)
 }
 #pragma code_seg(pop)
 #line __LINE__ __FILE__
@@ -286,13 +277,10 @@ static program_entry_t _programs[] = {
         bind_monitor_maps,
         1,
         bind_monitor_helpers,
-<<<<<<< HEAD
         2,
         28,
-=======
         1,
         13,
->>>>>>> 1da24ed0 (Add generated perf array bind monitor bpf programs.)
         &bind_monitor_program_type_guid,
         &bind_monitor_attach_type_guid,
     },

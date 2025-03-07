@@ -504,6 +504,44 @@ typedef struct _ebpf_operation_perf_event_array_map_write_data_request
     uint8_t data[1];
 } ebpf_operation_perf_event_array_map_write_data_request_t;
 
+typedef struct _ebpf_operation_perf_event_array_map_query_buffer_request
+{
+    struct _ebpf_operation_header header;
+    ebpf_handle_t map_handle;
+    uint32_t cpu_id;
+} ebpf_operation_perf_event_array_map_query_buffer_request_t;
+
+typedef struct _ebpf_operation_perf_event_array_map_query_buffer_reply
+{
+    struct _ebpf_operation_header header;
+    // Address to user-space read-only buffer for the ring-buffer records.
+    uint64_t buffer_address;
+    // The current consumer offset, so that subsequent reads can start from here.
+    size_t consumer_offset;
+} ebpf_operation_perf_event_array_map_query_buffer_reply_t;
+
+typedef struct _ebpf_operation_perf_event_array_map_async_query_request
+{
+    struct _ebpf_operation_header header;
+    ebpf_handle_t map_handle;
+    uint32_t cpu_id;
+    // Offset till which the consumer has read data so far.
+    size_t consumer_offset;
+} ebpf_operation_perf_event_array_map_async_query_request_t;
+
+typedef struct _ebpf_operation_perf_event_array_map_async_query_reply
+{
+    struct _ebpf_operation_header header;
+    ebpf_perf_event_array_map_async_query_result_t async_query_result;
+} ebpf_operation_perf_event_array_map_async_query_reply_t;
+
+typedef struct _ebpf_operation_perf_event_array_map_write_data_request
+{
+    struct _ebpf_operation_header header;
+    ebpf_handle_t map_handle;
+    uint8_t data[1];
+} ebpf_operation_perf_event_array_map_write_data_request_t;
+
 typedef struct _ebpf_operation_load_native_module_request
 {
     struct _ebpf_operation_header header;
