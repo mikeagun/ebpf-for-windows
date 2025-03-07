@@ -827,7 +827,7 @@ _ebpf_xdp_context_create(
 {
     NTSTATUS status = STATUS_SUCCESS;
     ebpf_result_t result;
-    net_ebpf_xdp_md_header_t* xdp_context_header = NULL;
+    net_ebpf_xdp_md_header_t* new_context_header = NULL;
     net_ebpf_xdp_md_t* new_context = NULL;
     MDL* mdl_chain = NULL;
     NET_BUFFER_LIST* new_nbl = NULL;
@@ -845,13 +845,13 @@ _ebpf_xdp_context_create(
         goto Exit;
     }
 
-    xdp_context_header = (net_ebpf_xdp_md_header_t*)ExAllocatePoolUninitialized(
+    new_context_header = (net_ebpf_xdp_md_header_t*)ExAllocatePoolUninitialized(
         NonPagedPoolNx, sizeof(net_ebpf_xdp_md_header_t), NET_EBPF_EXTENSION_POOL_TAG);
     NET_EBPF_EXT_BAIL_ON_ALLOC_FAILURE_RESULT(
-        NET_EBPF_EXT_TRACELOG_KEYWORD_XDP, xdp_context_header, "xdp_context_header", result);
+        NET_EBPF_EXT_TRACELOG_KEYWORD_XDP, new_context_header, "new_context_header", result);
 
-    memset(xdp_context_header, 0, sizeof(net_ebpf_xdp_md_header_t));
-    new_context = &xdp_context_header->context;
+    memset(new_context_header, 0, sizeof(net_ebpf_xdp_md_header_t));
+    new_context = &new_context_header->context;
 
     // Create a MDL with the packet buffer.
     mdl_chain = IoAllocateMdl((void*)data_in, (unsigned long)data_size_in, FALSE, FALSE, NULL);
@@ -893,7 +893,7 @@ _ebpf_xdp_context_create(
 
 Exit:
     if (new_context) {
-        ExFreePool(new_context);
+        ExFreePool(new_context_header);
     }
 
     if (mdl_chain) {

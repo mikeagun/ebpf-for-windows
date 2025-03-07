@@ -255,7 +255,7 @@ TEST_CASE("bind_invoke", "[netebpfext]")
     netebpf_ext_helper_t helper(
         &npi_specific_characteristics,
         (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_bind_program,
-        (netebpfext_helper_base_client_context_t*)&client_context);
+        (netebpfext_helper_base_client_context_t*)client_context);
 
     netebpfext_initialize_fwp_classify_parameters(&parameters);
 
