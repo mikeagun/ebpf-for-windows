@@ -719,7 +719,7 @@ net_ebpf_ext_layer_2_classify(
         goto Exit;
     }
 
-    net_xdp_ctx.original_nbl = nbl;
+    net_xdp_ctx->original_nbl = nbl;
 
     net_buffer = NET_BUFFER_LIST_FIRST_NB(nbl);
     if (net_buffer == NULL) {
