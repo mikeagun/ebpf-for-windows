@@ -15,6 +15,7 @@
 #include "test_helper.hpp"
 
 #include <iomanip>
+#include <iostream>
 #include <optional>
 #include <set>
 

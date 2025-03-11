@@ -1862,7 +1862,6 @@ TEST_CASE("perf_event_output", "[platform][perf_event_array]")
     // Ring is not empty.
     REQUIRE(producer == _perf_record_size(data.size()));
     REQUIRE(consumer == 0);
-
     auto record = ebpf_ring_buffer_next_record(buffer, size, consumer, producer);
     REQUIRE(record != nullptr);
     REQUIRE(!ebpf_ring_buffer_record_is_locked(record));
