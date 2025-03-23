@@ -4850,8 +4850,6 @@ _ebpf_perf_event_array_map_async_query_completion(_Inout_ void* completion_conte
         }
         for (;;) {
             auto record = ebpf_ring_buffer_next_record(subscription->buffer, perf_event_array_size, consumer, producer);
-            auto record =
-                ebpf_perf_event_array_next_record(subscription->buffer, perf_event_array_size, consumer, producer);
 
             if (record == nullptr) {
                 // No more records.
@@ -4986,18 +4984,17 @@ ebpf_perf_event_array_map_subscribe(
         }
 
         // Get user-mode address to perf buffer shared data.
-        ebpf_operation_perf_event_array_map_query_buffer_request_t query_buffer_request{
+        ebpf_operation_map_query_buffer_request_t query_buffer_request{
             sizeof(query_buffer_request),
-            ebpf_operation_id_t::EBPF_OPERATION_PERF_EVENT_ARRAY_MAP_QUERY_BUFFER,
+            ebpf_operation_id_t::EBPF_OPERATION_MAP_QUERY_BUFFER,
             local_subscription->perf_event_array_map_handle,
             cpu_id};
-        ebpf_operation_perf_event_array_map_query_buffer_reply_t query_buffer_reply{};
+        ebpf_operation_map_query_buffer_reply_t query_buffer_reply{};
         result = win32_error_code_to_ebpf_result(invoke_ioctl(query_buffer_request, query_buffer_reply));
         if (result != EBPF_SUCCESS) {
             EBPF_RETURN_RESULT(result);
         }
-        ebpf_assert(
-            query_buffer_reply.header.id == ebpf_operation_id_t::EBPF_OPERATION_PERF_EVENT_ARRAY_MAP_QUERY_BUFFER);
+        ebpf_assert(query_buffer_reply.header.id == ebpf_operation_id_t::EBPF_OPERATION_MAP_QUERY_BUFFER);
         local_subscription->buffer =
             reinterpret_cast<uint8_t*>(static_cast<uintptr_t>(query_buffer_reply.buffer_address));
 
@@ -5006,7 +5003,7 @@ ebpf_perf_event_array_map_subscribe(
         local_subscription->sample_callback = sample_callback;
         local_subscription->lost_callback = lost_callback;
         local_subscription->cpu_id = cpu_id;
-        memset(&local_subscription->reply, 0, sizeof(ebpf_operation_perf_event_array_map_async_query_reply_t));
+        memset(&local_subscription->reply, 0, sizeof(ebpf_operation_map_async_query_reply_t));
         result = initialize_async_ioctl_operation(
             local_subscription.get(),
             _ebpf_perf_event_array_map_async_query_completion,
@@ -5016,9 +5013,9 @@ ebpf_perf_event_array_map_subscribe(
         }
 
         // Issue the async query IOCTL.
-        ebpf_operation_perf_event_array_map_async_query_request_t async_query_request{
+        ebpf_operation_map_async_query_request_t async_query_request{
             sizeof(async_query_request),
-            ebpf_operation_id_t::EBPF_OPERATION_PERF_EVENT_ARRAY_MAP_ASYNC_QUERY,
+            ebpf_operation_id_t::EBPF_OPERATION_MAP_ASYNC_QUERY,
             local_subscription->perf_event_array_map_handle,
             cpu_id,
             query_buffer_reply.consumer_offset};
@@ -5054,7 +5051,7 @@ ebpf_perf_event_array_map_write(fd_t map_fd, _In_reads_bytes_(data_length) const
     ebpf_result_t result = EBPF_SUCCESS;
     ebpf_handle_t map_handle = ebpf_handle_invalid;
     ebpf_protocol_buffer_t request_buffer;
-    ebpf_operation_perf_event_array_map_write_data_request_t* request;
+    ebpf_operation_map_write_data_request_t* request;
 
     if (!data || !data_length) {
         return EBPF_INVALID_ARGUMENT;
@@ -5087,11 +5084,10 @@ ebpf_perf_event_array_map_write(fd_t map_fd, _In_reads_bytes_(data_length) const
             EBPF_RETURN_RESULT(result);
         }
 
-        request_buffer.resize(
-            EBPF_OFFSET_OF(ebpf_operation_perf_event_array_map_write_data_request_t, data) + data_length);
-        request = reinterpret_cast<ebpf_operation_perf_event_array_map_write_data_request_t*>(request_buffer.data());
+        request_buffer.resize(EBPF_OFFSET_OF(ebpf_operation_map_write_data_request_t, data) + data_length);
+        request = reinterpret_cast<ebpf_operation_map_write_data_request_t*>(request_buffer.data());
         request->header.length = static_cast<uint16_t>(request_buffer.size());
-        request->header.id = ebpf_operation_id_t::EBPF_OPERATION_PERF_EVENT_ARRAY_MAP_WRITE_DATA;
+        request->header.id = ebpf_operation_id_t::EBPF_OPERATION_MAP_WRITE_DATA;
         request->map_handle = (uint64_t)map_handle;
         std::copy((uint8_t*)data, (uint8_t*)data + data_length, request->data);
 

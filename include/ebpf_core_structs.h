@@ -33,27 +33,6 @@ typedef struct _ebpf_map_async_query_result
     size_t lost_count;
 } ebpf_map_async_query_result_t;
 
-typedef struct _ebpf_perf_event_array_map_async_query_result
-{
-    size_t producer;
-    size_t consumer;
-    size_t lost_count;
-} ebpf_perf_event_array_map_async_query_result_t;
-
-typedef struct _ebpf_perf_event_array_map_async_query_result
-{
-    size_t producer;
-    size_t consumer;
-    size_t lost_count;
-} ebpf_perf_event_array_map_async_query_result_t;
-
-typedef struct _ebpf_perf_event_array_map_async_query_result
-{
-    size_t producer;
-    size_t consumer;
-    size_t lost_count;
-} ebpf_perf_event_array_map_async_query_result_t;
-
 typedef enum _ebpf_object_type
 {
     EBPF_OBJECT_UNKNOWN,

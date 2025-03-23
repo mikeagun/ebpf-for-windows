@@ -2689,7 +2689,6 @@ ebpf_program_get_header_context_descriptor(
 void
 ebpf_program_get_context_data(
     _In_ const void* program_context, _Out_ const uint8_t** data_start, _Out_ const uint8_t** data_end)
-    _In_ const void* program_context, _Outptr_ const uint8_t** data_start, _Outptr_ const uint8_t** data_end)
 {
     ebpf_context_descriptor_t* context_descriptor;
     ebpf_program_get_header_context_descriptor(program_context, &context_descriptor);

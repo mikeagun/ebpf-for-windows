@@ -13,7 +13,6 @@
     <ClCompile Include="..\ebpf_hash_table.c" />
     <ClCompile Include="..\ebpf_interlocked.c" />
     <ClCompile Include="..\ebpf_object.c" />
-    <ClCompile Include="..\ebpf_perf_event_array.c" />
     <ClCompile Include="..\ebpf_pinning_table.c" />
     <ClCompile Include="..\ebpf_platform.c" />
     <ClCompile Include="..\ebpf_random.c" />

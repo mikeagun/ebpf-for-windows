@@ -1,4 +1,5 @@
-tests/libfuzzer/include/fuzz_helper_function.hpp// Copyright (c) eBPF for Windows contributors
+tests / libfuzzer / include /
+    fuzz_helper_function.hpp // Copyright (c) eBPF for Windows contributors
 // SPDX-License-Identifier: MIT
 
 #pragma once
@@ -17,13 +18,14 @@ tests/libfuzzer/include/fuzz_helper_function.hpp// Copyright (c) eBPF for Window
 // For testing purposes, use up to 64-byte buffers for things like csum diff.
 #define MAX_BUFFER_SIZE 64
 
-/**
- * @brief A wrapper class used to fuzz helper functions with a specific context type from a specific helper function
- * provider.
- *
- * @tparam context_type The context type to use when calling helper functions.
- */
-template <typename context_type> class fuzz_helper_function
+    /**
+     * @brief A wrapper class used to fuzz helper functions with a specific context type from a specific helper function
+     * provider.
+     *
+     * @tparam context_type The context type to use when calling helper functions.
+     */
+    template <typename context_type>
+    class fuzz_helper_function
 {
   public:
     fuzz_helper_function(GUID provider_id) : provider_guid(provider_id)
