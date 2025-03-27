@@ -3965,12 +3965,16 @@ bindmonitor_perf_buffer_test(ebpf_execution_type_t execution_type)
     // Test multiple subscriptions to the same perf buffer , to ensure that the perf buffer map will continue
     // to provide notifications to the subscriber.
     for (int i = 0; i < 3; i++) {
-        perf_buffer_api_test_helper(process_map_fd, fake_app_ids, [&](int i) {
-            // Emulate bind operation.
-            std::vector<char> fake_app_id = fake_app_ids[i];
-            fake_app_id.push_back('\0');
-            REQUIRE(emulate_bind(invoke, fake_pid + i, fake_app_id.data()) == BIND_PERMIT);
-        });
+        perf_buffer_api_test_helper(
+            process_map_fd,
+            fake_app_ids,
+            [&](int i) {
+                // Emulate bind operation.
+                std::vector<char> fake_app_id = fake_app_ids[i];
+                fake_app_id.push_back('\0');
+                REQUIRE(emulate_bind(invoke, fake_pid + i, fake_app_id.data()) == BIND_PERMIT);
+            },
+            true);
     }
 
     hook.detach_and_close_link(&link);

@@ -251,22 +251,29 @@ test_program_entry(void* context, const program_runtime_context_t* runtime_conte
 #line 33 "sample/undocked/test_sample_perf_event_array.c"
     r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
 
+    // EBPF_OP_LDXDW pc=0 dst=r4 src=r1 offset=0 imm=0
 #line 33 "sample/undocked/test_sample_perf_event_array.c"
     r4 = *(uint64_t*)(uintptr_t)(r1 + OFFSET(0));
+    // EBPF_OP_LDXDW pc=1 dst=r5 src=r1 offset=8 imm=0
 #line 33 "sample/undocked/test_sample_perf_event_array.c"
     r5 = *(uint64_t*)(uintptr_t)(r1 + OFFSET(8));
+    // EBPF_OP_JGE_REG pc=2 dst=r4 src=r5 offset=6 imm=0
 #line 33 "sample/undocked/test_sample_perf_event_array.c"
     if (r4 >= r5) {
 #line 33 "sample/undocked/test_sample_perf_event_array.c"
         goto label_1;
 #line 33 "sample/undocked/test_sample_perf_event_array.c"
     }
+    // EBPF_OP_SUB64_REG pc=3 dst=r5 src=r4 offset=0 imm=0
 #line 37 "sample/undocked/test_sample_perf_event_array.c"
     r5 -= r4;
+    // EBPF_OP_LDDW pc=4 dst=r2 src=r1 offset=0 imm=1
 #line 36 "sample/undocked/test_sample_perf_event_array.c"
     r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_LDDW pc=6 dst=r3 src=r0 offset=0 imm=-1
 #line 36 "sample/undocked/test_sample_perf_event_array.c"
     r3 = (uint64_t)4294967295;
+    // EBPF_OP_CALL pc=8 dst=r0 src=r0 offset=0 imm=32
 #line 36 "sample/undocked/test_sample_perf_event_array.c"
     r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
 #line 36 "sample/undocked/test_sample_perf_event_array.c"
@@ -276,8 +283,10 @@ test_program_entry(void* context, const program_runtime_context_t* runtime_conte
 #line 36 "sample/undocked/test_sample_perf_event_array.c"
     }
 label_1:
+    // EBPF_OP_MOV64_IMM pc=9 dst=r0 src=r0 offset=0 imm=0
 #line 40 "sample/undocked/test_sample_perf_event_array.c"
     r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=10 dst=r0 src=r0 offset=0 imm=0
 #line 40 "sample/undocked/test_sample_perf_event_array.c"
     return r0;
 #line 33 "sample/undocked/test_sample_perf_event_array.c"
