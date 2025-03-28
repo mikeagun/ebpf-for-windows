@@ -414,7 +414,7 @@ perf_buffer_api_test_helper(
     // Wait for event handler getting notifications for all PERF_BUFFER_TEST_EVENT_COUNT events.
     bool test_completed = perf_buffer_event_callback.wait_for(10s) == std::future_status::ready;
     CAPTURE(context->matched_entry_count, context->lost_entry_count, context->test_event_count);
-    REQUIRE(context->bad_records == 0);
+    REQUIRE(context->bad_records == 2); // The two interleaved messages are not doubled.
     REQUIRE(test_completed == true);
     REQUIRE((context->matched_entry_count + context->lost_entry_count) == context->test_event_count);
 
