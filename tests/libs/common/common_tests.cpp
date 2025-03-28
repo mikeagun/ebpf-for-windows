@@ -361,7 +361,8 @@ perf_buffer_api_test_helper(
     fd_t perf_buffer_map,
     std::vector<std::vector<char>>& expected_records,
     std::function<void(int)> generate_event,
-    bool doubled_data)
+    bool doubled_data,
+    size_t expected_bad_records)
 {
     std::vector<std::vector<char>> records = expected_records;
 
@@ -414,7 +415,7 @@ perf_buffer_api_test_helper(
     // Wait for event handler getting notifications for all PERF_BUFFER_TEST_EVENT_COUNT events.
     bool test_completed = perf_buffer_event_callback.wait_for(10s) == std::future_status::ready;
     CAPTURE(context->matched_entry_count, context->lost_entry_count, context->test_event_count);
-    REQUIRE(context->bad_records == 2); // The two interleaved messages are not doubled.
+    REQUIRE(context->bad_records == expected_bad_records);
     REQUIRE(test_completed == true);
     REQUIRE((context->matched_entry_count + context->lost_entry_count) == context->test_event_count);
 

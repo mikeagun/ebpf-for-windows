@@ -3974,7 +3974,8 @@ bindmonitor_perf_buffer_test(ebpf_execution_type_t execution_type)
                 fake_app_id.push_back('\0');
                 REQUIRE(emulate_bind(invoke, fake_pid + i, fake_app_id.data()) == BIND_PERMIT);
             },
-            true);
+            true,
+            2);
     }
 
     hook.detach_and_close_link(&link);

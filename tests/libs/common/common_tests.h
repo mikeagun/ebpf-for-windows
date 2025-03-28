@@ -105,4 +105,5 @@ perf_buffer_api_test_helper(
     fd_t perf_buffer_map,
     std::vector<std::vector<char>>& expected_records,
     std::function<void(int)> generate_event,
-    bool doubled_data = false);
+    bool doubled_data = false,
+    size_t expected_bad_records = 0);
