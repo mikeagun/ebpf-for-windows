@@ -224,9 +224,31 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         net_ebpf_extension_sock_ops_flow_established_classify,
         net_ebpf_ext_filter_change_notify,
         net_ebpf_extension_sock_ops_flow_delete,
-        L"ALE Flow Established Callout v4",
+        L"ALE Flow Established Callout v6",
         L"ALE Flow Established callout for eBPF",
         FWP_ACTION_CALLOUT_TERMINATING,
+    },
+    // EBPF_HOOK_STREAM_V4
+    {
+        &EBPF_HOOK_STREAM_FLOW_CLASSIFY_V4_CALLOUT,
+        &FWPM_LAYER_STREAM_V4,
+        net_ebpf_extension_flow_classify_flow_classify,
+        net_ebpf_ext_filter_change_notify,
+        net_ebpf_extension_flow_classify_flow_delete,
+        L"Stream Flow Classify Callout v4",
+        L"Stream Flow Classify callout for eBPF",
+        FWP_ACTION_CALLOUT_INSPECTION,
+    },
+    // EBPF_HOOK_STREAM_V6
+    {
+        &EBPF_HOOK_STREAM_FLOW_CLASSIFY_V6_CALLOUT,
+        &FWPM_LAYER_STREAM_V6,
+        net_ebpf_extension_flow_classify_flow_classify,
+        net_ebpf_ext_filter_change_notify,
+        net_ebpf_extension_flow_classify_flow_delete,
+        L"Stream Flow Classify Callout v6",
+        L"Stream Flow Classify callout for eBPF",
+        FWP_ACTION_CALLOUT_INSPECTION,
     }};
 
 // WFP globals
@@ -371,6 +393,12 @@ net_ebpf_extension_get_hook_id_from_wfp_layer_id(uint16_t wfp_layer_id)
         break;
     case FWPS_LAYER_ALE_CONNECT_REDIRECT_V6:
         hook_id = EBPF_HOOK_ALE_CONNECT_REDIRECT_V6;
+        break;
+    case FWPS_LAYER_STREAM_V4:
+        hook_id = EBPF_HOOK_STREAM_V4;
+        break;
+    case FWPS_LAYER_STREAM_V6:
+        hook_id = EBPF_HOOK_STREAM_V6;
         break;
     default:
         ASSERT(FALSE);

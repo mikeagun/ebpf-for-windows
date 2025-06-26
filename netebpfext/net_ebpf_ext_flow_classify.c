@@ -1,13 +1,10 @@
 // Copyright (c) eBPF for Windows contributors
 // SPDX-License-Identifier: MIT
 
-// FIXME: This is a currently a duplicate of net_ebpf_ext_sock_ops.c (doesn't implement flow classify yet).
-
 /*
  * @file
  * @brief This file implements the hook for the FLOW_CLASSIFY program type and associated attach types, on eBPF for
- * Windows.
- *
+ * Windows. This implements a WFP stream-layer callout for flow classification.
  *
  */
 
@@ -370,48 +367,52 @@ net_ebpf_ext_flow_classify_unregister_providers()
     }
 }
 
-extern wfp_ale_layer_fields_t wfp_flow_established_fields[2]; // FIXME: temporary hack
-//     // EBPF_HOOK_ALE_FLOW_ESTABLISHED_V4
-//     {FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_LOCAL_ADDRESS,
-//      FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_LOCAL_PORT,
-//      FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_REMOTE_ADDRESS,
-//      FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_REMOTE_PORT,
-//      FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_PROTOCOL,
-//      FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_DIRECTION,
-//      FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_COMPARTMENT_ID,
-//      FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_LOCAL_INTERFACE},
-//     // EBPF_HOOK_ALE_FLOW_ESTABLISHED_V6
-//     {FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_LOCAL_ADDRESS,
-//      FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_LOCAL_PORT,
-//      FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_REMOTE_ADDRESS,
-//      FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_REMOTE_PORT,
-//      FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_PROTOCOL,
-//      FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_DIRECTION,
-//      FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_COMPARTMENT_ID,
-//      FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_LOCAL_INTERFACE}};
+extern wfp_ale_layer_fields_t wfp_flow_established_fields[2]; // Used for flow established hooks
+
+// WFP stream layer field definitions for flow classify
+wfp_stream_layer_fields_t wfp_stream_fields[] = {
+    // EBPF_HOOK_STREAM_V4
+    {FWPS_FIELD_STREAM_V4_IP_LOCAL_ADDRESS,
+     FWPS_FIELD_STREAM_V4_IP_LOCAL_PORT,
+     FWPS_FIELD_STREAM_V4_IP_REMOTE_ADDRESS,
+     FWPS_FIELD_STREAM_V4_IP_REMOTE_PORT,
+     0, // No protocol field in stream layer - will get from connection state
+     FWPS_FIELD_STREAM_V4_DIRECTION,
+     FWPS_FIELD_STREAM_V4_COMPARTMENT_ID,
+     0,  // No interface field in stream layer - will leave as 0
+     0}, // Stream data is in layer_data parameter
+    // EBPF_HOOK_STREAM_V6
+    {FWPS_FIELD_STREAM_V6_IP_LOCAL_ADDRESS,
+     FWPS_FIELD_STREAM_V6_IP_LOCAL_PORT,
+     FWPS_FIELD_STREAM_V6_IP_REMOTE_ADDRESS,
+     FWPS_FIELD_STREAM_V6_IP_REMOTE_PORT,
+     0, // No protocol field in stream layer - will get from connection state
+     FWPS_FIELD_STREAM_V6_DIRECTION,
+     FWPS_FIELD_STREAM_V6_COMPARTMENT_ID,
+     0,   // No interface field in stream layer - will leave as 0
+     0}}; // Stream data is in layer_data parameter
 
 static void
-_net_ebpf_extension_flow_classify_copy_wfp_connection_fields(
+_net_ebpf_extension_flow_classify_copy_wfp_stream_fields(
     _In_ const FWPS_INCOMING_VALUES* incoming_fixed_values,
     _In_ const FWPS_INCOMING_METADATA_VALUES* incoming_metadata_values,
+    _Inout_ void* layer_data,
     _Out_ net_ebpf_flow_classify_t* flow_classify_context)
 {
     uint16_t wfp_layer_id = incoming_fixed_values->layerId;
     net_ebpf_extension_hook_id_t hook_id = net_ebpf_extension_get_hook_id_from_wfp_layer_id(wfp_layer_id);
-    wfp_ale_layer_fields_t* fields = &wfp_flow_established_fields[hook_id - EBPF_HOOK_ALE_FLOW_ESTABLISHED_V4];
+    wfp_stream_layer_fields_t* fields = &wfp_stream_fields[hook_id - EBPF_HOOK_STREAM_V4];
     bpf_flow_classify_t* flow_classify = &flow_classify_context->context;
 
     FWPS_INCOMING_VALUE0* incoming_values = incoming_fixed_values->incomingValue;
 
-    flow_classify->direction = incoming_values[fields->direction_field].value.uint32 == FWP_DIRECTION_OUTBOUND
-                                   ? FLOW_DIRECTION_OUTBOUND
-                                   : FLOW_DIRECTION_INBOUND;
-    // flow_classify->op = (incoming_values[fields->direction_field].value.uint32 == FWP_DIRECTION_OUTBOUND)
-    //                         ? BPF_SOCK_OPS_ACTIVE_ESTABLISHED_CB
-    //                         : BPF_SOCK_OPS_PASSIVE_ESTABLISHED_CB;
+    // Set direction
+    flow_classify->direction = (uint8_t)(incoming_values[fields->direction_field].value.uint32 == FWP_DIRECTION_OUTBOUND
+                                             ? FLOW_DIRECTION_OUTBOUND
+                                             : FLOW_DIRECTION_INBOUND);
 
-    // Copy IP address fields.
-    if (hook_id == EBPF_HOOK_ALE_FLOW_ESTABLISHED_V4) {
+    // Copy IP address fields
+    if (hook_id == EBPF_HOOK_STREAM_V4) {
         flow_classify->family = AF_INET;
         flow_classify->local_ip4 = htonl(incoming_values[fields->local_ip_address_field].value.uint32);
         flow_classify->remote_ip4 = htonl(incoming_values[fields->remote_ip_address_field].value.uint32);
@@ -426,26 +427,45 @@ _net_ebpf_extension_flow_classify_copy_wfp_connection_fields(
             incoming_values[fields->remote_ip_address_field].value.byteArray16,
             sizeof(FWP_BYTE_ARRAY16));
     }
+
     flow_classify->local_port = htons(incoming_values[fields->local_port_field].value.uint16);
     flow_classify->remote_port = htons(incoming_values[fields->remote_port_field].value.uint16);
-    flow_classify->protocol = incoming_values[fields->protocol_field].value.uint8;
+
+    // Protocol and interface fields not available at stream layer
+    // For TCP streams, protocol is always TCP (6)
+    flow_classify->protocol = IPPROTO_TCP;
+
     flow_classify->compartment_id = incoming_values[fields->compartment_id_field].value.uint32;
-    flow_classify->interface_luid = *incoming_values[fields->interface_luid_field].value.uint64;
+    flow_classify->interface_luid = 0; // Not available at stream layer
+
+    // Set flow ID from metadata
+    if (incoming_metadata_values->currentMetadataValues & FWPS_METADATA_FIELD_FLOW_HANDLE) {
+        flow_classify->flow_id = incoming_metadata_values->flowHandle;
+    } else {
+        flow_classify->flow_id = 0;
+    }
+
+    // Set process ID
     if (incoming_metadata_values->currentMetadataValues & FWPS_METADATA_FIELD_PROCESS_ID) {
         flow_classify_context->process_id = incoming_metadata_values->processId;
     } else {
-        NET_EBPF_EXT_LOG_MESSAGE_UINT64(
-            NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
-            NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
-            "FWPS_METADATA_FIELD_PROCESS_ID not present",
-            hook_id);
-
         flow_classify_context->process_id = 0;
+    }
+
+    // Set stream data pointers - simplified for now
+    // TODO: Implement proper stream data access based on WFP stream layer documentation
+    if (layer_data != NULL) {
+        // For now, just indicate that there is data available
+        flow_classify->data_start = (uint8_t*)layer_data;
+        flow_classify->data_end = (uint8_t*)layer_data; // Will be updated when proper stream data structure is defined
+    } else {
+        flow_classify->data_start = NULL;
+        flow_classify->data_end = NULL;
     }
 }
 
 //
-// WFP callout callback function.
+// WFP callout callback function for stream layer.
 //
 void
 net_ebpf_extension_flow_classify_flow_classify(
@@ -457,25 +477,8 @@ net_ebpf_extension_flow_classify_flow_classify(
     uint64_t flow_context,
     _Inout_ FWPS_CLASSIFY_OUT* classify_output)
 {
-    // NTSTATUS status;
-    // uint32_t result;
-}
-
-//
-// WFP callout callback function.
-//
-void
-net_ebpf_extension_flow_classify_flow_established_classify(
-    _In_ const FWPS_INCOMING_VALUES* incoming_fixed_values,
-    _In_ const FWPS_INCOMING_METADATA_VALUES* incoming_metadata_values,
-    _Inout_opt_ void* layer_data,
-    _In_opt_ const void* classify_context,
-    _In_ const FWPS_FILTER* filter,
-    uint64_t flow_context,
-    _Inout_ FWPS_CLASSIFY_OUT* classify_output)
-{
-    NTSTATUS status;
-    uint32_t result;
+    NTSTATUS status = STATUS_SUCCESS;
+    uint32_t result = FLOW_CLASSIFY_ALLOW;
     net_ebpf_extension_flow_classify_wfp_filter_context_t* filter_context = NULL;
     net_ebpf_extension_flow_classify_wfp_flow_context_t* local_flow_context = NULL;
     bpf_flow_classify_t* flow_classify_context = NULL;
@@ -484,113 +487,174 @@ net_ebpf_extension_flow_classify_flow_established_classify(
         net_ebpf_extension_get_hook_id_from_wfp_layer_id(incoming_fixed_values->layerId);
     KIRQL old_irql = PASSIVE_LEVEL;
     ebpf_result_t program_result;
+    bool flow_context_created = false;
 
-    UNREFERENCED_PARAMETER(layer_data);
     UNREFERENCED_PARAMETER(classify_context);
-    UNREFERENCED_PARAMETER(flow_context);
 
+    NET_EBPF_EXT_LOG_ENTRY();
+
+    // Default action is to permit
     classify_output->actionType = FWP_ACTION_PERMIT;
 
     filter_context = (net_ebpf_extension_flow_classify_wfp_filter_context_t*)filter->context;
     ASSERT(filter_context != NULL);
     if (filter_context == NULL) {
+        NET_EBPF_EXT_LOG_MESSAGE(
+            NET_EBPF_EXT_TRACELOG_LEVEL_ERROR, NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY, "filter_context is NULL");
         goto Exit;
     }
 
     if (filter_context->base.context_deleting) {
-        NET_EBPF_EXT_LOG_MESSAGE_NTSTATUS(
-            NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
-            NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
-            "net_ebpf_extension_flow_classify_flow_established_classify - Client detach detected.",
-            STATUS_INVALID_PARAMETER);
-        goto Exit;
-    }
-
-    local_flow_context = (net_ebpf_extension_flow_classify_wfp_flow_context_t*)ExAllocatePoolUninitialized(
-        NonPagedPoolNx, sizeof(net_ebpf_extension_flow_classify_wfp_flow_context_t), NET_EBPF_EXTENSION_POOL_TAG);
-    NET_EBPF_EXT_BAIL_ON_ALLOC_FAILURE_RESULT(
-        NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY, local_flow_context, "flow_context", result);
-    memset(local_flow_context, 0, sizeof(net_ebpf_extension_flow_classify_wfp_flow_context_t));
-
-    // Associate the filter context with the local flow context.
-    REFERENCE_FILTER_CONTEXT(&filter_context->base);
-    local_flow_context->filter_context = filter_context;
-
-    flow_classify_context = &local_flow_context->context.context;
-    _net_ebpf_extension_flow_classify_copy_wfp_connection_fields(
-        incoming_fixed_values, incoming_metadata_values, &local_flow_context->context);
-
-    client_compartment_id = filter_context->compartment_id;
-    ASSERT(
-        (client_compartment_id == UNSPECIFIED_COMPARTMENT_ID) ||
-        (client_compartment_id == flow_classify_context->compartment_id));
-    if (client_compartment_id != UNSPECIFIED_COMPARTMENT_ID &&
-        client_compartment_id != flow_classify_context->compartment_id) {
-        // The client is not interested in this compartment Id.
-        NET_EBPF_EXT_LOG_MESSAGE_UINT32(
-            NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
-            NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
-            "The cgroup_flow_classify eBPF program is not interested in this compartmentId",
-            flow_classify_context->compartment_id);
-        goto Exit;
-    }
-
-    local_flow_context->parameters.flow_id = incoming_metadata_values->flowHandle;
-    local_flow_context->parameters.layer_id = incoming_fixed_values->layerId;
-    local_flow_context->parameters.callout_id = net_ebpf_extension_get_callout_id_for_hook(hook_id);
-
-    program_result = net_ebpf_extension_hook_invoke_programs(flow_classify_context, &filter_context->base, &result);
-    if (program_result == EBPF_OBJECT_NOT_FOUND) {
-        // No program is attached to this hook.
         NET_EBPF_EXT_LOG_MESSAGE(
-            NET_EBPF_EXT_TRACELOG_LEVEL_WARNING,
+            NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
             NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
-            "net_ebpf_extension_flow_classify_flow_established_classify - No attached client.");
+            "filter_context is being deleted");
         goto Exit;
-    } else if (program_result != EBPF_SUCCESS) {
-        NET_EBPF_EXT_LOG_MESSAGE_UINT32(
+    }
+
+    // Get or create flow context
+    if (flow_context == 0) {
+        // First time seeing this flow, create new context
+        local_flow_context = (net_ebpf_extension_flow_classify_wfp_flow_context_t*)ExAllocatePoolUninitialized(
+            NonPagedPoolNx, sizeof(net_ebpf_extension_flow_classify_wfp_flow_context_t), NET_EBPF_EXTENSION_POOL_TAG);
+        NET_EBPF_EXT_BAIL_ON_ALLOC_FAILURE_RESULT(
+            NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY, local_flow_context, "flow_context", result);
+
+        memset(local_flow_context, 0, sizeof(net_ebpf_extension_flow_classify_wfp_flow_context_t));
+
+        // Associate the filter context with the local flow context
+        REFERENCE_FILTER_CONTEXT(&filter_context->base);
+        local_flow_context->filter_context = filter_context;
+        flow_context_created = true;
+
+        // Set up flow parameters
+        local_flow_context->parameters.flow_id = incoming_metadata_values->flowHandle;
+        local_flow_context->parameters.layer_id = incoming_fixed_values->layerId;
+        local_flow_context->parameters.callout_id = net_ebpf_extension_get_callout_id_for_hook(hook_id);
+    } else {
+        // Use existing flow context
+        local_flow_context = (net_ebpf_extension_flow_classify_wfp_flow_context_t*)(uintptr_t)flow_context;
+    }
+
+    if (local_flow_context == NULL) {
+        NET_EBPF_EXT_LOG_MESSAGE(
             NET_EBPF_EXT_TRACELOG_LEVEL_ERROR,
             NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
-            "net_ebpf_extension_flow_classify_flow_established_classify - Program invocation failed.",
+            "local_flow_context is NULL");
+        goto Exit;
+    }
+
+    filter_context = local_flow_context->filter_context;
+
+    // Copy WFP stream fields to the flow classify context
+    flow_classify_context = &local_flow_context->context.context;
+    _net_ebpf_extension_flow_classify_copy_wfp_stream_fields(
+        incoming_fixed_values, incoming_metadata_values, layer_data, &local_flow_context->context);
+
+    // Check compartment ID if specified
+    client_compartment_id = filter_context->compartment_id;
+    if (client_compartment_id != UNSPECIFIED_COMPARTMENT_ID &&
+        client_compartment_id != flow_classify_context->compartment_id) {
+        NET_EBPF_EXT_LOG_MESSAGE_UINT64(
+            NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
+            NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+            "Compartment id mismatch",
+            client_compartment_id);
+        goto Exit;
+    }
+
+    // Invoke the eBPF program
+    program_result = net_ebpf_extension_hook_invoke_programs(flow_classify_context, &filter_context->base, &result);
+    if (program_result == EBPF_OBJECT_NOT_FOUND) {
+        // No program attached, allow
+        goto Exit;
+    } else if (program_result != EBPF_SUCCESS) {
+        NET_EBPF_EXT_LOG_MESSAGE_NTSTATUS(
+            NET_EBPF_EXT_TRACELOG_LEVEL_ERROR,
+            NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+            "net_ebpf_extension_hook_invoke_programs failed",
             program_result);
         goto Exit;
     }
 
-    status = FwpsFlowAssociateContext(
-        local_flow_context->parameters.flow_id,
-        local_flow_context->parameters.layer_id,
-        local_flow_context->parameters.callout_id,
-        (uint64_t)(uintptr_t)local_flow_context);
-    if (!NT_SUCCESS(status)) {
-        NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE(
-            NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY, "FwpsFlowAssociateContext", status);
-        goto Exit;
-    }
+    // Handle the program result
+    switch (result) {
+    case FLOW_CLASSIFY_ALLOW:
+        // Allow the flow and set conditional on flow to stop future classifications
+        classify_output->actionType = FWP_ACTION_PERMIT;
+        classify_output->rights |= FWPS_RIGHT_ACTION_WRITE;
+        classify_output->flags |= FWPS_CLASSIFY_OUT_FLAG_ABSORB;
 
-    NET_EBPF_EXT_LOG_MESSAGE_UINT64(
-        NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
-        NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
-        "New flow created.",
-        local_flow_context->parameters.flow_id);
+        // Clear the WFP context - program has decided, no more classifications needed
+        if (flow_context_created) {
+            // Don't associate the context since we're allowing the flow permanently
+            flow_context_created = false;
+        }
 
-    KeAcquireSpinLock(&filter_context->lock, &old_irql);
-    InsertTailList(&filter_context->flow_context_list.list_head, &local_flow_context->link);
-    filter_context->flow_context_list.count++;
-    KeReleaseSpinLock(&filter_context->lock, old_irql);
-    local_flow_context = NULL;
+        NET_EBPF_EXT_LOG_MESSAGE(
+            NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
+            NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+            "Flow allowed permanently");
+        break;
 
-    classify_output->actionType = (result == 0) ? FWP_ACTION_PERMIT : FWP_ACTION_BLOCK;
-    if (classify_output->actionType == FWP_ACTION_BLOCK) {
-        classify_output->rights &= ~FWPS_RIGHT_ACTION_WRITE;
+    case FLOW_CLASSIFY_BLOCK:
+        // Block the segment and kill the flow
+        classify_output->actionType = FWP_ACTION_BLOCK;
+        classify_output->rights |= FWPS_RIGHT_ACTION_WRITE;
+        classify_output->flags |= FWPS_CLASSIFY_OUT_FLAG_ABSORB;
+
+        NET_EBPF_EXT_LOG_MESSAGE(
+            NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE, NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY, "Flow blocked");
+        break;
+
+    case FLOW_CLASSIFY_NEED_MORE_DATA:
+    default:
+        // Allow the segment but keep classifying future segments
+        classify_output->actionType = FWP_ACTION_PERMIT;
+
+        // If this is the first time, associate the flow context so we get future callbacks
+        if (flow_context_created) {
+            status = FwpsFlowAssociateContext(
+                local_flow_context->parameters.flow_id,
+                local_flow_context->parameters.layer_id,
+                local_flow_context->parameters.callout_id,
+                (uint64_t)(uintptr_t)local_flow_context);
+
+            if (!NT_SUCCESS(status)) {
+                NET_EBPF_EXT_LOG_MESSAGE_NTSTATUS(
+                    NET_EBPF_EXT_TRACELOG_LEVEL_ERROR,
+                    NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+                    "FwpsFlowAssociateContext failed",
+                    status);
+                goto Exit;
+            }
+
+            // Add to the flow context list
+            KeAcquireSpinLock(&filter_context->lock, &old_irql);
+            InsertTailList(&filter_context->flow_context_list.list_head, &local_flow_context->link);
+            filter_context->flow_context_list.count++;
+            KeReleaseSpinLock(&filter_context->lock, old_irql);
+
+            flow_context_created = false; // Successfully associated
+        }
+
+        NET_EBPF_EXT_LOG_MESSAGE(
+            NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
+            NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+            "Need more data, continuing classification");
+        break;
     }
 
 Exit:
-    if (local_flow_context != NULL) {
-        if (local_flow_context->filter_context != NULL) {
+    if (flow_context_created && local_flow_context != NULL) {
+        // Failed to associate context, clean up
+        if (local_flow_context->filter_context) {
             DEREFERENCE_FILTER_CONTEXT(&local_flow_context->filter_context->base);
         }
         ExFreePool(local_flow_context);
     }
+
+    NET_EBPF_EXT_LOG_EXIT();
 }
 
 void
@@ -599,12 +663,12 @@ net_ebpf_extension_flow_classify_flow_delete(uint16_t layer_id, uint32_t callout
     net_ebpf_extension_flow_classify_wfp_flow_context_t* local_flow_context =
         (net_ebpf_extension_flow_classify_wfp_flow_context_t*)(uintptr_t)flow_context;
     net_ebpf_extension_flow_classify_wfp_filter_context_t* filter_context = NULL;
-    bpf_flow_classify_t* flow_classify_context = NULL;
-    uint32_t result;
     KIRQL irql = 0;
 
     UNREFERENCED_PARAMETER(layer_id);
     UNREFERENCED_PARAMETER(callout_id);
+
+    NET_EBPF_EXT_LOG_ENTRY();
 
     ASSERT(local_flow_context != NULL);
     if (local_flow_context == NULL) {
@@ -631,14 +695,6 @@ net_ebpf_extension_flow_classify_flow_delete(uint16_t layer_id, uint32_t callout
         "Flow deleted.",
         local_flow_context->parameters.flow_id);
 
-    // Invoke eBPF program with connection deleted socket event.
-    flow_classify_context = &local_flow_context->context.context;
-    // flow_classify_context->op = BPF_SOCK_OPS_CONNECTION_DELETED_CB;
-    if (net_ebpf_extension_hook_invoke_programs(flow_classify_context, &filter_context->base, &result) !=
-        EBPF_SUCCESS) {
-        goto Exit;
-    }
-
 Exit:
     if (filter_context) {
         DEREFERENCE_FILTER_CONTEXT(&filter_context->base);
@@ -647,6 +703,8 @@ Exit:
     if (local_flow_context != NULL) {
         ExFreePool(local_flow_context);
     }
+
+    NET_EBPF_EXT_LOG_EXIT();
 }
 
 static ebpf_result_t

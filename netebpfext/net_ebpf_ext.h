@@ -77,6 +77,19 @@ typedef struct _wfp_ale_layer_fields
     uint16_t flags_field;
 } wfp_ale_layer_fields_t;
 
+typedef struct _wfp_stream_layer_fields
+{
+    uint16_t local_ip_address_field;
+    uint16_t local_port_field;
+    uint16_t remote_ip_address_field;
+    uint16_t remote_port_field;
+    uint16_t protocol_field;
+    uint32_t direction_field;
+    uint16_t compartment_id_field;
+    uint16_t interface_luid_field;
+    uint16_t stream_data_field;
+} wfp_stream_layer_fields_t;
+
 typedef struct _net_ebpf_extension_wfp_filter_parameters
 {
     const GUID* layer_guid;            ///< GUID of WFP layer to which this filter is associated.
@@ -249,7 +262,9 @@ typedef enum _net_ebpf_extension_hook_id
     EBPF_HOOK_ALE_AUTH_RECV_ACCEPT_V4, // 10
     EBPF_HOOK_ALE_AUTH_RECV_ACCEPT_V6,
     EBPF_HOOK_ALE_FLOW_ESTABLISHED_V4,
-    EBPF_HOOK_ALE_FLOW_ESTABLISHED_V6
+    EBPF_HOOK_ALE_FLOW_ESTABLISHED_V6,
+    EBPF_HOOK_STREAM_V4, // 14
+    EBPF_HOOK_STREAM_V6
 } net_ebpf_extension_hook_id_t;
 
 /**
