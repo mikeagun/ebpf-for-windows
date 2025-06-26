@@ -9,7 +9,7 @@
 
 // f53b4577-bc47-11ec-9a30-18602489beee
 DEFINE_GUID(
-    EBPF_HOOK_ALE_STREAM_CLASSIFY_V4_CALLOUT,
+    EBPF_HOOK_STREAM_FLOW_CLASSIFY_V4_CALLOUT,
     0xf53b4577,
     0xbc47,
     0x11ec,
@@ -24,7 +24,7 @@ DEFINE_GUID(
 
 // f53b4578-bc47-11ec-9a30-18602489beee
 DEFINE_GUID(
-    EBPF_HOOK_ALE_STREAM_CLASSIFY_V6_CALLOUT,
+    EBPF_HOOK_STREAM_FLOW_CLASSIFY_V6_CALLOUT,
     0xf53b4578,
     0xbc47,
     0x11ec,
@@ -38,7 +38,7 @@ DEFINE_GUID(
     0xee); // FIXME: This is a duplicate of EBPF_HOOK_ALE_FLOW_ESTABLISHED_V6_CALLOUT. Generate new GUID.
 
 /**
- * @brief WFP classifyFn callback for EBPF_HOOK_ALE_FLOW_ESTABLISHED_V4/6_CALLOUT.
+ * @brief WFP classifyFn callback for EBPF_HOOK_
  */
 void
 net_ebpf_extension_flow_classify_flow_classify(

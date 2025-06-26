@@ -46,14 +46,14 @@ typedef struct _net_ebpf_extension_flow_classify_wfp_flow_context_list
 } net_ebpf_extension_flow_classify_wfp_flow_context_list_t;
 
 const net_ebpf_extension_wfp_filter_parameters_t _net_ebpf_extension_flow_classify_wfp_filter_parameters[] = {
-    {&FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4,
+    {&FWPM_LAYER_STREAM_V4,
      NULL, // Default sublayer.
-     &EBPF_HOOK_ALE_STREAM_CLASSIFY_V4_CALLOUT,
+     &EBPF_HOOK_STREAM_FLOW_CLASSIFY_V4_CALLOUT,
      L"net eBPF flow_classify hook",
      L"net eBPF flow_classify hook WFP filter"},
-    {&FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6,
+    {&FWPM_LAYER_STREAM_V6,
      NULL, // Default sublayer.
-     &EBPF_HOOK_ALE_STREAM_CLASSIFY_V6_CALLOUT,
+     &EBPF_HOOK_STREAM_FLOW_CLASSIFY_V6_CALLOUT,
      L"net eBPF flow_classify hook",
      L"net eBPF flow_classify hook WFP filter"}};
 
@@ -404,9 +404,9 @@ _net_ebpf_extension_flow_classify_copy_wfp_connection_fields(
 
     FWPS_INCOMING_VALUE0* incoming_values = incoming_fixed_values->incomingValue;
 
-    flow_classify->op = (incoming_values[fields->direction_field].value.uint32 == FWP_DIRECTION_OUTBOUND)
-                            ? BPF_SOCK_OPS_ACTIVE_ESTABLISHED_CB
-                            : BPF_SOCK_OPS_PASSIVE_ESTABLISHED_CB;
+    // flow_classify->op = (incoming_values[fields->direction_field].value.uint32 == FWP_DIRECTION_OUTBOUND)
+    //                         ? BPF_SOCK_OPS_ACTIVE_ESTABLISHED_CB
+    //                         : BPF_SOCK_OPS_PASSIVE_ESTABLISHED_CB;
 
     // Copy IP address fields.
     if (hook_id == EBPF_HOOK_ALE_FLOW_ESTABLISHED_V4) {
@@ -614,7 +614,7 @@ net_ebpf_extension_flow_classify_flow_delete(uint16_t layer_id, uint32_t callout
 
     // Invoke eBPF program with connection deleted socket event.
     flow_classify_context = &local_flow_context->context.context;
-    flow_classify_context->op = BPF_SOCK_OPS_CONNECTION_DELETED_CB;
+    // flow_classify_context->op = BPF_SOCK_OPS_CONNECTION_DELETED_CB;
     if (net_ebpf_extension_hook_invoke_programs(flow_classify_context, &filter_context->base, &result) !=
         EBPF_SUCCESS) {
         goto Exit;

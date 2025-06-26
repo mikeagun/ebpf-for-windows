@@ -201,20 +201,38 @@ typedef enum _flow_classify_result
     FLOW_CLASSIFY_NEED_MORE_DATA,
 } flow_classify_result_t;
 
-typedef bpf_sock_ops_t bpf_flow_classify_t; // FIXME: temporary hack
+// typedef bpf_sock_ops_t bpf_flow_classify_t; // FIXME: temporary hack
 
-// typedef struct _bpf_flow_classify
-// {
-//     uint32_t local_addr_v4;      ///< Local IPv4 address (network byte order)
-//     uint32_t remote_addr_v4;     ///< Remote IPv4 address (network byte order)
-//     uint16_t local_port;         ///< Local port (network byte order)
-//     uint16_t remote_port;        ///< Remote port (network byte order)
-//     uint8_t  protocol;           ///< IP protocol (TCP/UDP/etc)
-//     uint8_t  direction;          ///< 0 = inbound, 1 = outbound
-//     uint64_t flow_handle;        ///< WFP flow handle
-//     uint8_t* data_start;         ///< Pointer to start of stream segment data
-//     uint8_t* data_end;           ///< Pointer to end of stream segment data
-// } bpf_flow_classify_t;
+typedef struct _bpf_flow_classify
+{
+    // bpf_sock_op_type_t op;
+    uint32_t family; ///< IP address family.
+    struct
+    {
+        union
+        {
+            uint32_t local_ip4;
+            uint32_t local_ip6[4];
+        }; ///< Local IP address.
+        uint32_t local_port;
+    }; ///< Local IP address and port stored in network byte order.
+    struct
+    {
+        union
+        {
+            uint32_t remote_ip4;
+            uint32_t remote_ip6[4];
+        }; ///< Remote IP address.
+        uint32_t remote_port;
+    }; ///< Remote IP address and port stored in network byte order.
+    uint8_t protocol;        ///< IP protocol.
+    uint32_t compartment_id; ///< Network compartment Id.
+    uint64_t interface_luid; ///< Interface LUID.
+    uint8_t direction;       ///< 0 = inbound, 1 = outbound
+    uint64_t flow_id;        ///< WFP flow handle
+    uint8_t* data_start;     ///< Pointer to start of stream segment data
+    uint8_t* data_end;       ///< Pointer to end of stream segment data
+} bpf_flow_classify_t;
 
 /*
  * @brief Handle flow classification (stream inspection).

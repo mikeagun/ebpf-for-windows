@@ -219,9 +219,9 @@ static const ebpf_program_section_info_t _ebpf_sock_ops_section_info[] = {
 // FLOW_CLASSIFY program information.
 static const ebpf_context_descriptor_t _ebpf_flow_classify_context_descriptor = {
     sizeof(bpf_flow_classify_t),
-    -1, // Offset into ctx struct for pointer to data, or -1 if none.
-    -1, // Offset into ctx struct for pointer to data, or -1 if none.
-    -1, // Offset into ctx struct for pointer to metadata, or -1 if none.
+    EBPF_OFFSET_OF(bpf_flow_classify_t, data_start), // Offset into ctx struct for pointer to data
+    EBPF_OFFSET_OF(bpf_flow_classify_t, data_end),   // Offset into ctx struct for data end pointer
+    -1,                                              // Offset into ctx struct for pointer to metadata, or -1 if none.
 };
 
 static const ebpf_program_type_descriptor_t _ebpf_flow_classify_program_type_descriptor = {
