@@ -38,7 +38,7 @@ DEFINE_GUID(
     0xee); // FIXME: This is a duplicate of EBPF_HOOK_ALE_FLOW_ESTABLISHED_V6_CALLOUT. Generate new GUID.
 
 /**
- * @brief WFP classifyFn callback for EBPF_HOOK_
+ * @brief WFP classifyFn callback for EBPF_HOOK_STREAM_FLOW_CLASSIFY_V4/6_CALLOUT.
  */
 void
 net_ebpf_extension_flow_classify_flow_classify(
@@ -51,7 +51,20 @@ net_ebpf_extension_flow_classify_flow_classify(
     _Inout_ FWPS_CLASSIFY_OUT* classify_output);
 
 /**
- * @brief WFP flowDeleteFn callback for EBPF_HOOK_ALE_FLOW_ESTABLISHED_V4/6_CALLOUT.
+ * @brief WFP classifyFn callback for EBPF_HOOK_STREAM_FLOW_CLASSIFY_V4/6_CALLOUT.
+ */
+void
+net_ebpf_extension_flow_classify_flow_established_classify(
+    _In_ const FWPS_INCOMING_VALUES* incoming_fixed_values,
+    _In_ const FWPS_INCOMING_METADATA_VALUES* incoming_metadata_values,
+    _Inout_opt_ void* layer_data,
+    _In_opt_ const void* classify_context,
+    _In_ const FWPS_FILTER* filter,
+    uint64_t flow_context,
+    _Inout_ FWPS_CLASSIFY_OUT* classify_output);
+
+/**
+ * @brief WFP flowDeleteFn callback for EBPF_HOOK_STREAM_FLOW_CLASSIFY_V4/6_CALLOUT.
  */
 void
 net_ebpf_extension_flow_classify_flow_delete(uint16_t layer_id, uint32_t callout_id, uint64_t flow_context);

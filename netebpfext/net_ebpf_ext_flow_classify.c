@@ -118,8 +118,7 @@ _ebpf_flow_classify_context_destroy(
 
 static ebpf_program_data_t _ebpf_flow_classify_program_data = {
     .header = EBPF_PROGRAM_DATA_HEADER,
-    // .program_info = &_ebpf_flow_classify_program_info,
-    .program_info = &_ebpf_sock_ops_program_info,
+    .program_info = &_ebpf_flow_classify_program_info,
     .global_helper_function_addresses = &_ebpf_flow_classify_global_helper_function_address_table,
     .context_create = &_ebpf_flow_classify_context_create,
     .context_destroy = &_ebpf_flow_classify_context_destroy,
@@ -404,6 +403,9 @@ _net_ebpf_extension_flow_classify_copy_wfp_connection_fields(
 
     FWPS_INCOMING_VALUE0* incoming_values = incoming_fixed_values->incomingValue;
 
+    flow_classify->direction = incoming_values[fields->direction_field].value.uint32 == FWP_DIRECTION_OUTBOUND
+                                   ? FLOW_DIRECTION_OUTBOUND
+                                   : FLOW_DIRECTION_INBOUND;
     // flow_classify->op = (incoming_values[fields->direction_field].value.uint32 == FWP_DIRECTION_OUTBOUND)
     //                         ? BPF_SOCK_OPS_ACTIVE_ESTABLISHED_CB
     //                         : BPF_SOCK_OPS_PASSIVE_ESTABLISHED_CB;
@@ -440,6 +442,23 @@ _net_ebpf_extension_flow_classify_copy_wfp_connection_fields(
 
         flow_classify_context->process_id = 0;
     }
+}
+
+//
+// WFP callout callback function.
+//
+void
+net_ebpf_extension_flow_classify_flow_classify(
+    _In_ const FWPS_INCOMING_VALUES* incoming_fixed_values,
+    _In_ const FWPS_INCOMING_METADATA_VALUES* incoming_metadata_values,
+    _Inout_opt_ void* layer_data,
+    _In_opt_ const void* classify_context,
+    _In_ const FWPS_FILTER* filter,
+    uint64_t flow_context,
+    _Inout_ FWPS_CLASSIFY_OUT* classify_output)
+{
+    // NTSTATUS status;
+    // uint32_t result;
 }
 
 //

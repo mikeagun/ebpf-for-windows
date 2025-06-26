@@ -194,12 +194,18 @@ typedef struct _bpf_sock_ops
 typedef int
 sock_ops_hook_t(bpf_sock_ops_t* context);
 
-typedef enum _flow_classify_result
+typedef enum _flow_classify_action
 {
     FLOW_CLASSIFY_ALLOW,
     FLOW_CLASSIFY_BLOCK,
     FLOW_CLASSIFY_NEED_MORE_DATA,
-} flow_classify_result_t;
+} flow_classify_action_t;
+
+typedef enum _flow_direction
+{
+    FLOW_DIRECTION_INBOUND,
+    FLOW_DIRECTION_OUTBOUND,
+} flow_direction_t;
 
 // typedef bpf_sock_ops_t bpf_flow_classify_t; // FIXME: temporary hack
 
@@ -243,9 +249,9 @@ typedef struct _bpf_flow_classify
  * \ref EBPF_ATTACH_TYPE_FLOW_CLASSIFY
  *
  * @param[in] context \ref flow_classify_md_t
- * @return 0 to permit, nonzero to block or indicate terminal/other result.
+ * @return classification decision (allow, block, or need more data to decide)
  */
-typedef int
+typedef flow_classify_action_t
 flow_classify_hook_t(bpf_flow_classify_t* context);
 
 #ifdef _MSC_VER
