@@ -215,3 +215,48 @@ static const ebpf_program_section_info_t _ebpf_sock_ops_section_info[] = {
      &EBPF_ATTACH_TYPE_CGROUP_SOCK_OPS,
      BPF_PROG_TYPE_SOCK_OPS,
      BPF_CGROUP_SOCK_OPS}};
+
+// FLOW_CLASSIFY program information.
+static const ebpf_context_descriptor_t _ebpf_flow_classify_context_descriptor = {
+    sizeof(bpf_flow_classify_t),
+    -1, // Offset into ctx struct for pointer to data, or -1 if none.
+    -1, // Offset into ctx struct for pointer to data, or -1 if none.
+    -1, // Offset into ctx struct for pointer to metadata, or -1 if none.
+};
+
+static const ebpf_program_type_descriptor_t _ebpf_flow_classify_program_type_descriptor = {
+    EBPF_PROGRAM_TYPE_DESCRIPTOR_HEADER,
+    "flow_classify",
+    &_ebpf_flow_classify_context_descriptor,
+    EBPF_PROGRAM_TYPE_FLOW_CLASSIFY_GUID,
+    BPF_PROG_TYPE_FLOW_CLASSIFY,
+    0};
+
+enum _flow_classify_global_helper_functions
+{
+    FLOW_CLASSIFY_GLOBAL_HELPER_GET_CURRENT_PID_TGID,
+};
+
+// FLOW_CLASSIFY global helper function prototypes.
+static const ebpf_helper_function_prototype_t _ebpf_flow_classify_global_helper_function_prototype[] = {
+    {.header = EBPF_HELPER_FUNCTION_PROTOTYPE_HEADER,
+     .helper_id = BPF_FUNC_get_current_pid_tgid,
+     .name = "bpf_get_current_pid_tgid",
+     .return_type = EBPF_RETURN_TYPE_INTEGER,
+     .arguments = {},
+     .implicit_context = true}};
+static const ebpf_program_info_t _ebpf_flow_classify_program_info = {
+    EBPF_PROGRAM_INFORMATION_HEADER,
+    &_ebpf_flow_classify_program_type_descriptor,
+    0,
+    NULL,
+    EBPF_COUNT_OF(_ebpf_flow_classify_global_helper_function_prototype),
+    _ebpf_flow_classify_global_helper_function_prototype};
+
+static const ebpf_program_section_info_t _ebpf_flow_classify_section_info[] = {
+    {{EBPF_PROGRAM_SECTION_INFORMATION_CURRENT_VERSION, EBPF_PROGRAM_SECTION_INFORMATION_CURRENT_VERSION_SIZE},
+     L"flow_classify",
+     &EBPF_PROGRAM_TYPE_FLOW_CLASSIFY,
+     &EBPF_ATTACH_TYPE_FLOW_CLASSIFY,
+     BPF_PROG_TYPE_FLOW_CLASSIFY,
+     BPF_FLOW_CLASSIFY}};

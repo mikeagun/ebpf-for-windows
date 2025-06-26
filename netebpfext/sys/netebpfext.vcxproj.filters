@@ -44,6 +44,9 @@
     <ClCompile Include="..\net_ebpf_ext_sock_ops.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\net_ebpf_ext_flow_classify.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\net_ebpf_ext_tracelog.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -79,6 +82,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\net_ebpf_ext_sock_ops.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\net_ebpf_ext_flow_classify.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\net_ebpf_ext_structs.h">

@@ -194,6 +194,42 @@ typedef struct _bpf_sock_ops
 typedef int
 sock_ops_hook_t(bpf_sock_ops_t* context);
 
+typedef enum _flow_classify_result
+{
+    FLOW_CLASSIFY_ALLOW,
+    FLOW_CLASSIFY_BLOCK,
+    FLOW_CLASSIFY_NEED_MORE_DATA,
+} flow_classify_result_t;
+
+typedef bpf_sock_ops_t bpf_flow_classify_t; // FIXME: temporary hack
+
+// typedef struct _bpf_flow_classify
+// {
+//     uint32_t local_addr_v4;      ///< Local IPv4 address (network byte order)
+//     uint32_t remote_addr_v4;     ///< Remote IPv4 address (network byte order)
+//     uint16_t local_port;         ///< Local port (network byte order)
+//     uint16_t remote_port;        ///< Remote port (network byte order)
+//     uint8_t  protocol;           ///< IP protocol (TCP/UDP/etc)
+//     uint8_t  direction;          ///< 0 = inbound, 1 = outbound
+//     uint64_t flow_handle;        ///< WFP flow handle
+//     uint8_t* data_start;         ///< Pointer to start of stream segment data
+//     uint8_t* data_end;           ///< Pointer to end of stream segment data
+// } bpf_flow_classify_t;
+
+/*
+ * @brief Handle flow classification (stream inspection).
+ *
+ * Program type: \ref EBPF_PROGRAM_TYPE_FLOW_CLASSIFY
+ *
+ * Attach type(s):
+ * \ref EBPF_ATTACH_TYPE_FLOW_CLASSIFY
+ *
+ * @param[in] context \ref flow_classify_md_t
+ * @return 0 to permit, nonzero to block or indicate terminal/other result.
+ */
+typedef int
+flow_classify_hook_t(bpf_flow_classify_t* context);
+
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif

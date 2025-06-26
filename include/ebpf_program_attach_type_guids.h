@@ -93,6 +93,17 @@ extern "C"
      */
     __declspec(selectany) ebpf_attach_type_t EBPF_ATTACH_TYPE_CGROUP_SOCK_OPS = EBPF_ATTACH_TYPE_CGROUP_SOCK_OPS_GUID;
 
+#define EBPF_ATTACH_TYPE_FLOW_CLASSIFY_GUID                                            \
+    {                                                                                  \
+        0x837d02cd, 0x3251, 0x4632, { 0x8d, 0x94, 0x60, 0xd3, 0xb4, 0x57, 0x69, 0xf2 } \
+    }
+    /** @brief Attach type for handling socket event notifications.
+     *
+     * Program type: \ref EBPF_PROGRAM_TYPE_FLOW_CLASSIFY
+     */
+    __declspec(selectany) ebpf_attach_type_t EBPF_ATTACH_TYPE_FLOW_CLASSIFY =
+        EBPF_ATTACH_TYPE_FLOW_CLASSIFY_GUID; // FIXME: copied from above
+
 #define EBPF_ATTACH_TYPE_SAMPLE_GUID                                                   \
     {                                                                                  \
         0xf788ef4b, 0x207d, 0x4dc3, { 0x85, 0xcf, 0x0f, 0x2e, 0xa1, 0x07, 0x21, 0x3c } \
@@ -178,6 +189,18 @@ extern "C"
      * Attach type(s): \ref EBPF_ATTACH_TYPE_CGROUP_SOCK_OPS
      */
     __declspec(selectany) ebpf_program_type_t EBPF_PROGRAM_TYPE_SOCK_OPS = EBPF_PROGRAM_TYPE_SOCK_OPS_GUID;
+
+#define EBPF_PROGRAM_TYPE_FLOW_CLASSIFY_GUID                                           \
+    {                                                                                  \
+        0x43fb224d, 0x68f8, 0x46d6, { 0xaa, 0x3f, 0xc8, 0x56, 0x51, 0x8c, 0xbb, 0x32 } \
+    }
+
+    /** @brief Program type for classifying network flows.
+     *
+     * Attach type(s): \ref EBPF_ATTACH_TYPE_CGROUP_FLOW_CLASSIFY
+     */
+    __declspec(selectany) ebpf_program_type_t EBPF_PROGRAM_TYPE_FLOW_CLASSIFY =
+        EBPF_PROGRAM_TYPE_FLOW_CLASSIFY_GUID; // FIXME: copied from above
 
 #define EBPF_PROGRAM_TYPE_SAMPLE_GUID                                                  \
     {                                                                                  \

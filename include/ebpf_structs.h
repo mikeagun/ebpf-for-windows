@@ -247,6 +247,17 @@ enum bpf_prog_type
      */
     BPF_PROG_TYPE_PROCESS,
 
+    /** @brief Program type for classifying network flows.
+     *
+     * **eBPF program prototype:** \ref flow_classify_hook_t
+     *
+     * **Attach type(s):**
+     *  \ref BPF_CGROUP_FLOW_CLASSIFY
+     *
+     * **Helpers available:** all helpers defined in bpf_helpers.h
+     */
+    BPF_PROG_TYPE_FLOW_CLASSIFY,
+
     /** @brief Program type for handling incoming packets as early as possible.
      *
      * **eBPF program prototype:** \ref xdp_hook_t
@@ -361,6 +372,12 @@ enum bpf_attach_type
      * **Program type:** \ref BPF_PROG_TYPE_PROCESS
      */
     BPF_ATTACH_TYPE_PROCESS,
+
+    /** @brief Attach type for handling various socket event notifications.
+     *
+     * **Program type:** \ref BPF_PROG_TYPE_FLOW_CLASSIFY
+     */
+    BPF_FLOW_CLASSIFY,
 
     __MAX_BPF_ATTACH_TYPE,
 };
