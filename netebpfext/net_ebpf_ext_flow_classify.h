@@ -7,35 +7,80 @@
 
 // Callout GUIDs
 
-// f53b4577-bc47-11ec-9a30-18602489beee
+// Flow established callouts for flow_classify hook
+// a1b2c3d4-5e6f-7890-abcd-ef1234567890
+DEFINE_GUID(
+    EBPF_HOOK_FLOW_CLASSIFY_ALE_FLOW_ESTABLISHED_V4_CALLOUT,
+    0xa1b2c3d4,
+    0x5e6f,
+    0x7890,
+    0xab,
+    0xcd,
+    0xef,
+    0x12,
+    0x34,
+    0x56,
+    0x78,
+    0x90);
+
+// a1b2c3d5-5e6f-7890-abcd-ef1234567890
+DEFINE_GUID(
+    EBPF_HOOK_FLOW_CLASSIFY_ALE_FLOW_ESTABLISHED_V6_CALLOUT,
+    0xa1b2c3d5,
+    0x5e6f,
+    0x7890,
+    0xab,
+    0xcd,
+    0xef,
+    0x12,
+    0x34,
+    0x56,
+    0x78,
+    0x90);
+
+// Stream callouts for flow_classify hook
+// c1ca9d8b-4d72-11ee-be56-0242ac120002
 DEFINE_GUID(
     EBPF_HOOK_STREAM_FLOW_CLASSIFY_V4_CALLOUT,
-    0xf53b4577,
-    0xbc47,
-    0x11ec,
-    0x9a,
-    0x30,
-    0x18,
-    0x60,
-    0x24,
-    0x89,
+    0xc1ca9d8b,
+    0x4d72,
+    0x11ee,
     0xbe,
-    0xee); // FIXME: This is a duplicate of EBPF_HOOK_ALE_FLOW_ESTABLISHED_V4_CALLOUT. Generate new GUID.
+    0x56,
+    0x02,
+    0x42,
+    0xac,
+    0x12,
+    0x00,
+    0x02);
 
-// f53b4578-bc47-11ec-9a30-18602489beee
+// c1ca9f3e-4d72-11ee-be56-0242ac120002
 DEFINE_GUID(
     EBPF_HOOK_STREAM_FLOW_CLASSIFY_V6_CALLOUT,
-    0xf53b4578,
-    0xbc47,
-    0x11ec,
-    0x9a,
-    0x30,
-    0x18,
-    0x60,
-    0x24,
-    0x89,
+    0xc1ca9f3e,
+    0x4d72,
+    0x11ee,
     0xbe,
-    0xee); // FIXME: This is a duplicate of EBPF_HOOK_ALE_FLOW_ESTABLISHED_V6_CALLOUT. Generate new GUID.
+    0x56,
+    0x02,
+    0x42,
+    0xac,
+    0x12,
+    0x00,
+    0x02);
+
+/**
+ * @brief WFP classifyFn callback for EBPF_HOOK_FLOW_CLASSIFY_ALE_FLOW_ESTABLISHED_V4/6_CALLOUT.
+ */
+void
+net_ebpf_extension_flow_classify_flow_established_classify(
+    _In_ const FWPS_INCOMING_VALUES* incoming_fixed_values,
+    _In_ const FWPS_INCOMING_METADATA_VALUES* incoming_metadata_values,
+    _Inout_opt_ void* layer_data,
+    _In_opt_ const void* classify_context,
+    _In_ const FWPS_FILTER* filter,
+    uint64_t flow_context,
+    _Inout_ FWPS_CLASSIFY_OUT* classify_output);
 
 /**
  * @brief WFP classifyFn callback for EBPF_HOOK_STREAM_FLOW_CLASSIFY_V4/6_CALLOUT.

@@ -70,6 +70,7 @@ typedef struct _net_ebpf_ext_wfp_callout_state
     wchar_t* name;
     wchar_t* description;
     FWP_ACTION_TYPE filter_action_type;
+    uint32_t callout_flags;
     uint32_t assigned_callout_id;
 } net_ebpf_ext_wfp_callout_state_t;
 
@@ -84,6 +85,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         L"L2 Outbound",
         L"L2 Outbound Callout for eBPF",
         FWP_ACTION_CALLOUT_TERMINATING,
+        0,
     },
     // EBPF_HOOK_INBOUND_L2
     {
@@ -95,6 +97,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         L"L2 Inbound",
         L"L2 Inbound Callout for eBPF",
         FWP_ACTION_CALLOUT_TERMINATING,
+        0,
     },
     // EBPF_HOOK_ALE_RESOURCE_ALLOC_V4
     {
@@ -106,6 +109,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         L"Resource Allocation v4",
         L"Resource Allocation v4 callout for eBPF",
         FWP_ACTION_CALLOUT_TERMINATING,
+        0,
     },
     // EBPF_HOOK_ALE_RESOURCE_RELEASE_V4
     {
@@ -117,6 +121,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         L"Resource Release v4",
         L"Resource Release v4 callout for eBPF",
         FWP_ACTION_CALLOUT_TERMINATING,
+        0,
     },
     // EBPF_HOOK_ALE_RESOURCE_ALLOC_V6
     {
@@ -128,6 +133,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         L"Resource Allocation v6",
         L"Resource Allocation v6 callout for eBPF",
         FWP_ACTION_CALLOUT_TERMINATING,
+        0,
     },
     // EBPF_HOOK_ALE_RESOURCE_RELEASE_V6
     {
@@ -139,6 +145,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         L"Resource Release eBPF Callout v6",
         L"Resource Release callout for eBPF",
         FWP_ACTION_CALLOUT_TERMINATING,
+        0,
     },
     // EBPF_HOOK_ALE_AUTH_CONNECT_V4
     {
@@ -150,6 +157,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         L"ALE Authorize Connect eBPF Callout v4",
         L"ALE Authorize Connect callout for eBPF",
         FWP_ACTION_CALLOUT_TERMINATING,
+        0,
     },
     // EBPF_HOOK_ALE_AUTH_CONNECT_V6
     {
@@ -161,6 +169,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         L"ALE Authorize Connect eBPF Callout v6",
         L"ALE Authorize Connect callout for eBPF",
         FWP_ACTION_CALLOUT_TERMINATING,
+        0,
     },
     // EBPF_HOOK_ALE_AUTH_RECV_ACCEPT_V4
     {
@@ -172,6 +181,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         L"ALE Authorize Receive or Accept eBPF Callout v4",
         L"ALE Authorize Receive or Accept callout for eBPF",
         FWP_ACTION_CALLOUT_TERMINATING,
+        0,
     },
     // EBPF_HOOK_ALE_AUTH_RECV_ACCEPT_V6
     {
@@ -183,6 +193,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         L"ALE Authorize Receive or Accept eBPF Callout v6",
         L"ALE Authorize Receive or Accept callout for eBPF",
         FWP_ACTION_CALLOUT_TERMINATING,
+        0,
     },
     // EBPF_HOOK_ALE_CONNECT_REDIRECT_V4
     {
@@ -194,6 +205,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         L"ALE Connect Redirect eBPF Callout v4",
         L"ALE Connect Redirect callout for eBPF",
         FWP_ACTION_CALLOUT_TERMINATING,
+        0,
     },
     // EBPF_HOOK_ALE_CONNECT_REDIRECT_V6
     {
@@ -205,6 +217,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         L"ALE Connect Redirect eBPF Callout v6",
         L"ALE Connect Redirect callout for eBPF",
         FWP_ACTION_CALLOUT_TERMINATING,
+        0,
     },
     // EBPF_HOOK_ALE_FLOW_ESTABLISHED_V4
     {
@@ -216,6 +229,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         L"ALE Flow Established Callout v4",
         L"ALE Flow Established callout for eBPF",
         FWP_ACTION_CALLOUT_TERMINATING,
+        0,
     },
     // EBPF_HOOK_ALE_FLOW_ESTABLISHED_V6
     {
@@ -227,6 +241,31 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         L"ALE Flow Established Callout v6",
         L"ALE Flow Established callout for eBPF",
         FWP_ACTION_CALLOUT_TERMINATING,
+        0,
+    },
+    // EBPF_HOOK_FLOW_CLASSIFY_ALE_FLOW_ESTABLISHED_V4
+    {
+        &EBPF_HOOK_FLOW_CLASSIFY_ALE_FLOW_ESTABLISHED_V4_CALLOUT,
+        &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4,
+        net_ebpf_extension_flow_classify_flow_established_classify,
+        net_ebpf_ext_filter_change_notify,
+        net_ebpf_extension_flow_classify_flow_delete,
+        L"Flow Classify ALE Flow Established Callout v4",
+        L"Flow Classify ALE Flow Established callout for eBPF",
+        FWP_ACTION_CALLOUT_TERMINATING,
+        0,
+    },
+    // EBPF_HOOK_FLOW_CLASSIFY_ALE_FLOW_ESTABLISHED_V6
+    {
+        &EBPF_HOOK_FLOW_CLASSIFY_ALE_FLOW_ESTABLISHED_V6_CALLOUT,
+        &FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6,
+        net_ebpf_extension_flow_classify_flow_established_classify,
+        net_ebpf_ext_filter_change_notify,
+        net_ebpf_extension_flow_classify_flow_delete,
+        L"Flow Classify ALE Flow Established Callout v6",
+        L"Flow Classify ALE Flow Established callout for eBPF",
+        FWP_ACTION_CALLOUT_TERMINATING,
+        0,
     },
     // EBPF_HOOK_STREAM_V4
     {
@@ -238,6 +277,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         L"Stream Flow Classify Callout v4",
         L"Stream Flow Classify callout for eBPF",
         FWP_ACTION_CALLOUT_INSPECTION,
+        FWP_CALLOUT_FLAG_CONDITIONAL_ON_FLOW,
     },
     // EBPF_HOOK_STREAM_V6
     {
@@ -249,6 +289,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         L"Stream Flow Classify Callout v6",
         L"Stream Flow Classify callout for eBPF",
         FWP_ACTION_CALLOUT_INSPECTION,
+        FWP_CALLOUT_FLAG_CONDITIONAL_ON_FLOW,
     }};
 
 // WFP globals
