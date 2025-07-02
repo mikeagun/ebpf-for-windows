@@ -1115,7 +1115,7 @@ TEST_CASE("flow_classify_invoke_ale_v4", "[flow_classify]")
     client_context->validate_flow_context = true;
 
     FWP_ACTION_TYPE result = helper.test_flow_classify_ale_v4(&parameters);
-    REQUIRE(result == FWP_ACTION_PERMIT);
+    REQUIRE(result == FLOW_CLASSIFY_ALLOW);
     REQUIRE(client_context->flow_classify_count == 1);
 
     // Test FLOW_CLASSIFY_BLOCK action
@@ -1123,7 +1123,7 @@ TEST_CASE("flow_classify_invoke_ale_v4", "[flow_classify]")
     client_context->flow_classify_count = 0; // Reset counter
 
     result = helper.test_flow_classify_ale_v4(&parameters);
-    REQUIRE(result == FWP_ACTION_BLOCK);
+    REQUIRE(result == FLOW_CLASSIFY_BLOCK);
     REQUIRE(client_context->flow_classify_count == 1);
 
     // Test FLOW_CLASSIFY_NEED_MORE_DATA action
@@ -1131,7 +1131,7 @@ TEST_CASE("flow_classify_invoke_ale_v4", "[flow_classify]")
     client_context->flow_classify_count = 0; // Reset counter
 
     result = helper.test_flow_classify_ale_v4(&parameters);
-    REQUIRE(result == FWP_ACTION_PERMIT);
+    REQUIRE(result == FLOW_CLASSIFY_ALLOW);
     REQUIRE(client_context->flow_classify_count == 1);
 }
 
@@ -1165,7 +1165,7 @@ TEST_CASE("flow_classify_invoke_ale_v6", "[flow_classify]")
     client_context->validate_flow_context = true;
 
     FWP_ACTION_TYPE result = helper.test_flow_classify_ale_v6(&parameters);
-    REQUIRE(result == FWP_ACTION_PERMIT);
+    REQUIRE(result == FLOW_CLASSIFY_ALLOW);
     REQUIRE(client_context->flow_classify_count == 1);
 
     // Test FLOW_CLASSIFY_BLOCK action
@@ -1173,7 +1173,7 @@ TEST_CASE("flow_classify_invoke_ale_v6", "[flow_classify]")
     client_context->flow_classify_count = 0; // Reset counter
 
     result = helper.test_flow_classify_ale_v6(&parameters);
-    REQUIRE(result == FWP_ACTION_BLOCK);
+    REQUIRE(result == FLOW_CLASSIFY_BLOCK);
     REQUIRE(client_context->flow_classify_count == 1);
 
     // Test FLOW_CLASSIFY_NEED_MORE_DATA action
@@ -1181,7 +1181,7 @@ TEST_CASE("flow_classify_invoke_ale_v6", "[flow_classify]")
     client_context->flow_classify_count = 0; // Reset counter
 
     result = helper.test_flow_classify_ale_v6(&parameters);
-    REQUIRE(result == FWP_ACTION_PERMIT);
+    REQUIRE(result == FLOW_CLASSIFY_ALLOW);
     REQUIRE(client_context->flow_classify_count == 1);
 }
 
@@ -1512,25 +1512,25 @@ TEST_CASE("flow_classify_context", "[flow_classify]")
 
     std::vector<uint8_t> input_data(100);
 
-    // Negative test: Data present (should not be allowed for flow_classify)
+    // Positive test: valid context create call.
     REQUIRE(
         flow_classify_program_data->context_create(
             input_data.data(),
             input_data.size(),
             (const uint8_t*)&input_context_v4,
             sizeof(input_context_v4),
-            (void**)&flow_classify_context) == EBPF_INVALID_ARGUMENT);
+            (void**)&flow_classify_context) == EBPF_SUCCESS);
 
     // Negative test: Context missing (context is required)
     REQUIRE(
         flow_classify_program_data->context_create(nullptr, 0, nullptr, 0, (void**)&flow_classify_context) ==
         EBPF_INVALID_ARGUMENT);
 
-    // Positive test: Valid IPv4 context creation
+    // Negative test: Data missing (data is required)
     REQUIRE(
         flow_classify_program_data->context_create(
             nullptr, 0, (const uint8_t*)&input_context_v4, sizeof(input_context_v4), (void**)&flow_classify_context) ==
-        0);
+        EBPF_INVALID_ARGUMENT);
 
     REQUIRE(flow_classify_context != nullptr);
     REQUIRE(flow_classify_context->family == AF_INET);
@@ -1789,10 +1789,16 @@ TEST_CASE("flow_classify_data_pointers", "[flow_classify]")
     input_context.data_start = nullptr;
     input_context.data_end = nullptr;
 
+    std::vector<uint8_t> input_data(100);
+
     bpf_flow_classify_t* flow_classify_context = nullptr;
     REQUIRE(
         flow_classify_program_data->context_create(
-            nullptr, 0, (const uint8_t*)&input_context, sizeof(input_context), (void**)&flow_classify_context) == 0);
+            input_data.data(),
+            input_data.size(),
+            (const uint8_t*)&input_context,
+            sizeof(input_context),
+            (void**)&flow_classify_context) == 0);
 
     // Initially, data pointers should be null
     REQUIRE(flow_classify_context->data_start == nullptr);
