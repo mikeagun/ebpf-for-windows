@@ -144,7 +144,7 @@ static net_ebpf_extension_program_info_provider_t* _ebpf_flow_classify_program_i
 //
 
 ebpf_attach_provider_data_t _net_ebpf_flow_classify_hook_provider_data = {
-    EBPF_ATTACH_PROVIDER_DATA_HEADER, EBPF_PROGRAM_TYPE_FLOW_CLASSIFY_GUID, BPF_FLOW_CLASSIFY, BPF_LINK_TYPE_CGROUP};
+    EBPF_ATTACH_PROVIDER_DATA_HEADER, EBPF_PROGRAM_TYPE_FLOW_CLASSIFY_GUID, BPF_FLOW_CLASSIFY, BPF_LINK_TYPE_PLAIN};
 
 NPI_MODULEID DECLSPEC_SELECTANY _ebpf_flow_classify_hook_provider_moduleid = {
     sizeof(NPI_MODULEID), MIT_GUID, EBPF_ATTACH_TYPE_FLOW_CLASSIFY_GUID};
