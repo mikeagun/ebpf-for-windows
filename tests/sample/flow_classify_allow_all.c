@@ -9,6 +9,10 @@ SEC("flow_classify")
 int
 flow_classify_allow_all(bpf_flow_classify_t* ctx)
 {
+    bpf_printk("flow_classify_allow_all\n");
+    bpf_printk("family: %d, local_ip4: %d, remote_ip4: %d", ctx->family, ctx->local_ip4, ctx->remote_ip4);
+    bpf_printk("local_port: %d, remote_port: %d", ctx->local_port, ctx->remote_port);
+    bpf_printk("data_length: %d", (uint32_t)(ctx->data_end - ctx->data_start));
     // Allow all flows immediately
     return FLOW_CLASSIFY_ALLOW;
 }

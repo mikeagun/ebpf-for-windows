@@ -131,7 +131,8 @@ _base_socket::get_received_message(_Out_ uint32_t& message_size, _Outref_result_
 _client_socket::_client_socket(
     int _sock_type, int _protocol, uint16_t _port, socket_family_t _family, const sockaddr_storage& _source_address)
     : _base_socket{_sock_type, _protocol, _port, _family, _source_address}, overlapped{}, receive_posted(false)
-{}
+{
+}
 
 void
 _client_socket::close()
@@ -250,7 +251,7 @@ _datagram_client_socket::send_message_to_remote_host(
     }
 
     // Send a message to the remote host using the sender socket.
-    std::vector<char> send_buffer(message, message + strlen(message));
+    std::vector<char> send_buffer(message, message + static_cast<size_t>(strlen(message)));
     WSABUF wsa_send_buffer{static_cast<unsigned long>(send_buffer.size()), reinterpret_cast<char*>(send_buffer.data())};
     uint32_t bytes_sent = 0;
     uint32_t send_flags = 0;
@@ -272,7 +273,8 @@ _datagram_client_socket::send_message_to_remote_host(
 
 void
 _datagram_client_socket::cancel_send_message()
-{}
+{
+}
 
 void
 _datagram_client_socket::complete_async_send(int timeout_in_ms, expected_result_t expected_result)
@@ -313,7 +315,7 @@ _stream_client_socket::send_message_to_remote_host(
 {
     // Send a message to the remote host using the sender socket.
     ((PSOCKADDR_IN6)&remote_address)->sin6_port = htons(remote_port);
-    std::vector<char> send_buffer(message, message + strlen(message));
+    std::vector<char> send_buffer(message, message + static_cast<size_t>(strlen(message)));
     uint32_t bytes_sent = 0;
     overlapped.hEvent = WSACreateEvent();
     if (!connectex(
@@ -510,7 +512,7 @@ _datagram_server_socket::send_async_response(_In_z_ const char* message)
     int error = 0;
 
     // Send a response to the sender.
-    std::vector<char> send_buffer(message, message + strlen(message));
+    std::vector<char> send_buffer(message, message + static_cast<size_t>(strlen(message)));
     WSABUF wsa_send_buffer{static_cast<unsigned long>(send_buffer.size()), reinterpret_cast<char*>(send_buffer.data())};
     uint32_t bytes_sent = 0;
     uint32_t send_flags = 0;
@@ -645,7 +647,7 @@ void
 _stream_server_socket::send_async_response(_In_z_ const char* message)
 {
     // Send a message to the remote host using the sender socket.
-    std::vector<char> send_buffer(message, message + strlen(message));
+    std::vector<char> send_buffer(message, message + static_cast<size_t>(strlen(message)));
     WSABUF wsa_send_buffer{static_cast<unsigned long>(send_buffer.size()), reinterpret_cast<char*>(send_buffer.data())};
     uint32_t bytes_sent = 0;
     overlapped.hEvent = WSACreateEvent();
