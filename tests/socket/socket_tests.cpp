@@ -1064,7 +1064,7 @@ test_multi_attach_combined(socket_family_t family, ADDRESS_FAMILY address_family
 
     const char* connect_program_name = (address_family == AF_INET) ? "connect_redirect4" : "connect_redirect6";
 
-    // Attach all the programs.
+    // Attach all the programs to the same hook (i.e. same attach parameters).
     for (uint32_t i = 0; i < program_count_per_hook * 2; i++) {
         bpf_program* connect_program = bpf_object__find_program_by_name(objects[i], connect_program_name);
         SAFE_REQUIRE(connect_program != nullptr);
@@ -1687,6 +1687,169 @@ TEST_CASE("multi_attach_concurrency_test2", "[multi_attach_tests][concurrent_tes
     }
 
     SAFE_REQUIRE(!failed);
+}
+
+// Flow classify tests
+TEST_CASE("flow_classify_prog_test_run", "[flow_classify_tests]")
+{
+    native_module_helper_t helper;
+    helper.initialize("flow_classify_allow_all", _is_main_thread);
+
+    struct bpf_object* object = bpf_object__open(helper.get_file_name().c_str());
+    bpf_object_ptr object_ptr(object);
+
+    SAFE_REQUIRE(object != nullptr);
+    SAFE_REQUIRE(bpf_object__load(object) == 0);
+
+    bpf_program* program = bpf_object__find_program_by_name(object, "flow_classify_allow_all");
+    SAFE_REQUIRE(program != nullptr);
+
+    int program_fd = bpf_program__fd(program);
+    SAFE_REQUIRE(program_fd > 0);
+
+    // Test with IPv4 TCP context
+    bpf_flow_classify_t ctx = {};
+    ctx.family = AF_INET;
+    ctx.local_ip4 = htonl(0x7f000001); // 127.0.0.1
+    ctx.local_port = htons(8080);
+    ctx.remote_ip4 = htonl(0x7f000001); // 127.0.0.1
+    ctx.remote_port = htons(12345);
+    ctx.protocol = IPPROTO_TCP;
+    ctx.compartment_id = UNSPECIFIED_COMPARTMENT_ID;
+    ctx.interface_luid = 0;
+    ctx.direction = FLOW_DIRECTION_INBOUND;
+    ctx.flow_id = 12345;
+
+    // Create some dummy data for stream inspection
+    std::vector<uint8_t> data = {0x48, 0x54, 0x54, 0x50}; // "HTTP"
+    ctx.data_start = data.data();
+    ctx.data_end = data.data() + data.size();
+
+    bpf_test_run_opts opts = {};
+    opts.ctx_in = &ctx;
+    opts.ctx_size_in = sizeof(ctx);
+    opts.ctx_out = &ctx;
+    opts.ctx_size_out = sizeof(ctx);
+    opts.data_in = data.data();
+    opts.data_size_in = static_cast<uint32_t>(data.size());
+    opts.data_out = data.data();
+    opts.data_size_out = static_cast<uint32_t>(data.size());
+
+    int result = bpf_prog_test_run_opts(program_fd, &opts);
+    SAFE_REQUIRE(result == 0);
+    SAFE_REQUIRE(opts.retval == FLOW_CLASSIFY_ALLOW);
+
+    // Test flow_classify_block_all program
+    native_module_helper_t block_helper;
+    block_helper.initialize("flow_classify_block_all", _is_main_thread);
+
+    struct bpf_object* block_object = bpf_object__open(block_helper.get_file_name().c_str());
+    bpf_object_ptr block_object_ptr(block_object);
+
+    SAFE_REQUIRE(block_object != nullptr);
+    SAFE_REQUIRE(bpf_object__load(block_object) == 0);
+
+    bpf_program* block_program = bpf_object__find_program_by_name(block_object, "flow_classify_block_all");
+    SAFE_REQUIRE(block_program != nullptr);
+
+    int block_program_fd = bpf_program__fd(block_program);
+    SAFE_REQUIRE(block_program_fd > 0);
+
+    // Test with IPv6 UDP context
+    bpf_flow_classify_t ctx_v6 = {};
+    ctx_v6.family = AF_INET6;
+    // IPv6 loopback: ::1
+    ctx_v6.local_ip6[0] = 0;
+    ctx_v6.local_ip6[1] = 0;
+    ctx_v6.local_ip6[2] = 0;
+    ctx_v6.local_ip6[3] = htonl(1);
+    ctx_v6.local_port = htons(53);
+    ctx_v6.remote_ip6[0] = 0;
+    ctx_v6.remote_ip6[1] = 0;
+    ctx_v6.remote_ip6[2] = 0;
+    ctx_v6.remote_ip6[3] = htonl(1);
+    ctx_v6.remote_port = htons(54321);
+    ctx_v6.protocol = IPPROTO_UDP;
+    ctx_v6.compartment_id = DEFAULT_COMPARTMENT_ID;
+    ctx_v6.interface_luid = 999;
+    ctx_v6.direction = FLOW_DIRECTION_OUTBOUND;
+    ctx_v6.flow_id = 67890;
+    ctx_v6.data_start = nullptr;
+    ctx_v6.data_end = nullptr;
+
+    bpf_test_run_opts block_opts = {};
+    block_opts.ctx_in = &ctx_v6;
+    block_opts.ctx_size_in = sizeof(ctx_v6);
+    block_opts.ctx_out = &ctx_v6;
+    block_opts.ctx_size_out = sizeof(ctx_v6);
+
+    result = bpf_prog_test_run_opts(block_program_fd, &block_opts);
+    SAFE_REQUIRE(result == 0);
+    SAFE_REQUIRE(block_opts.retval == FLOW_CLASSIFY_BLOCK);
+}
+
+TEST_CASE("flow_classify_tcp_connection_tests", "[flow_classify_tests]")
+{
+    // TODO: Test TCP connection establishment triggers ALE flow_established
+    // TODO: Test TCP data transmission triggers stream layer classification
+    // TODO: Test various program return values affect connection behavior
+    // TODO: Test both IPv4 and IPv6 scenarios
+    // TODO: Test different compartments if supported
+    UNREFERENCED_PARAMETER(0);
+}
+
+TEST_CASE("flow_classify_attach_detach", "[flow_classify_tests]")
+{
+    // TODO: Test program attach with bpf_prog_attach() and BPF_FLOW_CLASSIFY
+    // TODO: Test program detach
+    // TODO: Test multiple attach attempts (should fail - single attach per hook)
+    // TODO: Test attach with different compartment IDs
+    UNREFERENCED_PARAMETER(0);
+}
+
+TEST_CASE("flow_classify_allow_all_test", "[flow_classify_tests]")
+{
+    // TODO: Load flow_classify_allow_all.c program and test that all connections are allowed
+    UNREFERENCED_PARAMETER(0);
+}
+
+TEST_CASE("flow_classify_block_all_test", "[flow_classify_tests]")
+{
+    // TODO: Load flow_classify_block_all.c program and test that all connections are blocked
+    UNREFERENCED_PARAMETER(0);
+}
+
+TEST_CASE("flow_classify_need_more_data_test", "[flow_classify_tests]")
+{
+    // TODO: Load flow_classify_need_more_data.c program and test continuous classification
+    UNREFERENCED_PARAMETER(0);
+}
+
+TEST_CASE("flow_classify_conditional_test", "[flow_classify_tests]")
+{
+    // TODO: Load flow_classify_conditional.c program and test port-based filtering
+    // TODO: Test blocking HTTP/HTTPS connections
+    // TODO: Test allowing SSH connections
+    // TODO: Test need more data for other ports
+    UNREFERENCED_PARAMETER(0);
+}
+
+TEST_CASE("flow_classify_performance_test", "[flow_classify_tests]")
+{
+    // TODO: Test performance impact of flow classification on TCP throughput
+    // TODO: Test memory usage with many concurrent flows
+    // TODO: Test with high-frequency short connections
+    // TODO: Compare performance vs baseline (no eBPF program attached)
+    UNREFERENCED_PARAMETER(0);
+}
+
+TEST_CASE("flow_classify_error_conditions_socket", "[flow_classify_tests]")
+{
+    // TODO: Test behavior when flow context allocation fails
+    // TODO: Test behavior when eBPF program execution fails
+    // TODO: Test behavior with malformed connection data
+    // TODO: Test cleanup when connections are aborted
+    UNREFERENCED_PARAMETER(0);
 }
 
 int

@@ -86,6 +86,30 @@ typedef class _netebpf_ext_helper
     FWP_ACTION_TYPE
     test_sock_ops_v6(_In_ fwp_classify_parameters_t* parameters) { return usersim_fwp_sock_ops_v6(parameters); }
 
+    FWP_ACTION_TYPE
+    test_flow_classify_ale_v4(_In_ fwp_classify_parameters_t* parameters)
+    {
+        return usersim_fwp_flow_classify_ale_v4(parameters);
+    }
+
+    FWP_ACTION_TYPE
+    test_flow_classify_ale_v6(_In_ fwp_classify_parameters_t* parameters)
+    {
+        return usersim_fwp_flow_classify_ale_v6(parameters);
+    }
+
+    FWP_ACTION_TYPE
+    test_flow_classify_stream_v4(_In_ fwp_classify_parameters_t* parameters)
+    {
+        return usersim_fwp_flow_classify_stream_v4(parameters);
+    }
+
+    FWP_ACTION_TYPE
+    test_flow_classify_stream_v6(_In_ fwp_classify_parameters_t* parameters)
+    {
+        return usersim_fwp_flow_classify_stream_v6(parameters);
+    }
+
   private:
     bool trace_initiated = false;
     bool ndis_handle_initialized = false;

@@ -36,7 +36,7 @@ DEFINE_GUID(
     0x34,
     0x56,
     0x78,
-    0x90);
+    0x91);
 
 // Stream callouts for flow_classify hook
 // c1ca9d8b-4d72-11ee-be56-0242ac120002
@@ -67,7 +67,7 @@ DEFINE_GUID(
     0xac,
     0x12,
     0x00,
-    0x02);
+    0x03);
 
 /**
  * @brief WFP classifyFn callback for EBPF_HOOK_FLOW_CLASSIFY_ALE_FLOW_ESTABLISHED_V4/6_CALLOUT.

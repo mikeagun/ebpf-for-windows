@@ -95,7 +95,7 @@ extern "C"
 
 #define EBPF_ATTACH_TYPE_FLOW_CLASSIFY_GUID                                            \
     {                                                                                  \
-        0x837d02cd, 0x3251, 0x4632, { 0x8d, 0x94, 0x60, 0xd3, 0xb4, 0x57, 0x69, 0xf2 } \
+        0x837d02cd, 0x3251, 0x4632, { 0x8d, 0x94, 0x60, 0xd3, 0xb4, 0x57, 0x69, 0xf3 } \
     }
     /** @brief Attach type for handling socket event notifications.
      *
@@ -192,7 +192,7 @@ extern "C"
 
 #define EBPF_PROGRAM_TYPE_FLOW_CLASSIFY_GUID                                           \
     {                                                                                  \
-        0x43fb224d, 0x68f8, 0x46d6, { 0xaa, 0x3f, 0xc8, 0x56, 0x51, 0x8c, 0xbb, 0x32 } \
+        0x43fb224d, 0x68f8, 0x46d6, { 0xaa, 0x3f, 0xc8, 0x56, 0x51, 0x8c, 0xbb, 0x33 } \
     }
 
     /** @brief Program type for classifying network flows.

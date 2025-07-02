@@ -493,7 +493,7 @@ _net_ebpf_extension_flow_classify_copy_wfp_stream_fields(
         flow_classify->family = AF_INET;
         flow_classify->local_ip4 = htonl(incoming_values[fields->local_ip_address_field].value.uint32);
         flow_classify->remote_ip4 = htonl(incoming_values[fields->remote_ip_address_field].value.uint32);
-    } else {
+    } else if (hook_id == EBPF_HOOK_STREAM_V6) {
         flow_classify->family = AF_INET6;
         RtlCopyMemory(
             flow_classify->local_ip6,
@@ -503,6 +503,10 @@ _net_ebpf_extension_flow_classify_copy_wfp_stream_fields(
             flow_classify->remote_ip6,
             incoming_values[fields->remote_ip_address_field].value.byteArray16,
             sizeof(FWP_BYTE_ARRAY16));
+    } else {
+        NET_EBPF_EXT_LOG_MESSAGE_UINT64(
+            NET_EBPF_EXT_TRACELOG_LEVEL_ERROR, NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY, "Invalid hook_id", hook_id);
+        return;
     }
 
     flow_classify->local_port = htons(incoming_values[fields->local_port_field].value.uint16);
@@ -959,7 +963,7 @@ net_ebpf_extension_flow_classify_flow_established_classify(
     // Set up flow parameters for the stream layer
     local_flow_context->parameters.flow_id = incoming_metadata_values->flowHandle;
     local_flow_context->parameters.layer_id =
-        (hook_id == EBPF_HOOK_ALE_FLOW_ESTABLISHED_V4) ? FWPS_LAYER_STREAM_V4 : FWPS_LAYER_STREAM_V6;
+        (uint16_t)((hook_id == EBPF_HOOK_ALE_FLOW_ESTABLISHED_V4) ? FWPS_LAYER_STREAM_V4 : FWPS_LAYER_STREAM_V6);
     local_flow_context->parameters.callout_id = (hook_id == EBPF_HOOK_ALE_FLOW_ESTABLISHED_V4)
                                                     ? net_ebpf_extension_get_callout_id_for_hook(EBPF_HOOK_STREAM_V4)
                                                     : net_ebpf_extension_get_callout_id_for_hook(EBPF_HOOK_STREAM_V6);

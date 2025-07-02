@@ -6,6 +6,7 @@
 #include "catch_wrapper.hpp"
 #include "cxplat_fault_injection.h"
 #include "cxplat_passed_test_log.h"
+#include "ebpf_nethooks.h"
 #include "netebpf_ext_helper.h"
 #include "watchdog.h"
 
@@ -47,9 +48,10 @@ TEST_CASE("query program info", "[netebpfext]")
     std::vector<GUID> expected_guids = {
         EBPF_PROGRAM_TYPE_CGROUP_SOCK_ADDR,
         EBPF_PROGRAM_TYPE_SOCK_OPS,
+        EBPF_PROGRAM_TYPE_FLOW_CLASSIFY,
         EBPF_PROGRAM_TYPE_BIND,
         EBPF_PROGRAM_TYPE_XDP_TEST};
-    std::vector<std::string> expected_program_names = {"sock_addr", "sockops", "bind", "xdp_test"};
+    std::vector<std::string> expected_program_names = {"sock_addr", "sockops", "flow_classify", "bind", "xdp_test"};
 
     auto guid_less = [](const GUID& lhs, const GUID& rhs) { return memcmp(&lhs, &rhs, sizeof(lhs)) < 0; };
 
@@ -1025,3 +1027,308 @@ TEST_CASE("sock_ops_context", "[netebpfext]")
     REQUIRE(output_context.interface_luid == 0x1234567890abcdee);
 }
 #pragma endregion sock_ops
+
+#pragma region flow_classify
+
+typedef struct test_flow_classify_client_context_t
+{
+    netebpfext_helper_base_client_context_t base;
+    uint32_t flow_classify_action;
+} test_flow_classify_client_context_t;
+
+typedef struct test_flow_classify_client_context_header_t
+{
+    EBPF_CONTEXT_HEADER;
+    test_flow_classify_client_context_t context;
+} test_flow_classify_client_context_header_t;
+
+_Must_inspect_result_ ebpf_result_t
+netebpfext_unit_invoke_flow_classify_program(
+    _In_ const void* client_binding_context, _In_ const void* context, _Out_ uint32_t* result)
+{
+    UNREFERENCED_PARAMETER(context);
+    auto client_context = (test_flow_classify_client_context_t*)client_binding_context;
+    *result = client_context->flow_classify_action;
+    return EBPF_SUCCESS;
+}
+
+TEST_CASE("flow_classify_provider_registration", "[netebpfext]")
+{
+    // TODO: Test flow_classify provider registration and unregistration
+    // This test should verify that flow_classify providers register successfully
+    // and clean up properly on unregistration
+    UNREFERENCED_PARAMETER(0);
+}
+
+TEST_CASE("flow_classify_invoke_ale", "[netebpfext]")
+{
+    ebpf_extension_data_t npi_specific_characteristics = {
+        .header = EBPF_ATTACH_CLIENT_DATA_HEADER_VERSION,
+    };
+    test_flow_classify_client_context_header_t client_context_header = {0};
+    test_flow_classify_client_context_t* client_context = &client_context_header.context;
+    fwp_classify_parameters_t parameters = {};
+
+    netebpf_ext_helper_t helper(
+        &npi_specific_characteristics,
+        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_classify_program,
+        (netebpfext_helper_base_client_context_t*)client_context);
+
+    netebpfext_initialize_fwp_classify_parameters(&parameters);
+
+    // Test FLOW_CLASSIFY_ALLOW action
+    client_context->flow_classify_action = FLOW_CLASSIFY_ALLOW;
+
+    FWP_ACTION_TYPE result = helper.test_flow_classify_ale_v4(&parameters);
+    REQUIRE(result == FWP_ACTION_PERMIT);
+
+    result = helper.test_flow_classify_ale_v6(&parameters);
+    REQUIRE(result == FWP_ACTION_PERMIT);
+
+    // Test FLOW_CLASSIFY_BLOCK action
+    client_context->flow_classify_action = FLOW_CLASSIFY_BLOCK;
+
+    result = helper.test_flow_classify_ale_v4(&parameters);
+    REQUIRE(result == FWP_ACTION_BLOCK);
+
+    result = helper.test_flow_classify_ale_v6(&parameters);
+    REQUIRE(result == FWP_ACTION_BLOCK);
+
+    // Test FLOW_CLASSIFY_NEED_MORE_DATA action
+    client_context->flow_classify_action = FLOW_CLASSIFY_NEED_MORE_DATA;
+
+    result = helper.test_flow_classify_ale_v4(&parameters);
+    REQUIRE(result == FWP_ACTION_PERMIT);
+
+    result = helper.test_flow_classify_ale_v6(&parameters);
+    REQUIRE(result == FWP_ACTION_PERMIT);
+}
+
+TEST_CASE("flow_classify_invoke_stream", "[netebpfext]")
+{
+    ebpf_extension_data_t npi_specific_characteristics = {
+        .header = EBPF_ATTACH_CLIENT_DATA_HEADER_VERSION,
+    };
+    test_flow_classify_client_context_header_t client_context_header = {0};
+    test_flow_classify_client_context_t* client_context = &client_context_header.context;
+    fwp_classify_parameters_t parameters = {};
+
+    netebpf_ext_helper_t helper(
+        &npi_specific_characteristics,
+        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_classify_program,
+        (netebpfext_helper_base_client_context_t*)client_context);
+
+    netebpfext_initialize_fwp_classify_parameters(&parameters);
+
+    // Test FLOW_CLASSIFY_ALLOW action on stream layer
+    client_context->flow_classify_action = FLOW_CLASSIFY_ALLOW;
+
+    FWP_ACTION_TYPE result = helper.test_flow_classify_stream_v4(&parameters);
+    REQUIRE(result == FWP_ACTION_PERMIT);
+
+    result = helper.test_flow_classify_stream_v6(&parameters);
+    REQUIRE(result == FWP_ACTION_PERMIT);
+
+    // Test FLOW_CLASSIFY_BLOCK action on stream layer
+    client_context->flow_classify_action = FLOW_CLASSIFY_BLOCK;
+
+    result = helper.test_flow_classify_stream_v4(&parameters);
+    REQUIRE(result == FWP_ACTION_BLOCK);
+
+    result = helper.test_flow_classify_stream_v6(&parameters);
+    REQUIRE(result == FWP_ACTION_BLOCK);
+
+    // Test FLOW_CLASSIFY_NEED_MORE_DATA action on stream layer
+    client_context->flow_classify_action = FLOW_CLASSIFY_NEED_MORE_DATA;
+
+    result = helper.test_flow_classify_stream_v4(&parameters);
+    REQUIRE(result == FWP_ACTION_PERMIT);
+
+    result = helper.test_flow_classify_stream_v6(&parameters);
+    REQUIRE(result == FWP_ACTION_PERMIT);
+}
+
+TEST_CASE("flow_classify_context", "[netebpfext]")
+{
+    netebpf_ext_helper_t helper;
+    auto flow_classify_program_data = helper.get_program_info_provider_data(EBPF_PROGRAM_TYPE_FLOW_CLASSIFY);
+    REQUIRE(flow_classify_program_data != nullptr);
+
+    size_t output_data_size = 0;
+    bpf_flow_classify_t input_context = {
+        AF_INET,            // family - address family (IPv4/IPv6)
+        0x12345678,         // local_ip4 - local IPv4 address
+        0x1234,             // local_port - local port number
+        0x90abcdef,         // remote_ip4 - remote IPv4 address
+        0x5678,             // remote_port - remote port number
+        IPPROTO_TCP,        // protocol - IP protocol (TCP/UDP)
+        0x12345678,         // compartment_id - network compartment ID
+        0x1234567890abcdef, // interface_luid - network interface LUID
+        1,                  // direction - flow direction (0=inbound, 1=outbound)
+        0x1111222233334444, // flow_id - unique flow identifier
+        nullptr,            // data_start - start of packet data
+        nullptr,            // data_end - end of packet data
+    };
+    size_t output_context_size = sizeof(bpf_flow_classify_t);
+    bpf_flow_classify_t output_context = {};
+    bpf_flow_classify_t* flow_classify_context = nullptr;
+
+    std::vector<uint8_t> input_data(100);
+
+    // Negative test: Data present
+    REQUIRE(
+        flow_classify_program_data->context_create(
+            input_data.data(),
+            input_data.size(),
+            (const uint8_t*)&input_context,
+            sizeof(input_context),
+            (void**)&flow_classify_context) == EBPF_INVALID_ARGUMENT);
+
+    // Negative test: Context missing
+    REQUIRE(
+        flow_classify_program_data->context_create(nullptr, 0, nullptr, 0, (void**)&flow_classify_context) ==
+        EBPF_INVALID_ARGUMENT);
+
+    // Positive test: Valid context creation
+    REQUIRE(
+        flow_classify_program_data->context_create(
+            nullptr, 0, (const uint8_t*)&input_context, sizeof(input_context), (void**)&flow_classify_context) == 0);
+
+    REQUIRE(flow_classify_context != nullptr);
+    REQUIRE(flow_classify_context->family == AF_INET);
+    REQUIRE(flow_classify_context->local_ip4 == 0x12345678);
+    REQUIRE(flow_classify_context->local_port == 0x1234);
+    REQUIRE(flow_classify_context->remote_ip4 == 0x90abcdef);
+    REQUIRE(flow_classify_context->remote_port == 0x5678);
+    REQUIRE(flow_classify_context->protocol == IPPROTO_TCP);
+    REQUIRE(flow_classify_context->compartment_id == 0x12345678);
+    REQUIRE(flow_classify_context->interface_luid == 0x1234567890abcdef);
+    REQUIRE(flow_classify_context->direction == 1);
+    REQUIRE(flow_classify_context->flow_id == 0x1111222233334444);
+
+    // Modify the context
+    flow_classify_context->family = AF_INET6;
+    flow_classify_context->local_ip4++;
+    flow_classify_context->local_port--;
+    flow_classify_context->remote_ip4++;
+    flow_classify_context->remote_port--;
+    flow_classify_context->protocol = IPPROTO_UDP;
+    flow_classify_context->compartment_id++;
+    flow_classify_context->interface_luid--;
+    flow_classify_context->direction = 0;
+    flow_classify_context->flow_id++;
+
+    flow_classify_program_data->context_destroy(
+        flow_classify_context, nullptr, &output_data_size, (uint8_t*)&output_context, &output_context_size);
+
+    REQUIRE(output_data_size == 0);
+    REQUIRE(output_context_size == sizeof(bpf_flow_classify_t));
+    REQUIRE(output_context.family == AF_INET6);
+    REQUIRE(output_context.local_ip4 == 0x12345679);
+    REQUIRE(output_context.local_port == 0x1233);
+    REQUIRE(output_context.remote_ip4 == 0x90abcdf0);
+    REQUIRE(output_context.remote_port == 0x5677);
+    REQUIRE(output_context.protocol == IPPROTO_UDP);
+    REQUIRE(output_context.compartment_id == 0x12345679);
+    REQUIRE(output_context.interface_luid == 0x1234567890abcdee);
+    REQUIRE(output_context.direction == 0);
+    REQUIRE(output_context.flow_id == 0x1111222233334445);
+}
+
+TEST_CASE("flow_classify_wfp_field_copying", "[netebpfext]")
+{
+    // TODO: Test _net_ebpf_extension_flow_classify_copy_wfp_connection_fields function
+    // This test should verify correct copying of WFP fields from ALE layer to flow_classify context
+    // - Test IPv4 and IPv6 address copying
+    // - Test port, protocol, compartment ID, interface LUID copying
+    // - Test direction mapping (inbound/outbound)
+    // - Test process ID handling when present/missing
+    UNREFERENCED_PARAMETER(0);
+}
+
+TEST_CASE("flow_classify_stream_field_updates", "[netebpfext]")
+{
+    // TODO: Test stream callback field updates
+    // This test should verify that stream callback only updates appropriate fields
+    // - Test that connection fields established at ALE layer remain unchanged
+    // - Test flow_id, process_id, data pointer updates
+    // - Test stream data pointer handling
+    UNREFERENCED_PARAMETER(0);
+}
+
+TEST_CASE("flow_classify_flow_context_lifecycle", "[netebpfext]")
+{
+    // TODO: Test flow context lifecycle management
+    // This test should verify:
+    // - Flow context creation in ALE flow_established callback
+    // - Flow context association with stream layer callout
+    // - Flow context cleanup on various scenarios (ALLOW, BLOCK, error conditions)
+    // - Proper reference counting and memory management
+    UNREFERENCED_PARAMETER(0);
+}
+
+TEST_CASE("flow_classify_callout_registration", "[netebpfext]")
+{
+    // TODO: Test WFP callout registration
+    // This test should verify:
+    // - All 4 callouts register properly (ALE v4/v6, Stream v4/v6)
+    // - Proper callout flags (FWP_CALLOUT_FLAG_CONDITIONAL_ON_FLOW for stream)
+    // - Proper action types (FWP_ACTION_CALLOUT_TERMINATING vs FWP_ACTION_CALLOUT_INSPECTION)
+    UNREFERENCED_PARAMETER(0);
+}
+
+TEST_CASE("flow_classify_filter_context_management", "[netebpfext]")
+{
+    // TODO: Test filter context management
+    // This test should verify:
+    // - Filter context creation with compartment ID conditions
+    // - Filter context deletion and cleanup
+    // - Client context addition/removal
+    // - Wildcard vs specific compartment ID scenarios
+    UNREFERENCED_PARAMETER(0);
+}
+
+TEST_CASE("flow_classify_program_decisions", "[netebpfext]")
+{
+    // TODO: Test program decision handling
+    // This test should verify behavior for each return value:
+    // - FLOW_CLASSIFY_ALLOW: FWP_ACTION_PERMIT, WFP context removed
+    // - FLOW_CLASSIFY_BLOCK: FWP_ACTION_BLOCK, WFP context removed
+    // - FLOW_CLASSIFY_NEED_MORE_DATA: FWP_ACTION_PERMIT, WFP context remains
+    UNREFERENCED_PARAMETER(0);
+}
+
+TEST_CASE("flow_classify_error_conditions", "[netebpfext]")
+{
+    // TODO: Test error condition handling
+    // This test should verify behavior when:
+    // - FwpsFlowAssociateContext fails
+    // - FwpsFlowRemoveContext fails
+    // - eBPF program execution fails
+    // - Malformed WFP data is received
+    // - Driver unloads with active flows
+    UNREFERENCED_PARAMETER(0);
+}
+
+TEST_CASE("flow_classify_non_tcp_protocols", "[netebpfext]")
+{
+    // TODO: Test non-TCP protocol handling
+    // This test should verify:
+    // - UDP flows don't trigger flow_classify (TCP-only)
+    // - Other protocols (ICMP, etc.) don't trigger flow_classify
+    // - Error handling for unexpected protocols
+    UNREFERENCED_PARAMETER(0);
+}
+
+TEST_CASE("flow_classify_compartment_interface", "[netebpfext]")
+{
+    // TODO: Test compartment and interface handling
+    // This test should verify:
+    // - Compartment ID filtering works correctly
+    // - Interface LUID handling
+    // - Multiple network interfaces scenarios
+    // - Network namespace scenarios
+    UNREFERENCED_PARAMETER(0);
+}
+
+#pragma endregion flow_classify
