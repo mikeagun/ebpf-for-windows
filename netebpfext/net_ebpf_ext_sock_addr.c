@@ -2129,10 +2129,10 @@ _ebpf_sock_addr_context_create(
 
     *context = NULL;
 
-    // This does not use the data_in parameters.
-    if (data_size_in != 0 || data_in != NULL) {
+    // Data is mandatory.
+    if (data_in == NULL || data_size_in == 0) {
         NET_EBPF_EXT_LOG_MESSAGE(
-            NET_EBPF_EXT_TRACELOG_LEVEL_ERROR, NET_EBPF_EXT_TRACELOG_KEYWORD_SOCK_ADDR, "Data is not supported");
+            NET_EBPF_EXT_TRACELOG_LEVEL_ERROR, NET_EBPF_EXT_TRACELOG_KEYWORD_XDP, "Data is required");
         result = EBPF_INVALID_ARGUMENT;
         goto Exit;
     }

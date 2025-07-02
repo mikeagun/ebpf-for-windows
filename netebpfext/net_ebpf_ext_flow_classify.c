@@ -801,8 +801,8 @@ _ebpf_flow_classify_context_create(
 
     *context = NULL;
 
-    // This provider doesn't support data.
-    if (data_in != NULL || data_size_in != 0) {
+    // This provider requires data.
+    if (data_in == NULL || data_size_in == 0) {
         NET_EBPF_EXT_LOG_MESSAGE(
             NET_EBPF_EXT_TRACELOG_LEVEL_ERROR, NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY, "Data is not supported");
         result = EBPF_INVALID_ARGUMENT;

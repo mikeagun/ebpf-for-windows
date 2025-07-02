@@ -1707,8 +1707,11 @@ TEST_CASE("flow_classify_prog_test_run", "[flow_classify]")
     int program_fd = bpf_program__fd(program);
     SAFE_REQUIRE(program_fd > 0);
 
+    // Create some dummy data for stream inspection
+    std::vector<uint8_t> data = {0x48, 0x54, 0x54, 0x50}; // "HTTP"
+
     // Test with IPv4 TCP context
-    bpf_flow_classify_t ctx = {};
+    bpf_flow_classify_t ctx{};
     ctx.family = AF_INET;
     ctx.local_ip4 = htonl(0x7f000001); // 127.0.0.1
     ctx.local_port = htons(8080);
@@ -1720,8 +1723,6 @@ TEST_CASE("flow_classify_prog_test_run", "[flow_classify]")
     ctx.direction = FLOW_DIRECTION_INBOUND;
     ctx.flow_id = 12345;
 
-    // Create some dummy data for stream inspection
-    std::vector<uint8_t> data = {0x48, 0x54, 0x54, 0x50}; // "HTTP"
     ctx.data_start = data.data();
     ctx.data_end = data.data() + data.size();
 
@@ -1756,7 +1757,7 @@ TEST_CASE("flow_classify_prog_test_run", "[flow_classify]")
     SAFE_REQUIRE(block_program_fd > 0);
 
     // Test with IPv6 UDP context
-    bpf_flow_classify_t ctx_v6 = {};
+    bpf_flow_classify_t ctx_v6{};
     ctx_v6.family = AF_INET6;
     // IPv6 loopback: ::1
     ctx_v6.local_ip6[0] = 0;
@@ -1782,6 +1783,10 @@ TEST_CASE("flow_classify_prog_test_run", "[flow_classify]")
     block_opts.ctx_size_in = sizeof(ctx_v6);
     block_opts.ctx_out = &ctx_v6;
     block_opts.ctx_size_out = sizeof(ctx_v6);
+    block_opts.data_in = data.data();
+    block_opts.data_size_in = static_cast<uint32_t>(data.size());
+    block_opts.data_out = data.data();
+    block_opts.data_size_out = static_cast<uint32_t>(data.size());
 
     result = bpf_prog_test_run_opts(block_program_fd, &block_opts);
     SAFE_REQUIRE(result == 0);
