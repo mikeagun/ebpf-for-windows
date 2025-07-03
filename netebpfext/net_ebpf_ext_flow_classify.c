@@ -629,13 +629,49 @@ net_ebpf_extension_flow_classify_flow_classify(
 
     // Set stream data pointers for this segment
     if (layer_data != NULL) {
-        // For now, just indicate that there is data available
-        flow_classify_context->data_start = (uint8_t*)layer_data;
-        flow_classify_context->data_end =
-            (uint8_t*)layer_data; // Will be updated when proper stream data structure is defined
+        // layer_data is a pointer to FWPS_STREAM_DATA0 at the stream layer
+        FWPS_STREAM_DATA0* stream_data = (FWPS_STREAM_DATA0*)layer_data;
+
+        if (stream_data->netBufferListChain != NULL && stream_data->dataLength > 0) {
+            // Get the first NET_BUFFER from the NET_BUFFER_LIST chain
+            NET_BUFFER_LIST* nbl = stream_data->netBufferListChain;
+            NET_BUFFER* net_buffer = NET_BUFFER_LIST_FIRST_NB(nbl);
+
+            if (net_buffer != NULL) {
+                // Get contiguous data buffer from the NET_BUFFER
+                uint8_t* buffer = (uint8_t*)NdisGetDataBuffer(net_buffer, (ULONG)stream_data->dataLength, NULL, 1, 0);
+
+                if (buffer != NULL) {
+                    flow_classify_context->data_start = buffer;
+                    flow_classify_context->data_end = buffer + stream_data->dataLength;
+                } else {
+                    // Data is not contiguous - eBPF programs cannot access non-contiguous data
+                    NET_EBPF_EXT_LOG_MESSAGE(
+                        NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
+                        NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+                        "Stream data is not contiguous, cannot provide to eBPF program");
+                    flow_classify_context->data_start = NULL;
+                    flow_classify_context->data_end = NULL;
+                }
+            } else {
+                NET_EBPF_EXT_LOG_MESSAGE(
+                    NET_EBPF_EXT_TRACELOG_LEVEL_ERROR,
+                    NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+                    "No NET_BUFFER in stream data");
+                flow_classify_context->data_start = NULL;
+                flow_classify_context->data_end = NULL;
+            }
+        } else {
+            // No actual data in this stream segment
+            flow_classify_context->data_start = NULL;
+            flow_classify_context->data_end = NULL;
+        }
     } else {
+        NET_EBPF_EXT_LOG_MESSAGE(
+            NET_EBPF_EXT_TRACELOG_LEVEL_ERROR, NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY, "No stream data available");
         flow_classify_context->data_start = NULL;
         flow_classify_context->data_end = NULL;
+        goto Exit;
     }
 
     // Check compartment ID if specified
@@ -827,6 +863,8 @@ _ebpf_flow_classify_context_create(
     flow_classify_context = &context_header->context;
 
     memcpy(flow_classify_context, context_in, sizeof(bpf_flow_classify_t));
+    flow_classify_context->data_start = (uint8_t*)data_in;
+    flow_classify_context->data_end = (uint8_t*)data_in + data_size_in;
 
     *context = flow_classify_context;
     context_header = NULL;

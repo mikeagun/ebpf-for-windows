@@ -1723,10 +1723,7 @@ TEST_CASE("flow_classify_prog_test_run", "[flow_classify]")
     ctx.direction = FLOW_DIRECTION_INBOUND;
     ctx.flow_id = 12345;
 
-    ctx.data_start = data.data();
-    ctx.data_end = data.data() + data.size();
-
-    bpf_test_run_opts opts = {};
+    bpf_test_run_opts opts{};
     opts.ctx_in = &ctx;
     opts.ctx_size_in = sizeof(ctx);
     opts.ctx_out = &ctx;
@@ -1775,10 +1772,7 @@ TEST_CASE("flow_classify_prog_test_run", "[flow_classify]")
     ctx_v6.interface_luid = 999;
     ctx_v6.direction = FLOW_DIRECTION_OUTBOUND;
     ctx_v6.flow_id = 67890;
-    ctx_v6.data_start = nullptr;
-    ctx_v6.data_end = nullptr;
-
-    bpf_test_run_opts block_opts = {};
+    bpf_test_run_opts block_opts{};
     block_opts.ctx_in = &ctx_v6;
     block_opts.ctx_size_in = sizeof(ctx_v6);
     block_opts.ctx_out = &ctx_v6;
@@ -2028,7 +2022,7 @@ TEST_CASE("flow_classify_block_all_test", "[flow_classify]")
         try {
             const char* test_message = "block_all_tcp_test";
             tcp_client.send_message_to_remote_host(test_message, tcp_address, SOCKET_TEST_PORT + 120);
-            tcp_client.complete_async_send(100, FAILURE); // Expect failure due to blocking
+            tcp_client.complete_async_send(100, TIMEOUT); // Expect timeout in receive.
         } catch (...) {
             printf("TCP connection blocked or failed as expected\n");
         }
@@ -2047,7 +2041,7 @@ TEST_CASE("flow_classify_block_all_test", "[flow_classify]")
         try {
             const char* test_message = "block_all_tcp_v6_test";
             tcp_v6_client.send_message_to_remote_host(test_message, tcp_v6_address, SOCKET_TEST_PORT + 122);
-            tcp_v6_client.complete_async_send(100, FAILURE); // Expect failure due to blocking
+            tcp_v6_client.complete_async_send(100, TIMEOUT); // Expect failure due to blocking
         } catch (...) {
             printf("IPv6 TCP connection blocked or failed as expected\n");
         }
@@ -2094,7 +2088,7 @@ TEST_CASE("flow_classify_need_more_data_test", "[flow_classify]")
     // Small data that should trigger need_more_data
     std::vector<uint8_t> small_data = {0x48, 0x54}; // "HT"
 
-    bpf_test_run_opts opts = {};
+    bpf_test_run_opts opts{};
     opts.ctx_in = &ctx;
     opts.ctx_size_in = sizeof(ctx);
     opts.ctx_out = &ctx;
@@ -2127,9 +2121,6 @@ TEST_CASE("flow_classify_need_more_data_test", "[flow_classify]")
         0x0d,
         0x0a}; // "GET / HTTP/1.1\r\n"
 
-    ctx.data_start = full_data.data();
-    ctx.data_end = full_data.data() + full_data.size();
-
     opts.data_in = full_data.data();
     opts.data_size_in = static_cast<uint32_t>(full_data.size());
     opts.data_out = full_data.data();
@@ -2145,8 +2136,6 @@ TEST_CASE("flow_classify_need_more_data_test", "[flow_classify]")
     ctx.local_port = htons(53); // DNS
 
     std::vector<uint8_t> dns_data = {0x12, 0x34}; // DNS header start
-    ctx.data_start = dns_data.data();
-    ctx.data_end = dns_data.data() + dns_data.size();
 
     opts.data_in = dns_data.data();
     opts.data_size_in = static_cast<uint32_t>(dns_data.size());
@@ -2173,13 +2162,13 @@ TEST_CASE("flow_classify_conditional_test", "[flow_classify]")
     int program_fd = bpf_program__fd(program);
     SAFE_REQUIRE(program_fd > 0);
 
-    // Test HTTP port (80) - should be blocked
+    // Test HTTP port (8888) - should be allowed because it is GET
     bpf_flow_classify_t ctx_http{};
     ctx_http.family = AF_INET;
     ctx_http.local_ip4 = htonl(INADDR_LOOPBACK);
     ctx_http.local_port = htons(80);
     ctx_http.remote_ip4 = htonl(INADDR_LOOPBACK);
-    ctx_http.remote_port = htons(static_cast<uint16_t>(12345));
+    ctx_http.remote_port = htons(8888);
     ctx_http.protocol = IPPROTO_TCP;
     ctx_http.compartment_id = UNSPECIFIED_COMPARTMENT_ID;
     ctx_http.interface_luid = 0;
@@ -2198,17 +2187,20 @@ TEST_CASE("flow_classify_conditional_test", "[flow_classify]")
     http_opts.data_out = http_data.data();
     http_opts.data_size_out = static_cast<uint32_t>(http_data.size());
 
+    std::cout << "About to run HTTP port test" << std::endl;
     int result = bpf_prog_test_run_opts(program_fd, &http_opts);
     SAFE_REQUIRE(result == 0);
+    SAFE_REQUIRE(http_opts.retval == FLOW_CLASSIFY_ALLOW);
     printf("HTTP port result: %d\n", http_opts.retval);
+    std::cout << "HTTP port result: " << http_opts.retval << std::endl;
 
-    // Test HTTPS port (443) - should be blocked
+    // Test HTTPS+1 port (444) - should be blocked
     bpf_flow_classify_t ctx_https{};
     ctx_https.family = AF_INET;
     ctx_https.local_ip4 = htonl(INADDR_LOOPBACK);
-    ctx_https.local_port = htons(443);
+    ctx_https.local_port = htons(444);
     ctx_https.remote_ip4 = htonl(INADDR_LOOPBACK);
-    ctx_https.remote_port = htons(static_cast<uint16_t>(12346));
+    ctx_https.remote_port = htons(444);
     ctx_https.protocol = IPPROTO_TCP;
     ctx_https.compartment_id = UNSPECIFIED_COMPARTMENT_ID;
     ctx_https.interface_luid = 0;
@@ -2217,10 +2209,8 @@ TEST_CASE("flow_classify_conditional_test", "[flow_classify]")
 
     // TLS handshake start
     std::vector<uint8_t> https_data = {0x16, 0x03, 0x01, 0x00, 0x01, 0x01};
-    ctx_https.data_start = https_data.data();
-    ctx_https.data_end = https_data.data() + https_data.size();
 
-    bpf_test_run_opts https_opts = {};
+    bpf_test_run_opts https_opts{};
     https_opts.ctx_in = &ctx_https;
     https_opts.ctx_size_in = sizeof(ctx_https);
     https_opts.ctx_out = &ctx_https;
@@ -2230,17 +2220,56 @@ TEST_CASE("flow_classify_conditional_test", "[flow_classify]")
     https_opts.data_out = https_data.data();
     https_opts.data_size_out = static_cast<uint32_t>(https_data.size());
 
+    std::cout << "About to run HTTPS port test" << std::endl;
     result = bpf_prog_test_run_opts(program_fd, &https_opts);
     SAFE_REQUIRE(result == 0);
+    SAFE_REQUIRE(https_opts.retval == FLOW_CLASSIFY_BLOCK);
     printf("HTTPS port result: %d\n", https_opts.retval);
+    std::cout << "HTTPS port result: " << https_opts.retval << std::endl;
+
+    // HTTP GET request - should be allowed on port 8888
+    std::vector<uint8_t> http_get_data = {0x47, 0x45, 0x54, 0x20, 0x2f, 0x20, 0x48, 0x54, 0x54, 0x50}; // "GET / HTTP"
+    ctx_http.local_port = htons(54321);
+    ctx_http.remote_port = htons(8888);
+
+    bpf_test_run_opts http_get_opts{};
+    http_get_opts.ctx_in = &ctx_http;
+    http_get_opts.ctx_size_in = sizeof(ctx_http);
+    http_get_opts.ctx_out = &ctx_http;
+    http_get_opts.ctx_size_out = sizeof(ctx_http);
+    http_get_opts.data_in = http_get_data.data();
+    http_get_opts.data_size_in = static_cast<uint32_t>(http_get_data.size());
+    http_get_opts.data_out = http_get_data.data();
+    http_get_opts.data_size_out = static_cast<uint32_t>(http_get_data.size());
+
+    std::cout << "About to run HTTP port test" << std::endl;
+    result = bpf_prog_test_run_opts(program_fd, &http_get_opts);
+    SAFE_REQUIRE(result == 0);
+    SAFE_REQUIRE(http_get_opts.retval == FLOW_CLASSIFY_ALLOW);
+    printf("HTTP port result: %d\n", http_get_opts.retval);
+    std::cout << "HTTP port result: " << http_get_opts.retval << std::endl;
+
+    // PUT request - should be blocked on port 8888.
+    std::vector<uint8_t> http_put_data = {0x50, 0x55, 0x54, 0x20, 0x2f, 0x20, 0x48, 0x54, 0x54, 0x50}; // "PUT / HTTP"
+    http_get_opts.data_in = http_put_data.data();
+    http_get_opts.data_size_in = static_cast<uint32_t>(http_put_data.size());
+    http_get_opts.data_out = http_put_data.data();
+    http_get_opts.data_size_out = static_cast<uint32_t>(http_put_data.size());
+
+    std::cout << "About to run HTTP port test" << std::endl;
+    result = bpf_prog_test_run_opts(program_fd, &http_get_opts);
+    SAFE_REQUIRE(result == 0);
+    SAFE_REQUIRE(http_get_opts.retval == FLOW_CLASSIFY_BLOCK);
+    printf("HTTP port result: %d\n", http_get_opts.retval);
+    std::cout << "HTTP port result: " << http_get_opts.retval << std::endl;
 
     // Test SSH port (22) - should be allowed
     bpf_flow_classify_t ctx_ssh{};
     ctx_ssh.family = AF_INET;
     ctx_ssh.local_ip4 = htonl(INADDR_LOOPBACK);
-    ctx_ssh.local_port = htons(22);
+    ctx_ssh.local_port = htons(54321);
     ctx_ssh.remote_ip4 = htonl(INADDR_LOOPBACK);
-    ctx_ssh.remote_port = htons(static_cast<uint16_t>(12347));
+    ctx_ssh.remote_port = htons(22);
     ctx_ssh.protocol = IPPROTO_TCP;
     ctx_ssh.compartment_id = UNSPECIFIED_COMPARTMENT_ID;
     ctx_ssh.interface_luid = 0;
@@ -2260,9 +2289,12 @@ TEST_CASE("flow_classify_conditional_test", "[flow_classify]")
     ssh_opts.data_out = ssh_data.data();
     ssh_opts.data_size_out = static_cast<uint32_t>(ssh_data.size());
 
+    std::cout << "About to run SSH port test" << std::endl;
     result = bpf_prog_test_run_opts(program_fd, &ssh_opts);
     SAFE_REQUIRE(result == 0);
+    SAFE_REQUIRE(ssh_opts.retval == FLOW_CLASSIFY_ALLOW);
     printf("SSH port result: %d\n", ssh_opts.retval);
+    std::cout << "SSH port result: " << ssh_opts.retval << std::endl;
 
     // Test random port - behavior depends on program logic
     bpf_flow_classify_t ctx_random{};
@@ -2279,7 +2311,7 @@ TEST_CASE("flow_classify_conditional_test", "[flow_classify]")
 
     std::vector<uint8_t> random_data = {0x12, 0x34, 0x56, 0x78};
 
-    bpf_test_run_opts random_opts = {};
+    bpf_test_run_opts random_opts{};
     random_opts.ctx_in = &ctx_random;
     random_opts.ctx_size_in = sizeof(ctx_random);
     random_opts.ctx_out = &ctx_random;
@@ -2289,9 +2321,12 @@ TEST_CASE("flow_classify_conditional_test", "[flow_classify]")
     random_opts.data_out = random_data.data();
     random_opts.data_size_out = static_cast<uint32_t>(random_data.size());
 
+    std::cout << "About to run random port test" << std::endl;
     result = bpf_prog_test_run_opts(program_fd, &random_opts);
     SAFE_REQUIRE(result == 0);
+    SAFE_REQUIRE(random_opts.retval == FLOW_CLASSIFY_NEED_MORE_DATA);
     printf("Random port result: %d\n", random_opts.retval);
+    std::cout << "Random port result: " << random_opts.retval << std::endl;
 
     // Test IPv6 scenarios
     bpf_flow_classify_t ctx_v6 = {};
@@ -2305,14 +2340,14 @@ TEST_CASE("flow_classify_conditional_test", "[flow_classify]")
     ctx_v6.remote_ip6[1] = 0;
     ctx_v6.remote_ip6[2] = 0;
     ctx_v6.remote_ip6[3] = htonl(1);
-    ctx_v6.remote_port = htons(static_cast<uint16_t>(12349));
+    ctx_v6.remote_port = htons(8888);
     ctx_v6.protocol = IPPROTO_TCP;
     ctx_v6.compartment_id = UNSPECIFIED_COMPARTMENT_ID;
     ctx_v6.interface_luid = 0;
     ctx_v6.direction = FLOW_DIRECTION_INBOUND;
     ctx_v6.flow_id = 12349;
 
-    bpf_test_run_opts v6_opts = {};
+    bpf_test_run_opts v6_opts{};
     v6_opts.ctx_in = &ctx_v6;
     v6_opts.ctx_size_in = sizeof(ctx_v6);
     v6_opts.ctx_out = &ctx_v6;
@@ -2322,9 +2357,12 @@ TEST_CASE("flow_classify_conditional_test", "[flow_classify]")
     v6_opts.data_out = http_data.data();
     v6_opts.data_size_out = static_cast<uint32_t>(http_data.size());
 
+    std::cout << "About to run IPv6 HTTP port test" << std::endl;
     result = bpf_prog_test_run_opts(program_fd, &v6_opts);
     SAFE_REQUIRE(result == 0);
+    SAFE_REQUIRE(v6_opts.retval == FLOW_CLASSIFY_BLOCK);
     printf("IPv6 HTTP port result: %d\n", v6_opts.retval);
+    std::cout << "IPv6 HTTP port result: " << v6_opts.retval << std::endl;
 }
 
 TEST_CASE("flow_classify_performance_test", "[flow_classify]")
@@ -2463,15 +2501,15 @@ TEST_CASE("flow_classify_error_conditions_socket", "[flow_classify]")
     invalid_ctx.family = 999;   // Invalid family
     invalid_ctx.protocol = 255; // Invalid protocol
 
-    bpf_test_run_opts invalid_opts = {};
+    bpf_test_run_opts invalid_opts{};
     invalid_opts.ctx_in = &invalid_ctx;
     invalid_opts.ctx_size_in = sizeof(invalid_ctx);
     invalid_opts.ctx_out = &invalid_ctx;
     invalid_opts.ctx_size_out = sizeof(invalid_ctx);
 
-    // This should still succeed as the program should handle invalid data gracefully
+    // Bad context should fail.
     int result = bpf_prog_test_run_opts(program_fd, &invalid_opts);
-    SAFE_REQUIRE(result == 0);
+    SAFE_REQUIRE(result == -EINVAL);
 
     // Test with null data pointers
     bpf_flow_classify_t null_data_ctx = {};
@@ -2481,14 +2519,16 @@ TEST_CASE("flow_classify_error_conditions_socket", "[flow_classify]")
     null_data_ctx.remote_ip4 = htonl(INADDR_LOOPBACK);
     null_data_ctx.remote_port = htons(static_cast<uint16_t>(12345));
     null_data_ctx.protocol = IPPROTO_TCP;
-    null_data_ctx.data_start = nullptr;
-    null_data_ctx.data_end = nullptr;
 
-    bpf_test_run_opts null_opts = {};
+    bpf_test_run_opts null_opts{};
     null_opts.ctx_in = &null_data_ctx;
     null_opts.ctx_size_in = sizeof(null_data_ctx);
     null_opts.ctx_out = &null_data_ctx;
     null_opts.ctx_size_out = sizeof(null_data_ctx);
+    null_opts.data_in = nullptr;
+    null_opts.data_size_in = 0;
+    null_opts.data_out = nullptr;
+    null_opts.data_size_out = 0;
 
     result = bpf_prog_test_run_opts(program_fd, &null_opts);
     SAFE_REQUIRE(result == 0);
@@ -2504,7 +2544,7 @@ TEST_CASE("flow_classify_error_conditions_socket", "[flow_classify]")
     large_values_ctx.interface_luid = UINT64_MAX;
     large_values_ctx.compartment_id = UINT32_MAX;
 
-    bpf_test_run_opts large_opts = {};
+    bpf_test_run_opts large_opts{};
     large_opts.ctx_in = &large_values_ctx;
     large_opts.ctx_size_in = sizeof(large_values_ctx);
     large_opts.ctx_out = &large_values_ctx;
@@ -2577,7 +2617,7 @@ TEST_CASE("flow_classify_error_conditions_socket", "[flow_classify]")
     post_detach_ctx.remote_port = htons(static_cast<uint16_t>(12345));
     post_detach_ctx.protocol = IPPROTO_TCP;
 
-    bpf_test_run_opts post_opts = {};
+    bpf_test_run_opts post_opts{};
     post_opts.ctx_in = &post_detach_ctx;
     post_opts.ctx_size_in = sizeof(post_detach_ctx);
     post_opts.ctx_out = &post_detach_ctx;
