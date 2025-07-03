@@ -15,13 +15,6 @@ flow_classify_conditional(bpf_flow_classify_t* ctx)
     bpf_printk("local_port: %d, remote_port: %d", ctx->local_port, ctx->remote_port);
     bpf_printk("data_length: %d", (uint32_t)(ctx->data_end - ctx->data_start));
 
-    // If there is data, print the first 3 bytes
-    if (ctx->data_start + 3 <= ctx->data_end) {
-        bpf_printk("first 3 bytes: %02x %02x %02x", ctx->data_start[0], ctx->data_start[1], ctx->data_start[2]);
-    } else {
-        bpf_printk("no data");
-    }
-
     // Block connections to port 8888 unless it starts with "GET"
     if (ctx->remote_port == bpf_htons(8888)) {
         // Only allow port 8888 connections that start with "GET"

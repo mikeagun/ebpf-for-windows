@@ -42,6 +42,13 @@ typedef enum _xdp_test_action
     XDP_TEST_ACTION_FAILURE ///< Failed to invoke the eBPF program.
 } xdp_test_action_t;
 
+typedef enum _flow_classify_test_action
+{
+    FLOW_CLASSIFY_TEST_ACTION_PERMIT,
+    FLOW_CLASSIFY_TEST_ACTION_BLOCK,
+    FLOW_CLASSIFY_TEST_ACTION_NEED_MORE_DATA
+} flow_classify_test_action_t;
+
 TEST_CASE("query program info", "[netebpfext]")
 {
     netebpf_ext_helper_t helper;
@@ -1033,12 +1040,12 @@ TEST_CASE("sock_ops_context", "[netebpfext]")
 typedef struct test_flow_classify_client_context_t
 {
     netebpfext_helper_base_client_context_t base;
-    uint32_t flow_classify_action;
+    flow_classify_test_action_t flow_classify_action;
     uint32_t flow_established_count;
     uint32_t flow_classify_count;
-    uint32_t flow_delete_count;
     bool validate_flow_context;
     uint64_t expected_flow_id;
+    bool expect_flow_established; // true for ALE, false for flow classify
 } test_flow_classify_client_context_t;
 
 typedef struct test_flow_classify_client_context_header_t
@@ -1048,53 +1055,52 @@ typedef struct test_flow_classify_client_context_header_t
 } test_flow_classify_client_context_header_t;
 
 _Must_inspect_result_ ebpf_result_t
-netebpfext_unit_invoke_flow_ale_callback(
+netebpfext_unit_invoke_flow_callback(
     _In_ const void* client_binding_context, _In_ const void* context, _Out_ uint32_t* result)
 {
     auto client_context = (test_flow_classify_client_context_t*)client_binding_context;
     auto flow_context = (bpf_flow_classify_t*)context;
 
-    // Increment call count.
-    client_context->flow_classify_count++;
-
-    // Validate flow context if requested.
-    if (client_context->validate_flow_context && flow_context != nullptr) {
-        // Basic validation that the context has reasonable values.
-        if (flow_context->family != AF_INET && flow_context->family != AF_INET6) {
-            return EBPF_INVALID_ARGUMENT;
+    if (client_context->expect_flow_established) {
+        // ALE (flow established) callback
+        client_context->flow_established_count++;
+        if (client_context->validate_flow_context && flow_context != nullptr) {
+            if (flow_context->family != AF_INET && flow_context->family != AF_INET6) {
+                return EBPF_INVALID_ARGUMENT;
+            }
+            if (client_context->expected_flow_id != 0 && flow_context->flow_id != client_context->expected_flow_id) {
+                return EBPF_INVALID_ARGUMENT;
+            }
         }
-        if (client_context->expected_flow_id != 0 && flow_context->flow_id != client_context->expected_flow_id) {
-            return EBPF_INVALID_ARGUMENT;
+        *result = FWP_ACTION_PERMIT;
+        return EBPF_SUCCESS;
+    } else {
+        // Flow classify callback
+        client_context->flow_classify_count++;
+        if (client_context->validate_flow_context && flow_context != nullptr) {
+            if (flow_context->family != AF_INET && flow_context->family != AF_INET6) {
+                return EBPF_INVALID_ARGUMENT;
+            }
+            if (client_context->expected_flow_id != 0 && flow_context->flow_id != client_context->expected_flow_id) {
+                return EBPF_INVALID_ARGUMENT;
+            }
         }
+        switch (client_context->flow_classify_action) {
+        case FLOW_CLASSIFY_TEST_ACTION_PERMIT:
+            *result = FWP_ACTION_PERMIT;
+            break;
+        case FLOW_CLASSIFY_TEST_ACTION_BLOCK:
+            *result = FWP_ACTION_BLOCK;
+            break;
+        case FLOW_CLASSIFY_TEST_ACTION_NEED_MORE_DATA:
+            *result = FWP_ACTION_CONTINUE;
+            break;
+        default:
+            *result = FWP_ACTION_PERMIT;
+            break;
+        }
+        return EBPF_SUCCESS;
     }
-
-    *result = FWP_ACTION_PERMIT;
-    return EBPF_SUCCESS;
-}
-
-_Must_inspect_result_ ebpf_result_t
-netebpfext_unit_invoke_flow_classify_program(
-    _In_ const void* client_binding_context, _In_ const void* context, _Out_ uint32_t* result)
-{
-    auto client_context = (test_flow_classify_client_context_t*)client_binding_context;
-    auto flow_context = (bpf_flow_classify_t*)context;
-
-    // Increment call count.
-    client_context->flow_classify_count++;
-
-    // Validate flow context if requested.
-    if (client_context->validate_flow_context && flow_context != nullptr) {
-        // Basic validation that the context has reasonable values.
-        if (flow_context->family != AF_INET && flow_context->family != AF_INET6) {
-            return EBPF_INVALID_ARGUMENT;
-        }
-        if (client_context->expected_flow_id != 0 && flow_context->flow_id != client_context->expected_flow_id) {
-            return EBPF_INVALID_ARGUMENT;
-        }
-    }
-
-    *result = client_context->flow_classify_action;
-    return EBPF_SUCCESS;
 }
 
 TEST_CASE("flow_classify_provider_registration", "[flow_classify]")
@@ -1123,7 +1129,7 @@ TEST_CASE("flow_classify_invoke_ale_v4", "[flow_classify]")
 
     netebpf_ext_helper_t helper(
         &npi_specific_characteristics,
-        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_ale_callback,
+        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_callback,
         (netebpfext_helper_base_client_context_t*)client_context);
 
     netebpfext_initialize_fwp_classify_parameters(&parameters);
@@ -1136,27 +1142,26 @@ TEST_CASE("flow_classify_invoke_ale_v4", "[flow_classify]")
     parameters.protocol = IPPROTO_TCP;
 
     // Test FLOW_CLASSIFY_ALLOW action
-    client_context->flow_classify_action = FWP_ACTION_PERMIT;
+    client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_PERMIT;
     client_context->validate_flow_context = true;
-
+    client_context->expect_flow_established = true;
     FWP_ACTION_TYPE result = helper.test_flow_classify_ale_v4(&parameters);
     REQUIRE(result == FWP_ACTION_PERMIT);
-    REQUIRE(client_context->flow_classify_count == 1);
+    REQUIRE(client_context->flow_established_count == 1);
 
     // Test FLOW_CLASSIFY_BLOCK action
-    client_context->flow_classify_action = FWP_ACTION_BLOCK;
+    client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_BLOCK;
+    client_context->expect_flow_established = false;
     client_context->flow_classify_count = 0; // Reset counter
-
     result = helper.test_flow_classify_ale_v4(&parameters);
-    REQUIRE(result == FWP_ACTION_PERMIT);
+    REQUIRE(result == FWP_ACTION_BLOCK);
     REQUIRE(client_context->flow_classify_count == 1);
 
     // Test FLOW_CLASSIFY_NEED_MORE_DATA action
-    client_context->flow_classify_action = FWP_ACTION_CONTINUE;
+    client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_NEED_MORE_DATA;
     client_context->flow_classify_count = 0; // Reset counter
-
     result = helper.test_flow_classify_ale_v4(&parameters);
-    REQUIRE(result == FWP_ACTION_PERMIT);
+    REQUIRE(result == FWP_ACTION_CONTINUE);
     REQUIRE(client_context->flow_classify_count == 1);
 }
 
@@ -1171,7 +1176,7 @@ TEST_CASE("flow_classify_invoke_ale_v6", "[flow_classify]")
 
     netebpf_ext_helper_t helper(
         &npi_specific_characteristics,
-        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_ale_callback,
+        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_callback,
         (netebpfext_helper_base_client_context_t*)client_context);
 
     netebpfext_initialize_fwp_classify_parameters(&parameters);
@@ -1186,27 +1191,29 @@ TEST_CASE("flow_classify_invoke_ale_v6", "[flow_classify]")
     parameters.protocol = IPPROTO_TCP;
 
     // Test FLOW_CLASSIFY_ALLOW action
-    client_context->flow_classify_action = FWP_ACTION_PERMIT;
+    client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_PERMIT;
     client_context->validate_flow_context = true;
+    client_context->expect_flow_established = true;
 
     FWP_ACTION_TYPE result = helper.test_flow_classify_ale_v6(&parameters);
     REQUIRE(result == FWP_ACTION_PERMIT);
-    REQUIRE(client_context->flow_classify_count == 1);
+    REQUIRE(client_context->flow_established_count == 1);
 
     // Test FLOW_CLASSIFY_BLOCK action
-    client_context->flow_classify_action = FWP_ACTION_BLOCK;
+    client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_BLOCK;
+    client_context->expect_flow_established = false;
     client_context->flow_classify_count = 0; // Reset counter
 
     result = helper.test_flow_classify_ale_v6(&parameters);
-    REQUIRE(result == FWP_ACTION_PERMIT);
+    REQUIRE(result == FWP_ACTION_BLOCK);
     REQUIRE(client_context->flow_classify_count == 1);
 
     // Test FLOW_CLASSIFY_NEED_MORE_DATA action
-    client_context->flow_classify_action = FWP_ACTION_CONTINUE;
+    client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_NEED_MORE_DATA;
     client_context->flow_classify_count = 0; // Reset counter
 
     result = helper.test_flow_classify_ale_v6(&parameters);
-    REQUIRE(result == FWP_ACTION_PERMIT);
+    REQUIRE(result == FWP_ACTION_CONTINUE);
     REQUIRE(client_context->flow_classify_count == 1);
 }
 
@@ -1215,24 +1222,32 @@ TEST_CASE("flow_classify_invoke_stream_v4", "[flow_classify]")
     // NOTE: Stream layer tests require prior ALE flow establishment
     // The ALE layer creates the flow context that the stream layer uses
 
-    ebpf_extension_data_t npi_specific_characteristics = {
+    ebpf_extension_data_t ale_npi_specific_characteristics = {
         .header = EBPF_ATTACH_CLIENT_DATA_HEADER_VERSION,
     };
-    test_flow_classify_client_context_header_t client_context_header = {0};
-    test_flow_classify_client_context_t* client_context = &client_context_header.context;
+    ebpf_extension_data_t flow_npi_specific_characteristics = {
+        .header = EBPF_ATTACH_CLIENT_DATA_HEADER_VERSION,
+    };
+
     fwp_classify_parameters_t parameters = {};
+
+    test_flow_classify_client_context_header_t ale_client_context_header = {0};
+    test_flow_classify_client_context_t* ale_client_context = &ale_client_context_header.context;
+
+    test_flow_classify_client_context_header_t flow_client_context_header = {0};
+    test_flow_classify_client_context_t* flow_client_context = &flow_client_context_header.context;
 
     // ALE helper for flow establishment
     netebpf_ext_helper_t ale_helper(
-        &npi_specific_characteristics,
-        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_ale_callback,
-        (netebpfext_helper_base_client_context_t*)client_context);
+        &ale_npi_specific_characteristics,
+        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_callback,
+        (netebpfext_helper_base_client_context_t*)ale_client_context);
 
     // Stream helper for data processing
     netebpf_ext_helper_t stream_helper(
-        &npi_specific_characteristics,
-        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_classify_program,
-        (netebpfext_helper_base_client_context_t*)client_context);
+        &flow_npi_specific_characteristics,
+        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_callback,
+        (netebpfext_helper_base_client_context_t*)flow_client_context);
 
     netebpfext_initialize_fwp_classify_parameters(&parameters);
 
@@ -1243,43 +1258,46 @@ TEST_CASE("flow_classify_invoke_stream_v4", "[flow_classify]")
     parameters.destination_port = 3000;
     parameters.protocol = IPPROTO_TCP;
 
+    ale_client_context->validate_flow_context = true;
+    flow_client_context->validate_flow_context = true;
+
     // STEP 1: First establish the flow context through ALE layer
     // This simulates the TCP connection establishment phase
-    client_context->flow_classify_action = FWP_ACTION_PERMIT;
-    client_context->validate_flow_context = true;
-    client_context->flow_classify_count = 0;
+    ale_client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_PERMIT;
+    ale_client_context->validate_flow_context = true;
+    ale_client_context->flow_classify_count = 0;
 
     FWP_ACTION_TYPE ale_result = ale_helper.test_flow_classify_ale_v4(&parameters);
     REQUIRE(ale_result == FWP_ACTION_PERMIT);
-    REQUIRE(client_context->flow_classify_count == 1);
+    REQUIRE(ale_client_context->flow_classify_count == 1);
 
     // STEP 2: Now test stream layer with established flow context
     // This simulates TCP data segment processing
 
     // Test FLOW_CLASSIFY_ALLOW action on stream layer
-    client_context->flow_classify_action = FLOW_CLASSIFY_ALLOW;
-    client_context->flow_classify_count = 0; // Reset counter
+    flow_client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_PERMIT;
+    flow_client_context->flow_classify_count = 0; // Reset counter
 
     flow_classify_action_t result =
         static_cast<flow_classify_action_t>(stream_helper.test_flow_classify_stream_v4(&parameters));
     REQUIRE(result == FLOW_CLASSIFY_ALLOW);
-    REQUIRE(client_context->flow_classify_count == 1);
+    REQUIRE(flow_client_context->flow_classify_count == 1);
 
     // Test FLOW_CLASSIFY_BLOCK action on stream layer
-    client_context->flow_classify_action = FLOW_CLASSIFY_BLOCK;
-    client_context->flow_classify_count = 0; // Reset counter
+    flow_client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_BLOCK;
+    flow_client_context->flow_classify_count = 0; // Reset counter
 
     result = static_cast<flow_classify_action_t>(stream_helper.test_flow_classify_stream_v4(&parameters));
     REQUIRE(result == FLOW_CLASSIFY_BLOCK);
-    REQUIRE(client_context->flow_classify_count == 1);
+    REQUIRE(flow_client_context->flow_classify_count == 1);
 
     // Test FLOW_CLASSIFY_NEED_MORE_DATA action on stream layer
-    client_context->flow_classify_action = FLOW_CLASSIFY_NEED_MORE_DATA;
-    client_context->flow_classify_count = 0; // Reset counter
+    flow_client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_NEED_MORE_DATA;
+    flow_client_context->flow_classify_count = 0; // Reset counter
 
     result = static_cast<flow_classify_action_t>(stream_helper.test_flow_classify_stream_v4(&parameters));
     REQUIRE(result == FLOW_CLASSIFY_ALLOW);
-    REQUIRE(client_context->flow_classify_count == 1);
+    REQUIRE(flow_client_context->flow_classify_count == 1);
 }
 
 TEST_CASE("flow_classify_invoke_stream_v6", "[flow_classify]")
@@ -1287,7 +1305,11 @@ TEST_CASE("flow_classify_invoke_stream_v6", "[flow_classify]")
     // NOTE: Stream layer tests require prior ALE flow establishment
     // The ALE layer creates the flow context that the stream layer uses
 
-    ebpf_extension_data_t npi_specific_characteristics = {
+    ebpf_extension_data_t ale_npi_specific_characteristics = {
+        .header = EBPF_ATTACH_CLIENT_DATA_HEADER_VERSION,
+    };
+
+    ebpf_extension_data_t flow_npi_specific_characteristics = {
         .header = EBPF_ATTACH_CLIENT_DATA_HEADER_VERSION,
     };
     test_flow_classify_client_context_header_t client_context_header = {0};
@@ -1296,14 +1318,14 @@ TEST_CASE("flow_classify_invoke_stream_v6", "[flow_classify]")
 
     // ALE helper for flow establishment
     netebpf_ext_helper_t ale_helper(
-        &npi_specific_characteristics,
-        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_ale_callback,
+        &ale_npi_specific_characteristics,
+        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_callback,
         (netebpfext_helper_base_client_context_t*)client_context);
 
     // Stream helper for data processing
     netebpf_ext_helper_t stream_helper(
-        &npi_specific_characteristics,
-        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_classify_program,
+        &flow_npi_specific_characteristics,
+        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_callback,
         (netebpfext_helper_base_client_context_t*)client_context);
 
     netebpfext_initialize_fwp_classify_parameters(&parameters);
@@ -1319,7 +1341,7 @@ TEST_CASE("flow_classify_invoke_stream_v6", "[flow_classify]")
 
     // STEP 1: First establish the flow context through ALE layer
     // This simulates the TCP connection establishment phase
-    client_context->flow_classify_action = FLOW_CLASSIFY_ALLOW;
+    client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_PERMIT;
     client_context->validate_flow_context = true;
     client_context->flow_classify_count = 0;
 
@@ -1331,7 +1353,7 @@ TEST_CASE("flow_classify_invoke_stream_v6", "[flow_classify]")
     // This simulates TCP data segment processing
 
     // Test FLOW_CLASSIFY_ALLOW action on stream layer
-    client_context->flow_classify_action = FLOW_CLASSIFY_ALLOW;
+    client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_PERMIT;
     client_context->validate_flow_context = true;
     client_context->flow_classify_count = 0; // Reset counter
 
@@ -1341,7 +1363,7 @@ TEST_CASE("flow_classify_invoke_stream_v6", "[flow_classify]")
     REQUIRE(client_context->flow_classify_count == 1);
 
     // Test FLOW_CLASSIFY_BLOCK action on stream layer
-    client_context->flow_classify_action = FLOW_CLASSIFY_BLOCK;
+    client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_BLOCK;
     client_context->flow_classify_count = 0; // Reset counter
 
     result = static_cast<flow_classify_action_t>(stream_helper.test_flow_classify_stream_v6(&parameters));
@@ -1349,7 +1371,7 @@ TEST_CASE("flow_classify_invoke_stream_v6", "[flow_classify]")
     REQUIRE(client_context->flow_classify_count == 1);
 
     // Test FLOW_CLASSIFY_NEED_MORE_DATA action on stream layer
-    client_context->flow_classify_action = FLOW_CLASSIFY_NEED_MORE_DATA;
+    client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_NEED_MORE_DATA;
     client_context->flow_classify_count = 0; // Reset counter
 
     result = static_cast<flow_classify_action_t>(stream_helper.test_flow_classify_stream_v6(&parameters));
@@ -1359,7 +1381,10 @@ TEST_CASE("flow_classify_invoke_stream_v6", "[flow_classify]")
 
 TEST_CASE("flow_classify_lifecycle_simulation", "[flow_classify]")
 {
-    ebpf_extension_data_t npi_specific_characteristics = {
+    ebpf_extension_data_t ale_npi_specific_characteristics = {
+        .header = EBPF_ATTACH_CLIENT_DATA_HEADER_VERSION,
+    };
+    ebpf_extension_data_t flow_npi_specific_characteristics = {
         .header = EBPF_ATTACH_CLIENT_DATA_HEADER_VERSION,
     };
     test_flow_classify_client_context_header_t client_context_header = {0};
@@ -1368,14 +1393,14 @@ TEST_CASE("flow_classify_lifecycle_simulation", "[flow_classify]")
 
     // ALE helper for flow establishment
     netebpf_ext_helper_t ale_helper(
-        &npi_specific_characteristics,
-        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_ale_callback,
+        &ale_npi_specific_characteristics,
+        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_callback,
         (netebpfext_helper_base_client_context_t*)client_context);
 
     // Stream helper for data processing
     netebpf_ext_helper_t stream_helper(
-        &npi_specific_characteristics,
-        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_classify_program,
+        &flow_npi_specific_characteristics,
+        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_callback,
         (netebpfext_helper_base_client_context_t*)client_context);
 
     netebpfext_initialize_fwp_classify_parameters(&parameters);
@@ -1387,7 +1412,7 @@ TEST_CASE("flow_classify_lifecycle_simulation", "[flow_classify]")
     parameters.destination_port = 22; // SSH
     parameters.protocol = IPPROTO_TCP;
 
-    client_context->flow_classify_action = FLOW_CLASSIFY_ALLOW;
+    client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_PERMIT;
     client_context->validate_flow_context = true;
 
     // Simulate complete flow lifecycle:
@@ -1406,7 +1431,7 @@ TEST_CASE("flow_classify_lifecycle_simulation", "[flow_classify]")
     REQUIRE(client_context->flow_classify_count == 5);
 
     // 3. Test blocking mid-flow
-    client_context->flow_classify_action = FLOW_CLASSIFY_BLOCK;
+    client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_BLOCK;
     result = static_cast<flow_classify_action_t>(stream_helper.test_flow_classify_stream_v4(&parameters));
     REQUIRE(result == FLOW_CLASSIFY_BLOCK);
 
@@ -1416,7 +1441,10 @@ TEST_CASE("flow_classify_lifecycle_simulation", "[flow_classify]")
 
 TEST_CASE("flow_classify_multiple_flows", "[flow_classify]")
 {
-    ebpf_extension_data_t npi_specific_characteristics = {
+    ebpf_extension_data_t ale_npi_specific_characteristics = {
+        .header = EBPF_ATTACH_CLIENT_DATA_HEADER_VERSION,
+    };
+    ebpf_extension_data_t flow_npi_specific_characteristics = {
         .header = EBPF_ATTACH_CLIENT_DATA_HEADER_VERSION,
     };
     test_flow_classify_client_context_header_t client_context_header = {0};
@@ -1424,17 +1452,17 @@ TEST_CASE("flow_classify_multiple_flows", "[flow_classify]")
 
     // ALE helper for flow establishment
     netebpf_ext_helper_t ale_helper(
-        &npi_specific_characteristics,
-        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_ale_callback,
+        &ale_npi_specific_characteristics,
+        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_callback,
         (netebpfext_helper_base_client_context_t*)client_context);
 
     // Stream helper for data processing
     netebpf_ext_helper_t stream_helper(
-        &npi_specific_characteristics,
-        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_classify_program,
+        &flow_npi_specific_characteristics,
+        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_callback,
         (netebpfext_helper_base_client_context_t*)client_context);
 
-    client_context->flow_classify_action = FLOW_CLASSIFY_ALLOW;
+    client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_PERMIT;
     client_context->validate_flow_context = true;
 
     // Test multiple concurrent flows with different parameters
@@ -1494,7 +1522,7 @@ TEST_CASE("flow_classify_multiple_flows", "[flow_classify]")
 //
 //    netebpf_ext_helper_t helper(
 //        &npi_specific_characteristics,
-//        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_classify_program,
+//        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_callback,
 //        (netebpfext_helper_base_client_context_t*)client_context);
 //
 //    netebpfext_initialize_fwp_classify_parameters(&parameters);
@@ -1527,13 +1555,13 @@ TEST_CASE("flow_classify_compartment_filtering", "[flow_classify]")
 
     netebpf_ext_helper_t helper(
         &npi_specific_characteristics,
-        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_classify_program,
+        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_callback,
         (netebpfext_helper_base_client_context_t*)client_context);
 
     netebpfext_initialize_fwp_classify_parameters(&parameters);
     parameters.compartment_id = test_compartment_id;
 
-    client_context->flow_classify_action = FLOW_CLASSIFY_ALLOW;
+    client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_PERMIT;
     client_context->validate_flow_context = true;
 
     // Test flow classification with matching compartment ID
@@ -1684,7 +1712,7 @@ TEST_CASE("flow_classify_ipv6_addresses", "[flow_classify]")
 
     netebpf_ext_helper_t helper(
         &npi_specific_characteristics,
-        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_classify_program,
+        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_callback,
         (netebpfext_helper_base_client_context_t*)client_context);
 
     netebpfext_initialize_fwp_classify_parameters(&parameters);
@@ -1707,7 +1735,7 @@ TEST_CASE("flow_classify_ipv6_addresses", "[flow_classify]")
          {0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1}},
     };
 
-    client_context->flow_classify_action = FLOW_CLASSIFY_ALLOW;
+    client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_PERMIT;
     client_context->validate_flow_context = true;
 
     for (const auto& test : ipv6_tests) {
@@ -1735,7 +1763,7 @@ TEST_CASE("flow_classify_protocol_variations", "[flow_classify]")
 
     netebpf_ext_helper_t helper(
         &npi_specific_characteristics,
-        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_classify_program,
+        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_callback,
         (netebpfext_helper_base_client_context_t*)client_context);
 
     netebpfext_initialize_fwp_classify_parameters(&parameters);
@@ -1752,7 +1780,7 @@ TEST_CASE("flow_classify_protocol_variations", "[flow_classify]")
         {IPPROTO_ICMP, "ICMP", 0},
     };
 
-    client_context->flow_classify_action = FLOW_CLASSIFY_ALLOW;
+    client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_PERMIT;
     client_context->validate_flow_context = true;
 
     parameters.source_ipv4_address = 0x7f000001; // 127.0.0.1
@@ -1809,13 +1837,13 @@ TEST_CASE("flow_classify_compartment_scenarios", "[flow_classify]")
 
         netebpf_ext_helper_t helper(
             &npi_specific_characteristics,
-            (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_classify_program,
+            (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_callback,
             (netebpfext_helper_base_client_context_t*)client_context);
 
         netebpfext_initialize_fwp_classify_parameters(&parameters);
         parameters.compartment_id = test.flow_compartment_id;
 
-        client_context->flow_classify_action = FLOW_CLASSIFY_ALLOW;
+        client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_PERMIT;
         client_context->validate_flow_context = true;
 
         FWP_ACTION_TYPE result = helper.test_flow_classify_ale_v4(&parameters);
@@ -1895,7 +1923,7 @@ TEST_CASE("flow_classify_ale_to_stream_sequence", "[flow_classify]")
 
     netebpf_ext_helper_t helper(
         &npi_specific_characteristics,
-        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_classify_program,
+        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_flow_callback,
         (netebpfext_helper_base_client_context_t*)client_context);
 
     netebpfext_initialize_fwp_classify_parameters(&parameters);
@@ -1907,7 +1935,7 @@ TEST_CASE("flow_classify_ale_to_stream_sequence", "[flow_classify]")
     parameters.destination_port = 8080;
     parameters.protocol = IPPROTO_TCP;
 
-    client_context->flow_classify_action = FLOW_CLASSIFY_ALLOW;
+    client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_PERMIT;
     client_context->validate_flow_context = true;
 
     // Phase 1: ALE Flow Established
@@ -1929,7 +1957,7 @@ TEST_CASE("flow_classify_ale_to_stream_sequence", "[flow_classify]")
     REQUIRE(client_context->flow_classify_count == 3);
 
     // Phase 3: Test different actions at stream layer
-    client_context->flow_classify_action = FLOW_CLASSIFY_NEED_MORE_DATA;
+    client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_NEED_MORE_DATA;
     client_context->flow_classify_count = 0;
 
     FWP_ACTION_TYPE need_more_result = helper.test_flow_classify_stream_v4(&parameters);
@@ -1937,7 +1965,7 @@ TEST_CASE("flow_classify_ale_to_stream_sequence", "[flow_classify]")
     REQUIRE(client_context->flow_classify_count == 1);
 
     // Phase 4: Block subsequent data
-    client_context->flow_classify_action = FLOW_CLASSIFY_BLOCK;
+    client_context->flow_classify_action = FLOW_CLASSIFY_TEST_ACTION_BLOCK;
     client_context->flow_classify_count = 0;
 
     FWP_ACTION_TYPE block_result = helper.test_flow_classify_stream_v4(&parameters);
