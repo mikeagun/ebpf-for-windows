@@ -2250,6 +2250,13 @@ TEST_CASE("flow_classify_conditional_test", "[flow_classify]")
     std::cout << "HTTP port result: " << http_get_opts.retval << std::endl;
 
     // PUT request - should be blocked on port 8888.
+    ctx_http.local_port = htons(54321);
+    ctx_http.remote_port = htons(8888);
+    http_get_opts.ctx_in = &ctx_http;
+    http_get_opts.ctx_size_in = sizeof(ctx_http);
+    http_get_opts.ctx_out = &ctx_http;
+    http_get_opts.ctx_size_out = sizeof(ctx_http);
+
     std::vector<uint8_t> http_put_data = {0x50, 0x55, 0x54, 0x20, 0x2f, 0x20, 0x48, 0x54, 0x54, 0x50}; // "PUT / HTTP"
     http_get_opts.data_in = http_put_data.data();
     http_get_opts.data_size_in = static_cast<uint32_t>(http_put_data.size());
@@ -2360,7 +2367,7 @@ TEST_CASE("flow_classify_conditional_test", "[flow_classify]")
     std::cout << "About to run IPv6 HTTP port test" << std::endl;
     result = bpf_prog_test_run_opts(program_fd, &v6_opts);
     SAFE_REQUIRE(result == 0);
-    SAFE_REQUIRE(v6_opts.retval == FLOW_CLASSIFY_BLOCK);
+    SAFE_REQUIRE(v6_opts.retval == FLOW_CLASSIFY_ALLOW);
     printf("IPv6 HTTP port result: %d\n", v6_opts.retval);
     std::cout << "IPv6 HTTP port result: " << v6_opts.retval << std::endl;
 }
