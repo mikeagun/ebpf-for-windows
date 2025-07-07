@@ -51,6 +51,7 @@ net_ebpf_ext_trace_terminate()
 #define KEYWORD_SOCK_ADDR NET_EBPF_EXT_TRACELOG_KEYWORD_SOCK_ADDR
 #define KEYWORD_SOCK_OPS NET_EBPF_EXT_TRACELOG_KEYWORD_SOCK_OPS
 #define KEYWORD_XDP NET_EBPF_EXT_TRACELOG_KEYWORD_XDP
+#define KEYWORD_FLOW_CLASSIFY NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY
 
 #define CASE_BASE case _NET_EBPF_EXT_TRACELOG_KEYWORD_BASE
 #define CASE_BIND case _NET_EBPF_EXT_TRACELOG_KEYWORD_BIND
@@ -58,6 +59,7 @@ net_ebpf_ext_trace_terminate()
 #define CASE_SOCK_ADDR case _NET_EBPF_EXT_TRACELOG_KEYWORD_SOCK_ADDR
 #define CASE_SOCK_OPS case _NET_EBPF_EXT_TRACELOG_KEYWORD_SOCK_OPS
 #define CASE_XDP case _NET_EBPF_EXT_TRACELOG_KEYWORD_XDP
+#define CASE_FLOW_CLASSIFY case _NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY
 
 #define LEVEL_LOG_ALWAYS NET_EBPF_EXT_TRACELOG_LEVEL_LOG_ALWAYS
 #define LEVEL_CRITICAL NET_EBPF_EXT_TRACELOG_LEVEL_CRITICAL
@@ -73,29 +75,32 @@ net_ebpf_ext_trace_terminate()
 #define CASE_INFO case _NET_EBPF_EXT_TRACELOG_LEVEL_INFO
 #define CASE_VERBOSE case _NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE
 
-#define NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE_KEYWORD_SWITCH(api_name, status)       \
-    switch (keyword) {                                                               \
-    CASE_BASE:                                                                       \
-        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE(KEYWORD_BASE, api_name, status);      \
-        break;                                                                       \
-    CASE_EXT:                                                                        \
-        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE(KEYWORD_EXT, api_name, status);       \
-        break;                                                                       \
-    CASE_BIND:                                                                       \
-        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE(KEYWORD_BIND, api_name, status);      \
-        break;                                                                       \
-    CASE_SOCK_ADDR:                                                                  \
-        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE(KEYWORD_SOCK_ADDR, api_name, status); \
-        break;                                                                       \
-    CASE_SOCK_OPS:                                                                   \
-        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE(KEYWORD_SOCK_OPS, api_name, status);  \
-        break;                                                                       \
-    CASE_XDP:                                                                        \
-        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE(KEYWORD_XDP, api_name, status);       \
-        break;                                                                       \
-    default:                                                                         \
-        ebpf_assert(!"Invalid keyword");                                             \
-        break;                                                                       \
+#define NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE_KEYWORD_SWITCH(api_name, status)           \
+    switch (keyword) {                                                                   \
+    CASE_BASE:                                                                           \
+        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE(KEYWORD_BASE, api_name, status);          \
+        break;                                                                           \
+    CASE_EXT:                                                                            \
+        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE(KEYWORD_EXT, api_name, status);           \
+        break;                                                                           \
+    CASE_BIND:                                                                           \
+        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE(KEYWORD_BIND, api_name, status);          \
+        break;                                                                           \
+    CASE_SOCK_ADDR:                                                                      \
+        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE(KEYWORD_SOCK_ADDR, api_name, status);     \
+        break;                                                                           \
+    CASE_SOCK_OPS:                                                                       \
+        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE(KEYWORD_SOCK_OPS, api_name, status);      \
+        break;                                                                           \
+    CASE_XDP:                                                                            \
+        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE(KEYWORD_XDP, api_name, status);           \
+        break;                                                                           \
+    CASE_FLOW_CLASSIFY:                                                                  \
+        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE(KEYWORD_FLOW_CLASSIFY, api_name, status); \
+        break;                                                                           \
+    default:                                                                             \
+        ebpf_assert(!"Invalid keyword");                                                 \
+        break;                                                                           \
     }
 
 #pragma warning(push)
@@ -130,6 +135,10 @@ net_ebpf_ext_log_ntstatus_api_failure(
     CASE_XDP:                                                                                                         \
         _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE_MESSAGE_STRING(KEYWORD_XDP, api_name, status, message, string_value);  \
         break;                                                                                                        \
+    CASE_FLOW_CLASSIFY:                                                                                               \
+        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE_MESSAGE_STRING(                                                        \
+            KEYWORD_FLOW_CLASSIFY, api_name, status, message, string_value);                                          \
+        break;                                                                                                        \
     default:                                                                                                          \
         ebpf_assert(!"Invalid keyword");                                                                              \
         break;                                                                                                        \
@@ -146,29 +155,32 @@ net_ebpf_ext_log_ntstatus_api_failure_message_string(
     NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE_MESSAGE_STRING_KEYWORD_SWITCH(api_name, status, message, string_value);
 }
 
-#define NET_EBPF_EXT_LOG_MESSAGE_KEYWORD_SWITCH(trace_level, message)       \
-    switch (keyword) {                                                      \
-    CASE_BASE:                                                              \
-        _NET_EBPF_EXT_LOG_MESSAGE(trace_level, KEYWORD_BASE, message);      \
-        break;                                                              \
-    CASE_BIND:                                                              \
-        _NET_EBPF_EXT_LOG_MESSAGE(trace_level, KEYWORD_BIND, message);      \
-        break;                                                              \
-    CASE_EXT:                                                               \
-        _NET_EBPF_EXT_LOG_MESSAGE(trace_level, KEYWORD_EXT, message);       \
-        break;                                                              \
-    CASE_SOCK_ADDR:                                                         \
-        _NET_EBPF_EXT_LOG_MESSAGE(trace_level, KEYWORD_SOCK_ADDR, message); \
-        break;                                                              \
-    CASE_SOCK_OPS:                                                          \
-        _NET_EBPF_EXT_LOG_MESSAGE(trace_level, KEYWORD_SOCK_OPS, message);  \
-        break;                                                              \
-    CASE_XDP:                                                               \
-        _NET_EBPF_EXT_LOG_MESSAGE(trace_level, KEYWORD_XDP, message);       \
-        break;                                                              \
-    default:                                                                \
-        ebpf_assert(!"Invalid keyword");                                    \
-        break;                                                              \
+#define NET_EBPF_EXT_LOG_MESSAGE_KEYWORD_SWITCH(trace_level, message)           \
+    switch (keyword) {                                                          \
+    CASE_BASE:                                                                  \
+        _NET_EBPF_EXT_LOG_MESSAGE(trace_level, KEYWORD_BASE, message);          \
+        break;                                                                  \
+    CASE_BIND:                                                                  \
+        _NET_EBPF_EXT_LOG_MESSAGE(trace_level, KEYWORD_BIND, message);          \
+        break;                                                                  \
+    CASE_EXT:                                                                   \
+        _NET_EBPF_EXT_LOG_MESSAGE(trace_level, KEYWORD_EXT, message);           \
+        break;                                                                  \
+    CASE_SOCK_ADDR:                                                             \
+        _NET_EBPF_EXT_LOG_MESSAGE(trace_level, KEYWORD_SOCK_ADDR, message);     \
+        break;                                                                  \
+    CASE_SOCK_OPS:                                                              \
+        _NET_EBPF_EXT_LOG_MESSAGE(trace_level, KEYWORD_SOCK_OPS, message);      \
+        break;                                                                  \
+    CASE_XDP:                                                                   \
+        _NET_EBPF_EXT_LOG_MESSAGE(trace_level, KEYWORD_XDP, message);           \
+        break;                                                                  \
+    CASE_FLOW_CLASSIFY:                                                         \
+        _NET_EBPF_EXT_LOG_MESSAGE(trace_level, KEYWORD_FLOW_CLASSIFY, message); \
+        break;                                                                  \
+    default:                                                                    \
+        ebpf_assert(!"Invalid keyword");                                        \
+        break;                                                                  \
     }
 
 __declspec(noinline) void
@@ -200,29 +212,32 @@ net_ebpf_ext_log_message(
     }
 }
 
-#define NET_EBPF_EXT_LOG_MESSAGE_STRING_KEYWORD_SWITCH(trace_level, message, string_value)       \
-    switch (keyword) {                                                                           \
-    CASE_BASE:                                                                                   \
-        _NET_EBPF_EXT_LOG_MESSAGE_STRING(trace_level, KEYWORD_BASE, message, string_value);      \
-        break;                                                                                   \
-    CASE_BIND:                                                                                   \
-        _NET_EBPF_EXT_LOG_MESSAGE_STRING(trace_level, KEYWORD_BIND, message, string_value);      \
-        break;                                                                                   \
-    CASE_EXT:                                                                                    \
-        _NET_EBPF_EXT_LOG_MESSAGE_STRING(trace_level, KEYWORD_EXT, message, string_value);       \
-        break;                                                                                   \
-    CASE_SOCK_ADDR:                                                                              \
-        _NET_EBPF_EXT_LOG_MESSAGE_STRING(trace_level, KEYWORD_SOCK_ADDR, message, string_value); \
-        break;                                                                                   \
-    CASE_SOCK_OPS:                                                                               \
-        _NET_EBPF_EXT_LOG_MESSAGE_STRING(trace_level, KEYWORD_SOCK_OPS, message, string_value);  \
-        break;                                                                                   \
-    CASE_XDP:                                                                                    \
-        _NET_EBPF_EXT_LOG_MESSAGE_STRING(trace_level, KEYWORD_XDP, message, string_value);       \
-        break;                                                                                   \
-    default:                                                                                     \
-        ebpf_assert(!"Invalid keyword");                                                         \
-        break;                                                                                   \
+#define NET_EBPF_EXT_LOG_MESSAGE_STRING_KEYWORD_SWITCH(trace_level, message, string_value)           \
+    switch (keyword) {                                                                               \
+    CASE_BASE:                                                                                       \
+        _NET_EBPF_EXT_LOG_MESSAGE_STRING(trace_level, KEYWORD_BASE, message, string_value);          \
+        break;                                                                                       \
+    CASE_BIND:                                                                                       \
+        _NET_EBPF_EXT_LOG_MESSAGE_STRING(trace_level, KEYWORD_BIND, message, string_value);          \
+        break;                                                                                       \
+    CASE_EXT:                                                                                        \
+        _NET_EBPF_EXT_LOG_MESSAGE_STRING(trace_level, KEYWORD_EXT, message, string_value);           \
+        break;                                                                                       \
+    CASE_SOCK_ADDR:                                                                                  \
+        _NET_EBPF_EXT_LOG_MESSAGE_STRING(trace_level, KEYWORD_SOCK_ADDR, message, string_value);     \
+        break;                                                                                       \
+    CASE_SOCK_OPS:                                                                                   \
+        _NET_EBPF_EXT_LOG_MESSAGE_STRING(trace_level, KEYWORD_SOCK_OPS, message, string_value);      \
+        break;                                                                                       \
+    CASE_XDP:                                                                                        \
+        _NET_EBPF_EXT_LOG_MESSAGE_STRING(trace_level, KEYWORD_XDP, message, string_value);           \
+        break;                                                                                       \
+    CASE_FLOW_CLASSIFY:                                                                              \
+        _NET_EBPF_EXT_LOG_MESSAGE_STRING(trace_level, KEYWORD_FLOW_CLASSIFY, message, string_value); \
+        break;                                                                                       \
+    default:                                                                                         \
+        ebpf_assert(!"Invalid keyword");                                                             \
+        break;                                                                                       \
     }
 
 __declspec(noinline) void
@@ -257,29 +272,32 @@ net_ebpf_ext_log_message_string(
     }
 }
 
-#define NET_EBPF_EXT_LOG_MESSAGE_NTSTATUS_KEYWORD_SWITCH(trace_level, message, status)       \
-    switch (keyword) {                                                                       \
-    CASE_BASE:                                                                               \
-        _NET_EBPF_EXT_LOG_MESSAGE_NTSTATUS(trace_level, KEYWORD_BASE, message, status);      \
-        break;                                                                               \
-    CASE_BIND:                                                                               \
-        _NET_EBPF_EXT_LOG_MESSAGE_NTSTATUS(trace_level, KEYWORD_BIND, message, status);      \
-        break;                                                                               \
-    CASE_EXT:                                                                                \
-        _NET_EBPF_EXT_LOG_MESSAGE_NTSTATUS(trace_level, KEYWORD_EXT, message, status);       \
-        break;                                                                               \
-    CASE_SOCK_ADDR:                                                                          \
-        _NET_EBPF_EXT_LOG_MESSAGE_NTSTATUS(trace_level, KEYWORD_SOCK_ADDR, message, status); \
-        break;                                                                               \
-    CASE_SOCK_OPS:                                                                           \
-        _NET_EBPF_EXT_LOG_MESSAGE_NTSTATUS(trace_level, KEYWORD_SOCK_OPS, message, status);  \
-        break;                                                                               \
-    CASE_XDP:                                                                                \
-        _NET_EBPF_EXT_LOG_MESSAGE_NTSTATUS(trace_level, KEYWORD_XDP, message, status);       \
-        break;                                                                               \
-    default:                                                                                 \
-        ebpf_assert(!"Invalid keyword");                                                     \
-        break;                                                                               \
+#define NET_EBPF_EXT_LOG_MESSAGE_NTSTATUS_KEYWORD_SWITCH(trace_level, message, status)           \
+    switch (keyword) {                                                                           \
+    CASE_BASE:                                                                                   \
+        _NET_EBPF_EXT_LOG_MESSAGE_NTSTATUS(trace_level, KEYWORD_BASE, message, status);          \
+        break;                                                                                   \
+    CASE_BIND:                                                                                   \
+        _NET_EBPF_EXT_LOG_MESSAGE_NTSTATUS(trace_level, KEYWORD_BIND, message, status);          \
+        break;                                                                                   \
+    CASE_EXT:                                                                                    \
+        _NET_EBPF_EXT_LOG_MESSAGE_NTSTATUS(trace_level, KEYWORD_EXT, message, status);           \
+        break;                                                                                   \
+    CASE_SOCK_ADDR:                                                                              \
+        _NET_EBPF_EXT_LOG_MESSAGE_NTSTATUS(trace_level, KEYWORD_SOCK_ADDR, message, status);     \
+        break;                                                                                   \
+    CASE_SOCK_OPS:                                                                               \
+        _NET_EBPF_EXT_LOG_MESSAGE_NTSTATUS(trace_level, KEYWORD_SOCK_OPS, message, status);      \
+        break;                                                                                   \
+    CASE_XDP:                                                                                    \
+        _NET_EBPF_EXT_LOG_MESSAGE_NTSTATUS(trace_level, KEYWORD_XDP, message, status);           \
+        break;                                                                                   \
+    CASE_FLOW_CLASSIFY:                                                                          \
+        _NET_EBPF_EXT_LOG_MESSAGE_NTSTATUS(trace_level, KEYWORD_FLOW_CLASSIFY, message, status); \
+        break;                                                                                   \
+    default:                                                                                     \
+        ebpf_assert(!"Invalid keyword");                                                         \
+        break;                                                                                   \
     }
 
 __declspec(noinline) void
@@ -314,29 +332,32 @@ net_ebpf_ext_log_message_ntstatus(
     }
 }
 
-#define NET_EBPF_EXT_LOG_MESSAGE_BOOL_KEYWORD_SWITCH(trace_level, message, value)       \
-    switch (keyword) {                                                                  \
-    CASE_BASE:                                                                          \
-        _NET_EBPF_EXT_LOG_MESSAGE_BOOL(trace_level, KEYWORD_BASE, message, value);      \
-        break;                                                                          \
-    CASE_BIND:                                                                          \
-        _NET_EBPF_EXT_LOG_MESSAGE_BOOL(trace_level, KEYWORD_BIND, message, value);      \
-        break;                                                                          \
-    CASE_EXT:                                                                           \
-        _NET_EBPF_EXT_LOG_MESSAGE_BOOL(trace_level, KEYWORD_EXT, message, value);       \
-        break;                                                                          \
-    CASE_SOCK_ADDR:                                                                     \
-        _NET_EBPF_EXT_LOG_MESSAGE_BOOL(trace_level, KEYWORD_SOCK_ADDR, message, value); \
-        break;                                                                          \
-    CASE_SOCK_OPS:                                                                      \
-        _NET_EBPF_EXT_LOG_MESSAGE_BOOL(trace_level, KEYWORD_SOCK_OPS, message, value);  \
-        break;                                                                          \
-    CASE_XDP:                                                                           \
-        _NET_EBPF_EXT_LOG_MESSAGE_BOOL(trace_level, KEYWORD_XDP, message, value);       \
-        break;                                                                          \
-    default:                                                                            \
-        ebpf_assert(!"Invalid keyword");                                                \
-        break;                                                                          \
+#define NET_EBPF_EXT_LOG_MESSAGE_BOOL_KEYWORD_SWITCH(trace_level, message, value)           \
+    switch (keyword) {                                                                      \
+    CASE_BASE:                                                                              \
+        _NET_EBPF_EXT_LOG_MESSAGE_BOOL(trace_level, KEYWORD_BASE, message, value);          \
+        break;                                                                              \
+    CASE_BIND:                                                                              \
+        _NET_EBPF_EXT_LOG_MESSAGE_BOOL(trace_level, KEYWORD_BIND, message, value);          \
+        break;                                                                              \
+    CASE_EXT:                                                                               \
+        _NET_EBPF_EXT_LOG_MESSAGE_BOOL(trace_level, KEYWORD_EXT, message, value);           \
+        break;                                                                              \
+    CASE_SOCK_ADDR:                                                                         \
+        _NET_EBPF_EXT_LOG_MESSAGE_BOOL(trace_level, KEYWORD_SOCK_ADDR, message, value);     \
+        break;                                                                              \
+    CASE_SOCK_OPS:                                                                          \
+        _NET_EBPF_EXT_LOG_MESSAGE_BOOL(trace_level, KEYWORD_SOCK_OPS, message, value);      \
+        break;                                                                              \
+    CASE_XDP:                                                                               \
+        _NET_EBPF_EXT_LOG_MESSAGE_BOOL(trace_level, KEYWORD_XDP, message, value);           \
+        break;                                                                              \
+    CASE_FLOW_CLASSIFY:                                                                     \
+        _NET_EBPF_EXT_LOG_MESSAGE_BOOL(trace_level, KEYWORD_FLOW_CLASSIFY, message, value); \
+        break;                                                                              \
+    default:                                                                                \
+        ebpf_assert(!"Invalid keyword");                                                    \
+        break;                                                                              \
     }
 
 __declspec(noinline) void
@@ -371,29 +392,32 @@ net_ebpf_ext_log_message_bool(
     }
 }
 
-#define NET_EBPF_EXT_LOG_MESSAGE_POINTER_KEYWORD_SWITCH(trace_level, message, value)       \
-    switch (keyword) {                                                                     \
-    CASE_BASE:                                                                             \
-        _NET_EBPF_EXT_LOG_MESSAGE_POINTER(trace_level, KEYWORD_BASE, message, value);      \
-        break;                                                                             \
-    CASE_BIND:                                                                             \
-        _NET_EBPF_EXT_LOG_MESSAGE_POINTER(trace_level, KEYWORD_BIND, message, value);      \
-        break;                                                                             \
-    CASE_EXT:                                                                              \
-        _NET_EBPF_EXT_LOG_MESSAGE_POINTER(trace_level, KEYWORD_EXT, message, value);       \
-        break;                                                                             \
-    CASE_SOCK_ADDR:                                                                        \
-        _NET_EBPF_EXT_LOG_MESSAGE_POINTER(trace_level, KEYWORD_SOCK_ADDR, message, value); \
-        break;                                                                             \
-    CASE_SOCK_OPS:                                                                         \
-        _NET_EBPF_EXT_LOG_MESSAGE_POINTER(trace_level, KEYWORD_SOCK_OPS, message, value);  \
-        break;                                                                             \
-    CASE_XDP:                                                                              \
-        _NET_EBPF_EXT_LOG_MESSAGE_POINTER(trace_level, KEYWORD_XDP, message, value);       \
-        break;                                                                             \
-    default:                                                                               \
-        ebpf_assert(!"Invalid keyword");                                                   \
-        break;                                                                             \
+#define NET_EBPF_EXT_LOG_MESSAGE_POINTER_KEYWORD_SWITCH(trace_level, message, value)           \
+    switch (keyword) {                                                                         \
+    CASE_BASE:                                                                                 \
+        _NET_EBPF_EXT_LOG_MESSAGE_POINTER(trace_level, KEYWORD_BASE, message, value);          \
+        break;                                                                                 \
+    CASE_BIND:                                                                                 \
+        _NET_EBPF_EXT_LOG_MESSAGE_POINTER(trace_level, KEYWORD_BIND, message, value);          \
+        break;                                                                                 \
+    CASE_EXT:                                                                                  \
+        _NET_EBPF_EXT_LOG_MESSAGE_POINTER(trace_level, KEYWORD_EXT, message, value);           \
+        break;                                                                                 \
+    CASE_SOCK_ADDR:                                                                            \
+        _NET_EBPF_EXT_LOG_MESSAGE_POINTER(trace_level, KEYWORD_SOCK_ADDR, message, value);     \
+        break;                                                                                 \
+    CASE_SOCK_OPS:                                                                             \
+        _NET_EBPF_EXT_LOG_MESSAGE_POINTER(trace_level, KEYWORD_SOCK_OPS, message, value);      \
+        break;                                                                                 \
+    CASE_XDP:                                                                                  \
+        _NET_EBPF_EXT_LOG_MESSAGE_POINTER(trace_level, KEYWORD_XDP, message, value);           \
+        break;                                                                                 \
+    CASE_FLOW_CLASSIFY:                                                                        \
+        _NET_EBPF_EXT_LOG_MESSAGE_POINTER(trace_level, KEYWORD_FLOW_CLASSIFY, message, value); \
+        break;                                                                                 \
+    default:                                                                                   \
+        ebpf_assert(!"Invalid keyword");                                                       \
+        break;                                                                                 \
     }
 
 __declspec(noinline) void
@@ -428,29 +452,32 @@ net_ebpf_ext_log_message_pointer(
     }
 }
 
-#define NET_EBPF_EXT_LOG_MESSAGE_UINT32_KEYWORD_SWITCH(trace_level, message, status)       \
-    switch (keyword) {                                                                     \
-    CASE_BASE:                                                                             \
-        _NET_EBPF_EXT_LOG_MESSAGE_UINT32(trace_level, KEYWORD_BASE, message, status);      \
-        break;                                                                             \
-    CASE_BIND:                                                                             \
-        _NET_EBPF_EXT_LOG_MESSAGE_UINT32(trace_level, KEYWORD_BIND, message, status);      \
-        break;                                                                             \
-    CASE_EXT:                                                                              \
-        _NET_EBPF_EXT_LOG_MESSAGE_UINT32(trace_level, KEYWORD_EXT, message, status);       \
-        break;                                                                             \
-    CASE_SOCK_ADDR:                                                                        \
-        _NET_EBPF_EXT_LOG_MESSAGE_UINT32(trace_level, KEYWORD_SOCK_ADDR, message, status); \
-        break;                                                                             \
-    CASE_SOCK_OPS:                                                                         \
-        _NET_EBPF_EXT_LOG_MESSAGE_UINT32(trace_level, KEYWORD_SOCK_OPS, message, status);  \
-        break;                                                                             \
-    CASE_XDP:                                                                              \
-        _NET_EBPF_EXT_LOG_MESSAGE_UINT32(trace_level, KEYWORD_XDP, message, status);       \
-        break;                                                                             \
-    default:                                                                               \
-        ebpf_assert(!"Invalid keyword");                                                   \
-        break;                                                                             \
+#define NET_EBPF_EXT_LOG_MESSAGE_UINT32_KEYWORD_SWITCH(trace_level, message, status)           \
+    switch (keyword) {                                                                         \
+    CASE_BASE:                                                                                 \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT32(trace_level, KEYWORD_BASE, message, status);          \
+        break;                                                                                 \
+    CASE_BIND:                                                                                 \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT32(trace_level, KEYWORD_BIND, message, status);          \
+        break;                                                                                 \
+    CASE_EXT:                                                                                  \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT32(trace_level, KEYWORD_EXT, message, status);           \
+        break;                                                                                 \
+    CASE_SOCK_ADDR:                                                                            \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT32(trace_level, KEYWORD_SOCK_ADDR, message, status);     \
+        break;                                                                                 \
+    CASE_SOCK_OPS:                                                                             \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT32(trace_level, KEYWORD_SOCK_OPS, message, status);      \
+        break;                                                                                 \
+    CASE_XDP:                                                                                  \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT32(trace_level, KEYWORD_XDP, message, status);           \
+        break;                                                                                 \
+    CASE_FLOW_CLASSIFY:                                                                        \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT32(trace_level, KEYWORD_FLOW_CLASSIFY, message, status); \
+        break;                                                                                 \
+    default:                                                                                   \
+        ebpf_assert(!"Invalid keyword");                                                       \
+        break;                                                                                 \
     }
 
 __declspec(noinline) void
@@ -485,29 +512,32 @@ net_ebpf_ext_log_message_uint32(
     }
 }
 
-#define NET_EBPF_EXT_LOG_MESSAGE_UINT64_KEYWORD_SWITCH(trace_level, message, status)       \
-    switch (keyword) {                                                                     \
-    CASE_BASE:                                                                             \
-        _NET_EBPF_EXT_LOG_MESSAGE_UINT64(trace_level, KEYWORD_BASE, message, status);      \
-        break;                                                                             \
-    CASE_BIND:                                                                             \
-        _NET_EBPF_EXT_LOG_MESSAGE_UINT64(trace_level, KEYWORD_BIND, message, status);      \
-        break;                                                                             \
-    CASE_EXT:                                                                              \
-        _NET_EBPF_EXT_LOG_MESSAGE_UINT64(trace_level, KEYWORD_EXT, message, status);       \
-        break;                                                                             \
-    CASE_SOCK_ADDR:                                                                        \
-        _NET_EBPF_EXT_LOG_MESSAGE_UINT64(trace_level, KEYWORD_SOCK_ADDR, message, status); \
-        break;                                                                             \
-    CASE_SOCK_OPS:                                                                         \
-        _NET_EBPF_EXT_LOG_MESSAGE_UINT64(trace_level, KEYWORD_SOCK_OPS, message, status);  \
-        break;                                                                             \
-    CASE_XDP:                                                                              \
-        _NET_EBPF_EXT_LOG_MESSAGE_UINT64(trace_level, KEYWORD_XDP, message, status);       \
-        break;                                                                             \
-    default:                                                                               \
-        ebpf_assert(!"Invalid keyword");                                                   \
-        break;                                                                             \
+#define NET_EBPF_EXT_LOG_MESSAGE_UINT64_KEYWORD_SWITCH(trace_level, message, status)           \
+    switch (keyword) {                                                                         \
+    CASE_BASE:                                                                                 \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT64(trace_level, KEYWORD_BASE, message, status);          \
+        break;                                                                                 \
+    CASE_BIND:                                                                                 \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT64(trace_level, KEYWORD_BIND, message, status);          \
+        break;                                                                                 \
+    CASE_EXT:                                                                                  \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT64(trace_level, KEYWORD_EXT, message, status);           \
+        break;                                                                                 \
+    CASE_SOCK_ADDR:                                                                            \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT64(trace_level, KEYWORD_SOCK_ADDR, message, status);     \
+        break;                                                                                 \
+    CASE_SOCK_OPS:                                                                             \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT64(trace_level, KEYWORD_SOCK_OPS, message, status);      \
+        break;                                                                                 \
+    CASE_XDP:                                                                                  \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT64(trace_level, KEYWORD_XDP, message, status);           \
+        break;                                                                                 \
+    CASE_FLOW_CLASSIFY:                                                                        \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT64(trace_level, KEYWORD_FLOW_CLASSIFY, message, status); \
+        break;                                                                                 \
+    default:                                                                                   \
+        ebpf_assert(!"Invalid keyword");                                                       \
+        break;                                                                                 \
     }
 
 __declspec(noinline) void
@@ -542,29 +572,32 @@ net_ebpf_ext_log_message_uint64(
     }
 }
 
-#define NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE_UINT64_UINT64_KEYWORD_SWITCH(api_name, status, value1, value2)       \
-    switch (keyword) {                                                                                             \
-    CASE_BASE:                                                                                                     \
-        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE_UINT64_UINT64(KEYWORD_BASE, api_name, status, value1, value2);      \
-        break;                                                                                                     \
-    CASE_EXT:                                                                                                      \
-        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE_UINT64_UINT64(KEYWORD_EXT, api_name, status, value1, value2);       \
-        break;                                                                                                     \
-    CASE_BIND:                                                                                                     \
-        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE_UINT64_UINT64(KEYWORD_BIND, api_name, status, value1, value2);      \
-        break;                                                                                                     \
-    CASE_SOCK_ADDR:                                                                                                \
-        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE_UINT64_UINT64(KEYWORD_SOCK_ADDR, api_name, status, value1, value2); \
-        break;                                                                                                     \
-    CASE_SOCK_OPS:                                                                                                 \
-        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE_UINT64_UINT64(KEYWORD_SOCK_OPS, api_name, status, value1, value2);  \
-        break;                                                                                                     \
-    CASE_XDP:                                                                                                      \
-        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE_UINT64_UINT64(KEYWORD_XDP, api_name, status, value1, value2);       \
-        break;                                                                                                     \
-    default:                                                                                                       \
-        ebpf_assert(!"Invalid keyword");                                                                           \
-        break;                                                                                                     \
+#define NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE_UINT64_UINT64_KEYWORD_SWITCH(api_name, status, value1, value2)           \
+    switch (keyword) {                                                                                                 \
+    CASE_BASE:                                                                                                         \
+        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE_UINT64_UINT64(KEYWORD_BASE, api_name, status, value1, value2);          \
+        break;                                                                                                         \
+    CASE_EXT:                                                                                                          \
+        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE_UINT64_UINT64(KEYWORD_EXT, api_name, status, value1, value2);           \
+        break;                                                                                                         \
+    CASE_BIND:                                                                                                         \
+        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE_UINT64_UINT64(KEYWORD_BIND, api_name, status, value1, value2);          \
+        break;                                                                                                         \
+    CASE_SOCK_ADDR:                                                                                                    \
+        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE_UINT64_UINT64(KEYWORD_SOCK_ADDR, api_name, status, value1, value2);     \
+        break;                                                                                                         \
+    CASE_SOCK_OPS:                                                                                                     \
+        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE_UINT64_UINT64(KEYWORD_SOCK_OPS, api_name, status, value1, value2);      \
+        break;                                                                                                         \
+    CASE_XDP:                                                                                                          \
+        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE_UINT64_UINT64(KEYWORD_XDP, api_name, status, value1, value2);           \
+        break;                                                                                                         \
+    CASE_FLOW_CLASSIFY:                                                                                                \
+        _NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE_UINT64_UINT64(KEYWORD_FLOW_CLASSIFY, api_name, status, value1, value2); \
+        break;                                                                                                         \
+    default:                                                                                                           \
+        ebpf_assert(!"Invalid keyword");                                                                               \
+        break;                                                                                                         \
     }
 
 __declspec(noinline) void
@@ -578,29 +611,32 @@ net_ebpf_ext_log_ntstatus_api_failure_uint64_uint64(
     NET_EBPF_EXT_LOG_NTSTATUS_API_FAILURE_UINT64_UINT64_KEYWORD_SWITCH(api_name, status, value1, value2);
 }
 
-#define NET_EBPF_EXT_LOG_MESSAGE_UINT64_UINT64_KEYWORD_SWITCH(trace_level, message, value1, value2)       \
-    switch (keyword) {                                                                                    \
-    CASE_BASE:                                                                                            \
-        _NET_EBPF_EXT_LOG_MESSAGE_UINT64_UINT64(trace_level, KEYWORD_BASE, message, value1, value2);      \
-        break;                                                                                            \
-    CASE_EXT:                                                                                             \
-        _NET_EBPF_EXT_LOG_MESSAGE_UINT64_UINT64(trace_level, KEYWORD_EXT, message, value1, value2);       \
-        break;                                                                                            \
-    CASE_BIND:                                                                                            \
-        _NET_EBPF_EXT_LOG_MESSAGE_UINT64_UINT64(trace_level, KEYWORD_BIND, message, value1, value2);      \
-        break;                                                                                            \
-    CASE_SOCK_ADDR:                                                                                       \
-        _NET_EBPF_EXT_LOG_MESSAGE_UINT64_UINT64(trace_level, KEYWORD_SOCK_ADDR, message, value1, value2); \
-        break;                                                                                            \
-    CASE_SOCK_OPS:                                                                                        \
-        _NET_EBPF_EXT_LOG_MESSAGE_UINT64_UINT64(trace_level, KEYWORD_SOCK_OPS, message, value1, value2);  \
-        break;                                                                                            \
-    CASE_XDP:                                                                                             \
-        _NET_EBPF_EXT_LOG_MESSAGE_UINT64_UINT64(trace_level, KEYWORD_XDP, message, value1, value2);       \
-        break;                                                                                            \
-    default:                                                                                              \
-        ebpf_assert(!"Invalid keyword");                                                                  \
-        break;                                                                                            \
+#define NET_EBPF_EXT_LOG_MESSAGE_UINT64_UINT64_KEYWORD_SWITCH(trace_level, message, value1, value2)           \
+    switch (keyword) {                                                                                        \
+    CASE_BASE:                                                                                                \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT64_UINT64(trace_level, KEYWORD_BASE, message, value1, value2);          \
+        break;                                                                                                \
+    CASE_EXT:                                                                                                 \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT64_UINT64(trace_level, KEYWORD_EXT, message, value1, value2);           \
+        break;                                                                                                \
+    CASE_BIND:                                                                                                \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT64_UINT64(trace_level, KEYWORD_BIND, message, value1, value2);          \
+        break;                                                                                                \
+    CASE_SOCK_ADDR:                                                                                           \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT64_UINT64(trace_level, KEYWORD_SOCK_ADDR, message, value1, value2);     \
+        break;                                                                                                \
+    CASE_SOCK_OPS:                                                                                            \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT64_UINT64(trace_level, KEYWORD_SOCK_OPS, message, value1, value2);      \
+        break;                                                                                                \
+    CASE_XDP:                                                                                                 \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT64_UINT64(trace_level, KEYWORD_XDP, message, value1, value2);           \
+        break;                                                                                                \
+    CASE_FLOW_CLASSIFY:                                                                                       \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT64_UINT64(trace_level, KEYWORD_FLOW_CLASSIFY, message, value1, value2); \
+        break;                                                                                                \
+    default:                                                                                                  \
+        ebpf_assert(!"Invalid keyword");                                                                      \
+        break;                                                                                                \
     }
 
 __declspec(noinline) void
@@ -657,6 +693,10 @@ net_ebpf_ext_log_message_uint64_uint64(
         break;                                                                                                      \
     CASE_XDP:                                                                                                       \
         _NET_EBPF_EXT_LOG_MESSAGE_UINT64_UINT64_UINT64(trace_level, KEYWORD_XDP, message, value1, value2, value3);  \
+        break;                                                                                                      \
+    CASE_FLOW_CLASSIFY:                                                                                             \
+        _NET_EBPF_EXT_LOG_MESSAGE_UINT64_UINT64_UINT64(                                                             \
+            trace_level, KEYWORD_FLOW_CLASSIFY, message, value1, value2, value3);                                   \
         break;                                                                                                      \
     default:                                                                                                        \
         ebpf_assert(!"Invalid keyword");                                                                            \

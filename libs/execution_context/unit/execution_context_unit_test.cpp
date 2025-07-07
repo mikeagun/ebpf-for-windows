@@ -1955,6 +1955,7 @@ std::vector<GUID> _program_types = {
     EBPF_PROGRAM_TYPE_BIND,
     EBPF_PROGRAM_TYPE_CGROUP_SOCK_ADDR,
     EBPF_PROGRAM_TYPE_SOCK_OPS,
+    // EBPF_PROGRAM_TYPE_FLOW_CLASSIFY,
     EBPF_PROGRAM_TYPE_SAMPLE};
 
 std::map<std::string, ebpf_map_definition_in_memory_t> _map_definitions = {
