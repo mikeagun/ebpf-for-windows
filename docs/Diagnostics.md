@@ -22,6 +22,7 @@ The following program types rely on WFP:
 - BPF_PROG_TYPE_BIND
 - BPF_PROG_TYPE_CGROUP_SOCK_ADDR
 - BPF_PROG_TYPE_SOCK_OPS
+- BPF_PROG_TYPE_FLOW_CLASSIFY
 
 Use the command `netsh wfp show state` to produce a `wfpstate.xml`. This file shows the WFP state on the system,
 including all WFP `sublayer`, `callout`, and `filter` objects. This can be used to determine if eBPF objects are

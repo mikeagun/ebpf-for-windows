@@ -161,6 +161,7 @@ _net_ebpf_extension_flow_classify_create_filter_context(
     _In_ const net_ebpf_extension_hook_provider_t* provider_context,
     _Outptr_ net_ebpf_extension_wfp_filter_context_t** filter_context)
 {
+    NET_EBPF_EXT_LOG_ENTRY();
     ebpf_result_t result = EBPF_SUCCESS;
     net_ebpf_extension_flow_classify_wfp_filter_context_t* local_filter_context = NULL;
     uint32_t compartment_id = UNSPECIFIED_COMPARTMENT_ID;
@@ -220,6 +221,7 @@ static ebpf_result_t
 _net_ebpf_extension_flow_classify_validate_client_data(
     _In_ const ebpf_extension_data_t* client_data, _Out_ bool* is_wildcard)
 {
+    NET_EBPF_EXT_LOG_ENTRY();
     ebpf_result_t result = EBPF_SUCCESS;
     *is_wildcard = FALSE;
 
@@ -367,6 +369,7 @@ Exit:
 void
 net_ebpf_ext_flow_classify_unregister_providers()
 {
+    NET_EBPF_EXT_LOG_ENTRY();
     if (_ebpf_flow_classify_hook_provider_context != NULL) {
         net_ebpf_extension_hook_provider_unregister(_ebpf_flow_classify_hook_provider_context);
         _ebpf_flow_classify_hook_provider_context = NULL;
@@ -392,6 +395,7 @@ _net_ebpf_extension_flow_classify_copy_wfp_connection_fields(
     _In_ const FWPS_INCOMING_METADATA_VALUES* incoming_metadata_values,
     _Out_ net_ebpf_flow_classify_t* flow_classify_context)
 {
+    NET_EBPF_EXT_LOG_ENTRY();
     uint16_t wfp_layer_id = incoming_fixed_values->layerId;
     net_ebpf_extension_hook_id_t hook_id = net_ebpf_extension_get_hook_id_from_wfp_layer_id(wfp_layer_id);
     wfp_ale_layer_fields_t* fields = &wfp_flow_established_fields[hook_id - EBPF_HOOK_ALE_FLOW_ESTABLISHED_V4];
@@ -476,6 +480,7 @@ _net_ebpf_extension_flow_classify_copy_wfp_stream_fields(
     _Inout_ void* layer_data,
     _Out_ net_ebpf_flow_classify_t* flow_classify_context)
 {
+    NET_EBPF_EXT_LOG_ENTRY();
     uint16_t wfp_layer_id = incoming_fixed_values->layerId;
     net_ebpf_extension_hook_id_t hook_id = net_ebpf_extension_get_hook_id_from_wfp_layer_id(wfp_layer_id);
     wfp_stream_layer_fields_t* fields = &wfp_stream_fields[hook_id - EBPF_HOOK_STREAM_V4];
@@ -831,6 +836,7 @@ _ebpf_flow_classify_context_create(
     size_t context_size_in,
     _Outptr_ void** context)
 {
+    NET_EBPF_EXT_LOG_ENTRY();
     ebpf_result_t result;
     bpf_flow_classify_t* flow_classify_context = NULL;
     net_ebpf_flow_classify_t* context_header = NULL;
@@ -941,7 +947,7 @@ net_ebpf_extension_flow_classify_flow_established_classify(
     NET_EBPF_EXT_LOG_ENTRY();
 
     // Default action is to permit
-    classify_output->actionType = FWP_ACTION_PERMIT;
+    classify_output->actionType = FWP_ACTION_CONTINUE;
 
     filter_context = (net_ebpf_extension_flow_classify_wfp_filter_context_t*)filter->context;
     ASSERT(filter_context != NULL);

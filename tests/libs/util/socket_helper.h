@@ -170,7 +170,8 @@ typedef class _server_socket : public _base_socket
     {
         MODE_TIMEOUT,
         MODE_NO_TIMEOUT,
-        MODE_DONT_CARE
+        MODE_DONT_CARE,
+        MODE_ACCESS,
     };
     _server_socket(int _sock_type, int _protocol, uint16_t port);
     ~_server_socket();

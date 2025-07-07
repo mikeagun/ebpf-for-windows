@@ -415,6 +415,8 @@ _server_socket::~_server_socket()
     }
 }
 
+// TODO: where should we include from?
+// #define WSAEACCES                        10013L
 void
 _server_socket::complete_async_receive(int timeout_in_ms, receiver_mode mode)
 {
@@ -437,7 +439,11 @@ _server_socket::complete_async_receive(int timeout_in_ms, receiver_mode mode)
         overlapped.hEvent = INVALID_HANDLE_VALUE;
     } else {
         if (error == WSA_WAIT_TIMEOUT) {
-            if (mode == MODE_NO_TIMEOUT) {
+            if (mode != MODE_TIMEOUT) {
+                FAIL("Receiver socket did not receive any message in 1 second.");
+            }
+        } else if (error == WSAEACCES) {
+            if (mode != MODE_ACCESS) {
                 FAIL("Receiver socket did not receive any message in 1 second.");
             }
         } else {

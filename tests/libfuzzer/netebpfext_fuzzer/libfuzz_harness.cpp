@@ -129,6 +129,13 @@ FUZZ_EXPORT int __cdecl LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         (void)helper.test_sock_ops_v4(&parameters);
         (void)helper.test_sock_ops_v6(&parameters);
         break;
+    // case BPF_PROG_TYPE_FLOW_CLASSIFY:
+    //     (void)helper.test_flow_classify_ale_v4(&parameters);
+    //     (void)helper.test_flow_classify_stream_v4(&parameters);
+    //     (void)helper.test_flow_classify_ale_v6(&parameters);
+    //     (void)helper.test_flow_classify_stream_v6(&parameters);
+    //     break;
+
     // Explicitly ignore all other program types.
     default:
         break;

@@ -65,6 +65,10 @@ static std::vector<std::pair<GUID, GUID>> _program_types = {
         EBPF_PROGRAM_TYPE_SOCK_OPS,
         EBPF_ATTACH_TYPE_CGROUP_SOCK_OPS,
     },
+    // {
+    //     EBPF_PROGRAM_TYPE_FLOW_CLASSIFY,
+    //     EBPF_ATTACH_TYPE_FLOW_CLASSIFY,
+    // }
     {
         EBPF_PROGRAM_TYPE_SAMPLE,
         EBPF_ATTACH_TYPE_SAMPLE,

@@ -253,7 +253,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         net_ebpf_extension_flow_classify_flow_delete,
         L"Flow Classify ALE Flow Established Callout v4",
         L"Flow Classify ALE Flow Established callout for eBPF",
-        FWP_ACTION_CALLOUT_TERMINATING,
+        FWP_ACTION_CALLOUT_INSPECTION,
         0,
     },
     // EBPF_HOOK_FLOW_CLASSIFY_ALE_FLOW_ESTABLISHED_V6
@@ -265,7 +265,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         net_ebpf_extension_flow_classify_flow_delete,
         L"Flow Classify ALE Flow Established Callout v6",
         L"Flow Classify ALE Flow Established callout for eBPF",
-        FWP_ACTION_CALLOUT_TERMINATING,
+        FWP_ACTION_CALLOUT_INSPECTION,
         0,
     },
     // EBPF_HOOK_STREAM_V4
@@ -277,8 +277,9 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         net_ebpf_extension_flow_classify_flow_delete,
         L"Stream Flow Classify Callout v4",
         L"Stream Flow Classify callout for eBPF",
-        FWP_ACTION_CALLOUT_INSPECTION,
-        FWP_CALLOUT_FLAG_CONDITIONAL_ON_FLOW,
+        FWP_ACTION_CALLOUT_TERMINATING,
+        // FWP_CALLOUT_FLAG_CONDITIONAL_ON_FLOW,
+        0,
     },
     // EBPF_HOOK_STREAM_V6
     {
@@ -289,8 +290,9 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         net_ebpf_extension_flow_classify_flow_delete,
         L"Stream Flow Classify Callout v6",
         L"Stream Flow Classify callout for eBPF",
-        FWP_ACTION_CALLOUT_INSPECTION,
-        FWP_CALLOUT_FLAG_CONDITIONAL_ON_FLOW,
+        FWP_ACTION_CALLOUT_TERMINATING,
+        // FWP_CALLOUT_FLAG_CONDITIONAL_ON_FLOW,
+        0,
     }};
 
 // WFP globals
@@ -633,7 +635,7 @@ _net_ebpf_ext_register_wfp_callout(_Inout_ net_ebpf_ext_wfp_callout_state_t* cal
     callout_register_state.classifyFn = callout_state->classify_fn;
     callout_register_state.notifyFn = callout_state->notify_fn;
     callout_register_state.flowDeleteFn = callout_state->delete_fn;
-    callout_register_state.flags = 0;
+    callout_register_state.flags = callout_state->callout_flags;
 
     status = FwpsCalloutRegister(device_object, &callout_register_state, &callout_state->assigned_callout_id);
     if (!NT_SUCCESS(status)) {
