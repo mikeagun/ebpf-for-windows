@@ -1988,13 +1988,13 @@ TEST_CASE("flow_classify_tcp_connection_tests", "[flow_classify]")
         stream_server_socket_t tcp_server(SOCK_STREAM, IPPROTO_TCP, SOCKET_TEST_PORT + 100);
 
         sockaddr_storage destination_address{};
-        IN4ADDR_SETLOOPBACK((PSOCKADDR_IN)&destination_address);
+        IN6ADDR_SETV4MAPPED((PSOCKADDR_IN6)&destination_address, &in4addr_loopback, scopeid_unspecified, 0);
 
         tcp_server.post_async_receive();
 
         const char* tcp_message = "flow_classify_tcp_baseline_test";
         tcp_client.send_message_to_remote_host(tcp_message, destination_address, SOCKET_TEST_PORT + 100);
-        tcp_client.complete_async_send(1000);
+        tcp_client.complete_async_send(1000); //?
 
         tcp_server.complete_async_receive(1000);
 
@@ -2015,16 +2015,16 @@ TEST_CASE("flow_classify_tcp_connection_tests", "[flow_classify]")
     try {
         // Test IPv4 TCP connection
         stream_client_socket_t tcp_client(SOCK_STREAM, IPPROTO_TCP, 0, IPv4);
-        stream_server_socket_t tcp_server(SOCK_STREAM, IPPROTO_TCP, SOCKET_TEST_PORT + 100);
+        stream_server_socket_t tcp_server(SOCK_STREAM, IPPROTO_TCP, SOCKET_TEST_PORT + 101);
 
         sockaddr_storage destination_address{};
-        IN4ADDR_SETLOOPBACK((PSOCKADDR_IN)&destination_address);
+        IN6ADDR_SETV4MAPPED((PSOCKADDR_IN6)&destination_address, &in4addr_loopback, scopeid_unspecified, 0);
 
         tcp_server.post_async_receive();
 
         const char* tcp_message = "flow_classify_tcp_test";
-        tcp_client.send_message_to_remote_host(tcp_message, destination_address, SOCKET_TEST_PORT + 100);
-        tcp_client.complete_async_send(1000);
+        tcp_client.send_message_to_remote_host(tcp_message, destination_address, SOCKET_TEST_PORT + 101);
+        tcp_client.complete_async_send(1000); //?
 
         tcp_server.complete_async_receive(1000);
 
@@ -2055,7 +2055,7 @@ TEST_CASE("flow_classify_tcp_connection_tests", "[flow_classify]")
         tcp_server_v6.post_async_receive();
 
         tcp_client_v6.send_message_to_remote_host(tcp_message_v6, destination_address, SOCKET_TEST_PORT + 102);
-        tcp_client_v6.complete_async_send(1000);
+        tcp_client_v6.complete_async_send(1000); //?
 
         tcp_server_v6.complete_async_receive(1000);
 

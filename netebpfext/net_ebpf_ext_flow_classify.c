@@ -576,6 +576,9 @@ net_ebpf_extension_flow_classify_flow_classify(
 
     NET_EBPF_EXT_LOG_ENTRY();
 
+    NET_EBPF_EXT_LOG_MESSAGE(
+        NET_EBPF_EXT_TRACELOG_LEVEL_ERROR, NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY, "in flow_classify callback");
+
     // Default action is to permit
     classify_output->actionType = FWP_ACTION_PERMIT;
 
@@ -587,6 +590,7 @@ net_ebpf_extension_flow_classify_flow_classify(
         goto Exit;
     }
 
+
     if (filter_context->base.context_deleting) {
         NET_EBPF_EXT_LOG_MESSAGE(
             NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
@@ -595,8 +599,10 @@ net_ebpf_extension_flow_classify_flow_classify(
         goto Exit;
     }
 
+    local_flow_context = (net_ebpf_extension_flow_classify_wfp_flow_context_t*)(uintptr_t)flow_context;
+
     // Get flow context - should always be present due to FWP_CALLOUT_FLAG_CONDITIONAL_ON_FLOW
-    if (flow_context == 0) {
+    if (local_flow_context == NULL) {
         NET_EBPF_EXT_LOG_MESSAGE(
             NET_EBPF_EXT_TRACELOG_LEVEL_ERROR,
             NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
@@ -604,17 +610,9 @@ net_ebpf_extension_flow_classify_flow_classify(
         goto Exit;
     }
 
-    local_flow_context = (net_ebpf_extension_flow_classify_wfp_flow_context_t*)(uintptr_t)flow_context;
+    NET_EBPF_EXT_LOG_MESSAGE(
+        NET_EBPF_EXT_TRACELOG_LEVEL_ERROR, NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY, "flow_classify -- have flow context");
 
-    if (local_flow_context == NULL) {
-        NET_EBPF_EXT_LOG_MESSAGE(
-            NET_EBPF_EXT_TRACELOG_LEVEL_ERROR,
-            NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
-            "local_flow_context is NULL");
-        goto Exit;
-    }
-
-    filter_context = local_flow_context->filter_context;
 
     // Copy WFP stream fields to the flow classify context
     flow_classify_context = &local_flow_context->context.context;
@@ -680,7 +678,7 @@ net_ebpf_extension_flow_classify_flow_classify(
     }
 
     // Check compartment ID if specified
-    client_compartment_id = filter_context->compartment_id;
+    client_compartment_id = local_flow_context->filter_context->compartment_id;
     if (client_compartment_id != UNSPECIFIED_COMPARTMENT_ID &&
         client_compartment_id != flow_classify_context->compartment_id) {
         NET_EBPF_EXT_LOG_MESSAGE_UINT64(
@@ -691,10 +689,16 @@ net_ebpf_extension_flow_classify_flow_classify(
         goto Exit;
     }
 
+    NET_EBPF_EXT_LOG_MESSAGE(
+        NET_EBPF_EXT_TRACELOG_LEVEL_INFO, NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY, "Invoking eBPF program");
     // Invoke the eBPF program
-    program_result = net_ebpf_extension_hook_invoke_programs(flow_classify_context, &filter_context->base, &result);
+    program_result = net_ebpf_extension_hook_invoke_programs(flow_classify_context, &local_flow_context->filter_context->base, &result);
     if (program_result == EBPF_OBJECT_NOT_FOUND) {
         // No program attached, allow
+        NET_EBPF_EXT_LOG_MESSAGE(
+            NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
+            NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+            "No program attached, allowing flow");
         goto Exit;
     } else if (program_result != EBPF_SUCCESS) {
         NET_EBPF_EXT_LOG_MESSAGE_NTSTATUS(
