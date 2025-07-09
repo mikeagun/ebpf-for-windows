@@ -412,7 +412,7 @@ _net_ebpf_extension_flow_classify_copy_wfp_connection_fields(
         flow_classify->family = AF_INET;
         flow_classify->local_ip4 = htonl(incoming_values[fields->local_ip_address_field].value.uint32);
         flow_classify->remote_ip4 = htonl(incoming_values[fields->remote_ip_address_field].value.uint32);
-    } else {
+    } else if (hook_id == EBPF_HOOK_ALE_FLOW_ESTABLISHED_V6) {
         flow_classify->family = AF_INET6;
         RtlCopyMemory(
             flow_classify->local_ip6,
@@ -422,6 +422,13 @@ _net_ebpf_extension_flow_classify_copy_wfp_connection_fields(
             flow_classify->remote_ip6,
             incoming_values[fields->remote_ip_address_field].value.byteArray16,
             sizeof(FWP_BYTE_ARRAY16));
+    } else {
+        NET_EBPF_EXT_LOG_MESSAGE_UINT64(
+            NET_EBPF_EXT_TRACELOG_LEVEL_ERROR,
+            NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+            "flow_established: Invalid hook_id",
+            hook_id);
+        return;
     }
     flow_classify->local_port = htons(incoming_values[fields->local_port_field].value.uint16);
     flow_classify->remote_port = htons(incoming_values[fields->remote_port_field].value.uint16);
@@ -579,8 +586,14 @@ net_ebpf_extension_flow_classify_flow_classify(
     NET_EBPF_EXT_LOG_MESSAGE(
         NET_EBPF_EXT_TRACELOG_LEVEL_ERROR, NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY, "in flow_classify callback");
 
+    NET_EBPF_EXT_LOG_MESSAGE_UINT64(
+        NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
+        NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+        "flow id",
+        incoming_metadata_values->flowHandle);
+
     // Default action is to permit
-    classify_output->actionType = FWP_ACTION_PERMIT;
+    classify_output->actionType = FWP_ACTION_CONTINUE;
 
     filter_context = (net_ebpf_extension_flow_classify_wfp_filter_context_t*)filter->context;
     ASSERT(filter_context != NULL);
@@ -589,7 +602,6 @@ net_ebpf_extension_flow_classify_flow_classify(
             NET_EBPF_EXT_TRACELOG_LEVEL_ERROR, NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY, "filter_context is NULL");
         goto Exit;
     }
-
 
     if (filter_context->base.context_deleting) {
         NET_EBPF_EXT_LOG_MESSAGE(
@@ -611,8 +623,9 @@ net_ebpf_extension_flow_classify_flow_classify(
     }
 
     NET_EBPF_EXT_LOG_MESSAGE(
-        NET_EBPF_EXT_TRACELOG_LEVEL_ERROR, NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY, "flow_classify -- have flow context");
-
+        NET_EBPF_EXT_TRACELOG_LEVEL_ERROR,
+        NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+        "flow_classify -- have flow context");
 
     // Copy WFP stream fields to the flow classify context
     flow_classify_context = &local_flow_context->context.context;
@@ -692,7 +705,8 @@ net_ebpf_extension_flow_classify_flow_classify(
     NET_EBPF_EXT_LOG_MESSAGE(
         NET_EBPF_EXT_TRACELOG_LEVEL_INFO, NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY, "Invoking eBPF program");
     // Invoke the eBPF program
-    program_result = net_ebpf_extension_hook_invoke_programs(flow_classify_context, &local_flow_context->filter_context->base, &result);
+    program_result = net_ebpf_extension_hook_invoke_programs(
+        flow_classify_context, &local_flow_context->filter_context->base, &result);
     if (program_result == EBPF_OBJECT_NOT_FOUND) {
         // No program attached, allow
         NET_EBPF_EXT_LOG_MESSAGE(
@@ -712,8 +726,8 @@ net_ebpf_extension_flow_classify_flow_classify(
     // Handle the program result
     switch (result) {
     case FLOW_CLASSIFY_ALLOW:
-        classify_output->actionType = FWP_ACTION_PERMIT;
         classify_output->rights |= FWPS_RIGHT_ACTION_WRITE;
+        classify_output->actionType = FWP_ACTION_PERMIT;
         classify_output->flags |= FWPS_CLASSIFY_OUT_FLAG_ABSORB;
 
         // Remove the WFP context - program has decided, no more classifications needed
@@ -741,8 +755,8 @@ net_ebpf_extension_flow_classify_flow_classify(
 
     case FLOW_CLASSIFY_BLOCK:
         // Block the segment and kill the flow
-        classify_output->actionType = FWP_ACTION_BLOCK;
         classify_output->rights |= FWPS_RIGHT_ACTION_WRITE;
+        classify_output->actionType = FWP_ACTION_BLOCK;
         classify_output->flags |= FWPS_CLASSIFY_OUT_FLAG_ABSORB;
 
         // Remove the WFP context - flow is being blocked
@@ -769,7 +783,7 @@ net_ebpf_extension_flow_classify_flow_classify(
     case FLOW_CLASSIFY_NEED_MORE_DATA:
     default:
         // Allow the segment but keep classifying future segments
-        classify_output->actionType = FWP_ACTION_PERMIT;
+        classify_output->actionType = FWP_ACTION_CONTINUE;
 
         NET_EBPF_EXT_LOG_MESSAGE(
             NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
@@ -949,8 +963,14 @@ net_ebpf_extension_flow_classify_flow_established_classify(
     UNREFERENCED_PARAMETER(flow_context);
 
     NET_EBPF_EXT_LOG_ENTRY();
+    NET_EBPF_EXT_LOG_MESSAGE_UINT64(
+        NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
+        NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+        "flow id",
+        incoming_metadata_values->flowHandle);
 
     // Default action is to permit
+    // classify_output->rights |= FWPS_RIGHT_ACTION_WRITE;
     classify_output->actionType = FWP_ACTION_CONTINUE;
 
     filter_context = (net_ebpf_extension_flow_classify_wfp_filter_context_t*)filter->context;
@@ -1023,6 +1043,11 @@ net_ebpf_extension_flow_classify_flow_established_classify(
     // Set the flow ID after copying other fields
     local_flow_context->context.context.flow_id = incoming_metadata_values->flowHandle;
 
+    if (flow_context != 0) {
+        NET_EBPF_EXT_LOG_MESSAGE(
+            NET_EBPF_EXT_TRACELOG_LEVEL_ERROR, NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY, "Flow context already set");
+    }
+
     // Associate the flow context with the stream layer callout
     status = FwpsFlowAssociateContext(
         local_flow_context->parameters.flow_id,
@@ -1038,6 +1063,15 @@ net_ebpf_extension_flow_classify_flow_established_classify(
             status);
         goto Exit;
     }
+
+    // tracelog flow_id, layer_id, callout_id
+    NET_EBPF_EXT_LOG_MESSAGE_UINT64_UINT64_UINT64(
+        NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
+        NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+        "FwpsFlowAssociateContext succeeded",
+        local_flow_context->parameters.flow_id,
+        local_flow_context->parameters.layer_id,
+        local_flow_context->parameters.callout_id);
 
     // Add to the flow context list
     KeAcquireSpinLock(&filter_context->lock, &old_irql);

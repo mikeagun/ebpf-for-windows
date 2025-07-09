@@ -1984,15 +1984,18 @@ TEST_CASE("flow_classify_tcp_connection_tests", "[flow_classify]")
 
     // Test basic connection first
     {
+        std::string test_message = "flow_classify_tcp_baseline_v4";
+        CAPTURE(test_message);
         stream_client_socket_t tcp_client(SOCK_STREAM, IPPROTO_TCP, 0, IPv4);
         stream_server_socket_t tcp_server(SOCK_STREAM, IPPROTO_TCP, SOCKET_TEST_PORT + 100);
 
         sockaddr_storage destination_address{};
-        IN6ADDR_SETV4MAPPED((PSOCKADDR_IN6)&destination_address, &in4addr_loopback, scopeid_unspecified, 0);
+        // IN6ADDR_SETV4MAPPED((PSOCKADDR_IN6)&destination_address, &in4addr_loopback, scopeid_unspecified, 0);
+        IN4ADDR_SETLOOPBACK((PSOCKADDR_IN)&destination_address);
 
         tcp_server.post_async_receive();
 
-        const char* tcp_message = "flow_classify_tcp_baseline_test";
+        const char* tcp_message = "flow_classify_tcp_baseline_v4";
         tcp_client.send_message_to_remote_host(tcp_message, destination_address, SOCKET_TEST_PORT + 100);
         tcp_client.complete_async_send(1000); //?
 
@@ -2013,12 +2016,15 @@ TEST_CASE("flow_classify_tcp_connection_tests", "[flow_classify]")
 
     std::cout << "About to send V4" << std::endl;
     try {
+        std::string test_message = "flow_classify_tcp_v4";
+        CAPTURE(test_message);
         // Test IPv4 TCP connection
         stream_client_socket_t tcp_client(SOCK_STREAM, IPPROTO_TCP, 0, IPv4);
         stream_server_socket_t tcp_server(SOCK_STREAM, IPPROTO_TCP, SOCKET_TEST_PORT + 101);
 
         sockaddr_storage destination_address{};
-        IN6ADDR_SETV4MAPPED((PSOCKADDR_IN6)&destination_address, &in4addr_loopback, scopeid_unspecified, 0);
+        // IN6ADDR_SETV4MAPPED((PSOCKADDR_IN6)&destination_address, &in4addr_loopback, scopeid_unspecified, 0);
+        IN4ADDR_SETLOOPBACK((PSOCKADDR_IN)&destination_address);
 
         tcp_server.post_async_receive();
 
@@ -2044,6 +2050,8 @@ TEST_CASE("flow_classify_tcp_connection_tests", "[flow_classify]")
 
     std::cout << "About to send V6" << std::endl;
     try {
+        std::string test_message = "flow_classify_tcp_v6";
+        CAPTURE(test_message);
         // Test IPv6 TCP connection
         stream_client_socket_t tcp_client_v6(SOCK_STREAM, IPPROTO_TCP, 0, IPv6);
         stream_server_socket_t tcp_server_v6(SOCK_STREAM, IPPROTO_TCP, SOCKET_TEST_PORT + 102);

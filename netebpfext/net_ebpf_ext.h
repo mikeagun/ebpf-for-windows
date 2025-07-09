@@ -247,6 +247,11 @@ typedef struct _net_ebpf_extension_flow_context_parameters
     uint32_t callout_id; ///< WFP callout Id that this flow is associated to.
 } net_ebpf_extension_flow_context_parameters_t;
 
+/**
+ * @brief netebpfext hook Ids.
+ *
+ * @note This must be kept in sync with _net_ebpf_ext_wfp_callout_states
+ */
 typedef enum _net_ebpf_extension_hook_id
 {
     EBPF_HOOK_OUTBOUND_L2 = 0,
@@ -263,7 +268,9 @@ typedef enum _net_ebpf_extension_hook_id
     EBPF_HOOK_ALE_AUTH_RECV_ACCEPT_V6,
     EBPF_HOOK_ALE_FLOW_ESTABLISHED_V4,
     EBPF_HOOK_ALE_FLOW_ESTABLISHED_V6,
-    EBPF_HOOK_STREAM_V4, // 14
+    EBPF_HOOK_FLOW_CLASSIFY_ALE_FLOW_ESTABLISHED_V4, // FIXME: this overlaps in layer with the above FLOW_ESTABLISHED
+    EBPF_HOOK_FLOW_CLASSIFY_ALE_FLOW_ESTABLISHED_V6,
+    EBPF_HOOK_STREAM_V4, // 16
     EBPF_HOOK_STREAM_V6
 } net_ebpf_extension_hook_id_t;
 

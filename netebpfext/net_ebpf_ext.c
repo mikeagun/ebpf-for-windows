@@ -75,6 +75,11 @@ typedef struct _net_ebpf_ext_wfp_callout_state
     uint32_t assigned_callout_id;
 } net_ebpf_ext_wfp_callout_state_t;
 
+/**
+ * @brief WFP callout states.
+ *
+ * @note This must be kept in sync with net_ebpf_extension_hook_id_t
+ */
 static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
     // EBPF_HOOK_OUTBOUND_L2
     {
@@ -277,7 +282,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         net_ebpf_extension_flow_classify_flow_delete,
         L"Stream Flow Classify Callout v4",
         L"Stream Flow Classify callout for eBPF",
-        FWP_ACTION_CALLOUT_TERMINATING,
+        FWP_ACTION_CALLOUT_UNKNOWN,
         // FWP_CALLOUT_FLAG_CONDITIONAL_ON_FLOW,
         0,
     },
@@ -290,7 +295,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         net_ebpf_extension_flow_classify_flow_delete,
         L"Stream Flow Classify Callout v6",
         L"Stream Flow Classify callout for eBPF",
-        FWP_ACTION_CALLOUT_TERMINATING,
+        FWP_ACTION_CALLOUT_UNKNOWN,
         // FWP_CALLOUT_FLAG_CONDITIONAL_ON_FLOW,
         0,
     }};
@@ -438,6 +443,8 @@ net_ebpf_extension_get_hook_id_from_wfp_layer_id(uint16_t wfp_layer_id)
     case FWPS_LAYER_ALE_CONNECT_REDIRECT_V6:
         hook_id = EBPF_HOOK_ALE_CONNECT_REDIRECT_V6;
         break;
+    // Note: EBPF_HOOK_FLOW_CLASSIFY_ALE_FLOW_ESTABLISHED_V4 and EBPF_HOOK_FLOW_CLASSIFY_ALE_FLOW_ESTABLISHED_V6
+    // are on the same layer as the sock_ops flow established hook.
     case FWPS_LAYER_STREAM_V4:
         hook_id = EBPF_HOOK_STREAM_V4;
         break;
