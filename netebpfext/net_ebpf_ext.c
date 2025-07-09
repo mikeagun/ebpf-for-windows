@@ -283,8 +283,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         L"Stream Flow Classify Callout v4",
         L"Stream Flow Classify callout for eBPF",
         FWP_ACTION_CALLOUT_TERMINATING,
-        // FWP_CALLOUT_FLAG_CONDITIONAL_ON_FLOW,
-        0,
+        FWP_CALLOUT_FLAG_CONDITIONAL_ON_FLOW,
     },
     // EBPF_HOOK_STREAM_V6
     {
@@ -296,8 +295,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
         L"Stream Flow Classify Callout v6",
         L"Stream Flow Classify callout for eBPF",
         FWP_ACTION_CALLOUT_TERMINATING,
-        // FWP_CALLOUT_FLAG_CONDITIONAL_ON_FLOW,
-        0,
+        FWP_CALLOUT_FLAG_CONDITIONAL_ON_FLOW,
     }};
 
 // WFP globals

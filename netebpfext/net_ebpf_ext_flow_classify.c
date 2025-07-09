@@ -642,7 +642,7 @@ net_ebpf_extension_flow_classify_flow_classify(
     // Set stream data pointers for this segment
     if (layer_data != NULL) {
         // layer_data is a pointer to FWPS_STREAM_DATA0 at the stream layer
-        FWPS_STREAM_DATA0* stream_data = (FWPS_STREAM_DATA0*)layer_data;
+        FWPS_STREAM_DATA0* stream_data = ((FWPS_STREAM_CALLOUT_IO_PACKET0*)layer_data)->streamData;
 
         if (stream_data->netBufferListChain != NULL && stream_data->dataLength > 0) {
             // Get the first NET_BUFFER from the NET_BUFFER_LIST chain
