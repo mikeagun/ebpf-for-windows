@@ -593,7 +593,8 @@ net_ebpf_extension_flow_classify_flow_classify(
         incoming_metadata_values->flowHandle);
 
     // Default action is to permit
-    classify_output->actionType = FWP_ACTION_CONTINUE;
+    classify_output->rights |= FWPS_RIGHT_ACTION_WRITE;
+    classify_output->actionType = FWP_ACTION_PERMIT;
 
     filter_context = (net_ebpf_extension_flow_classify_wfp_filter_context_t*)filter->context;
     ASSERT(filter_context != NULL);
@@ -621,11 +622,6 @@ net_ebpf_extension_flow_classify_flow_classify(
             "Stream callout invoked without flow context");
         goto Exit;
     }
-
-    NET_EBPF_EXT_LOG_MESSAGE(
-        NET_EBPF_EXT_TRACELOG_LEVEL_ERROR,
-        NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
-        "flow_classify -- have flow context");
 
     // Copy WFP stream fields to the flow classify context
     flow_classify_context = &local_flow_context->context.context;
@@ -726,7 +722,7 @@ net_ebpf_extension_flow_classify_flow_classify(
     // Handle the program result
     switch (result) {
     case FLOW_CLASSIFY_ALLOW:
-        classify_output->rights |= FWPS_RIGHT_ACTION_WRITE;
+        // classify_output->rights |= FWPS_RIGHT_ACTION_WRITE;
         classify_output->actionType = FWP_ACTION_PERMIT;
         classify_output->flags |= FWPS_CLASSIFY_OUT_FLAG_ABSORB;
 
@@ -755,7 +751,7 @@ net_ebpf_extension_flow_classify_flow_classify(
 
     case FLOW_CLASSIFY_BLOCK:
         // Block the segment and kill the flow
-        classify_output->rights |= FWPS_RIGHT_ACTION_WRITE;
+        // classify_output->rights |= FWPS_RIGHT_ACTION_WRITE;
         classify_output->actionType = FWP_ACTION_BLOCK;
         classify_output->flags |= FWPS_CLASSIFY_OUT_FLAG_ABSORB;
 
@@ -783,7 +779,7 @@ net_ebpf_extension_flow_classify_flow_classify(
     case FLOW_CLASSIFY_NEED_MORE_DATA:
     default:
         // Allow the segment but keep classifying future segments
-        classify_output->actionType = FWP_ACTION_CONTINUE;
+        classify_output->actionType = FWP_ACTION_PERMIT;
 
         NET_EBPF_EXT_LOG_MESSAGE(
             NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
@@ -793,6 +789,49 @@ net_ebpf_extension_flow_classify_flow_classify(
     }
 
 Exit:
+    NET_EBPF_EXT_LOG_EXIT();
+}
+
+void
+net_ebpf_extension_flow_classify_flow_established_delete(uint16_t layer_id, uint32_t callout_id, uint64_t flow_context)
+{
+    net_ebpf_extension_flow_classify_wfp_flow_context_t* local_flow_context =
+        (net_ebpf_extension_flow_classify_wfp_flow_context_t*)(uintptr_t)flow_context;
+    net_ebpf_extension_flow_classify_wfp_filter_context_t* filter_context = NULL;
+    KIRQL irql = 0;
+
+    UNREFERENCED_PARAMETER(layer_id);
+    UNREFERENCED_PARAMETER(callout_id);
+
+    NET_EBPF_EXT_LOG_ENTRY();
+
+    if (local_flow_context == NULL) {
+        goto Exit;
+    }
+
+    filter_context = local_flow_context->filter_context;
+    if (filter_context == NULL) {
+        goto Exit;
+    }
+
+    if (filter_context->base.context_deleting) {
+        goto Exit;
+    }
+
+    KeAcquireSpinLock(&filter_context->lock, &irql);
+    RemoveEntryList(&local_flow_context->link);
+    filter_context->flow_context_list.count--;
+    KeReleaseSpinLock(&filter_context->lock, irql);
+
+Exit:
+    if (filter_context) {
+        DEREFERENCE_FILTER_CONTEXT(&filter_context->base);
+    }
+
+    if (local_flow_context != NULL) {
+        ExFreePool(local_flow_context);
+    }
+
     NET_EBPF_EXT_LOG_EXIT();
 }
 
@@ -809,7 +848,6 @@ net_ebpf_extension_flow_classify_flow_delete(uint16_t layer_id, uint32_t callout
 
     NET_EBPF_EXT_LOG_ENTRY();
 
-    ASSERT(local_flow_context != NULL);
     if (local_flow_context == NULL) {
         goto Exit;
     }
@@ -970,8 +1008,8 @@ net_ebpf_extension_flow_classify_flow_established_classify(
         incoming_metadata_values->flowHandle);
 
     // Default action is to permit
-    // classify_output->rights |= FWPS_RIGHT_ACTION_WRITE;
-    classify_output->actionType = FWP_ACTION_CONTINUE;
+    classify_output->rights |= FWPS_RIGHT_ACTION_WRITE;
+    classify_output->actionType = FWP_ACTION_PERMIT;
 
     filter_context = (net_ebpf_extension_flow_classify_wfp_filter_context_t*)filter->context;
     ASSERT(filter_context != NULL);

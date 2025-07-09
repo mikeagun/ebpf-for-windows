@@ -102,6 +102,12 @@ void
 net_ebpf_extension_flow_classify_flow_delete(uint16_t layer_id, uint32_t callout_id, uint64_t flow_context);
 
 /**
+ * @brief WFP flowDeleteFn callback for EBPF_HOOK_STREAM_FLOW_ESTABLISHED_V4/6_CALLOUT.
+ */
+void
+net_ebpf_extension_flow_classify_flow_established_delete(uint16_t layer_id, uint32_t callout_id, uint64_t flow_context);
+
+/**
  * @brief Unregister FLOW_CLASSIFY NPI providers.
  *
  */
