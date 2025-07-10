@@ -577,6 +577,7 @@ net_ebpf_extension_flow_classify_flow_classify(
     bpf_flow_classify_t* flow_classify_context = NULL;
     uint32_t client_compartment_id = UNSPECIFIED_COMPARTMENT_ID;
     ebpf_result_t program_result;
+    uint8_t* allocated_data_buffer = NULL; // Track allocated buffer for cleanup
 
     UNREFERENCED_PARAMETER(classify_context);
     UNREFERENCED_PARAMETER(incoming_fixed_values);
@@ -650,20 +651,51 @@ net_ebpf_extension_flow_classify_flow_classify(
             NET_BUFFER* net_buffer = NET_BUFFER_LIST_FIRST_NB(nbl);
 
             if (net_buffer != NULL) {
-                // Get contiguous data buffer from the NET_BUFFER
+                // Try to get contiguous data buffer from the NET_BUFFER
                 uint8_t* buffer = (uint8_t*)NdisGetDataBuffer(net_buffer, (ULONG)stream_data->dataLength, NULL, 1, 0);
 
                 if (buffer != NULL) {
+                    // Data is already contiguous
                     flow_classify_context->data_start = buffer;
                     flow_classify_context->data_end = buffer + stream_data->dataLength;
                 } else {
-                    // Data is not contiguous - eBPF programs cannot access non-contiguous data
-                    NET_EBPF_EXT_LOG_MESSAGE(
+                    // Data is not contiguous - allocate buffer and copy using WFP function
+                    NET_EBPF_EXT_LOG_MESSAGE_UINT64(
                         NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
                         NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
-                        "Stream data is not contiguous, cannot provide to eBPF program");
-                    flow_classify_context->data_start = NULL;
-                    flow_classify_context->data_end = NULL;
+                        "Stream data is not contiguous, copying to buffer. Length:",
+                        stream_data->dataLength);
+
+                    allocated_data_buffer = (uint8_t*)ExAllocatePoolUninitialized(
+                        NonPagedPoolNx, (SIZE_T)stream_data->dataLength, NET_EBPF_EXTENSION_POOL_TAG);
+
+                    if (allocated_data_buffer != NULL) {
+                        SIZE_T bytes_copied = 0;
+                        FwpsCopyStreamDataToBuffer0(
+                            stream_data, allocated_data_buffer, (SIZE_T)stream_data->dataLength, &bytes_copied);
+
+                        if (bytes_copied == stream_data->dataLength) {
+                            flow_classify_context->data_start = allocated_data_buffer;
+                            flow_classify_context->data_end = allocated_data_buffer + stream_data->dataLength;
+                        } else {
+                            NET_EBPF_EXT_LOG_MESSAGE_UINT64(
+                                NET_EBPF_EXT_TRACELOG_LEVEL_ERROR,
+                                NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+                                "FwpsCopyStreamDataToBuffer0 copied unexpected amount",
+                                bytes_copied);
+                            ExFreePool(allocated_data_buffer);
+                            allocated_data_buffer = NULL;
+                            flow_classify_context->data_start = NULL;
+                            flow_classify_context->data_end = NULL;
+                        }
+                    } else {
+                        NET_EBPF_EXT_LOG_MESSAGE(
+                            NET_EBPF_EXT_TRACELOG_LEVEL_ERROR,
+                            NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+                            "Failed to allocate buffer for non-contiguous stream data");
+                        flow_classify_context->data_start = NULL;
+                        flow_classify_context->data_end = NULL;
+                    }
                 }
             } else {
                 NET_EBPF_EXT_LOG_MESSAGE(
@@ -789,6 +821,12 @@ net_ebpf_extension_flow_classify_flow_classify(
     }
 
 Exit:
+    // Clean up allocated data buffer if one was created
+    if (allocated_data_buffer != NULL) {
+        ExFreePool(allocated_data_buffer);
+        allocated_data_buffer = NULL;
+    }
+
     NET_EBPF_EXT_LOG_EXIT();
 }
 
