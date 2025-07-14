@@ -553,6 +553,7 @@ _net_ebpf_extension_flow_classify_copy_wfp_stream_fields(
     _Inout_ void* layer_data,
     _Out_ net_ebpf_flow_classify_t* flow_classify_context)
 {
+    UNREFERENCED_PARAMETER(layer_data); // Currently copied in flow_classify callout.
     NET_EBPF_EXT_LOG_ENTRY();
     uint16_t wfp_layer_id = incoming_fixed_values->layerId;
     net_ebpf_extension_hook_id_t hook_id = net_ebpf_extension_get_hook_id_from_wfp_layer_id(wfp_layer_id);
@@ -565,39 +566,40 @@ _net_ebpf_extension_flow_classify_copy_wfp_stream_fields(
     flow_classify->direction = (uint8_t)(incoming_values[fields->direction_field].value.uint32 == FWP_DIRECTION_OUTBOUND
                                              ? FLOW_DIRECTION_OUTBOUND
                                              : FLOW_DIRECTION_INBOUND);
+    // Note: we get protocol/src/dest IP/port at flow established layer, so we don't need to copy them here.
+    // // Copy IP address fields
+    // if (hook_id == EBPF_HOOK_STREAM_V4) {
+    //     flow_classify->family = AF_INET;
+    //     flow_classify->local_ip4 = htonl(incoming_values[fields->local_ip_address_field].value.uint32);
+    //     flow_classify->remote_ip4 = htonl(incoming_values[fields->remote_ip_address_field].value.uint32);
+    // } else if (hook_id == EBPF_HOOK_STREAM_V6) {
+    //     flow_classify->family = AF_INET6;
+    //     RtlCopyMemory(
+    //         flow_classify->local_ip6,
+    //         incoming_values[fields->local_ip_address_field].value.byteArray16,
+    //         sizeof(FWP_BYTE_ARRAY16));
+    //     RtlCopyMemory(
+    //         flow_classify->remote_ip6,
+    //         incoming_values[fields->remote_ip_address_field].value.byteArray16,
+    //         sizeof(FWP_BYTE_ARRAY16));
+    // } else {
+    //     NET_EBPF_EXT_LOG_MESSAGE_UINT64(
+    //         NET_EBPF_EXT_TRACELOG_LEVEL_ERROR, NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY, "Invalid hook_id",
+    //         hook_id);
+    //     return;
+    // }
 
-    // Copy IP address fields
-    if (hook_id == EBPF_HOOK_STREAM_V4) {
-        flow_classify->family = AF_INET;
-        flow_classify->local_ip4 = htonl(incoming_values[fields->local_ip_address_field].value.uint32);
-        flow_classify->remote_ip4 = htonl(incoming_values[fields->remote_ip_address_field].value.uint32);
-    } else if (hook_id == EBPF_HOOK_STREAM_V6) {
-        flow_classify->family = AF_INET6;
-        RtlCopyMemory(
-            flow_classify->local_ip6,
-            incoming_values[fields->local_ip_address_field].value.byteArray16,
-            sizeof(FWP_BYTE_ARRAY16));
-        RtlCopyMemory(
-            flow_classify->remote_ip6,
-            incoming_values[fields->remote_ip_address_field].value.byteArray16,
-            sizeof(FWP_BYTE_ARRAY16));
-    } else {
-        NET_EBPF_EXT_LOG_MESSAGE_UINT64(
-            NET_EBPF_EXT_TRACELOG_LEVEL_ERROR, NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY, "Invalid hook_id", hook_id);
-        return;
-    }
+    // flow_classify->local_port = htons(incoming_values[fields->local_port_field].value.uint16);
+    // flow_classify->remote_port = htons(incoming_values[fields->remote_port_field].value.uint16);
 
-    flow_classify->local_port = htons(incoming_values[fields->local_port_field].value.uint16);
-    flow_classify->remote_port = htons(incoming_values[fields->remote_port_field].value.uint16);
+    // // Protocol and interface fields not available at stream layer
+    // // For TCP streams, protocol is always TCP (6)
+    // flow_classify->protocol = IPPROTO_TCP;
 
-    // Protocol and interface fields not available at stream layer
-    // For TCP streams, protocol is always TCP (6)
-    flow_classify->protocol = IPPROTO_TCP;
+    // flow_classify->compartment_id = incoming_values[fields->compartment_id_field].value.uint32;
+    // flow_classify->interface_luid = 0; // Not available at stream layer
 
-    flow_classify->compartment_id = incoming_values[fields->compartment_id_field].value.uint32;
-    flow_classify->interface_luid = 0; // Not available at stream layer
-
-    // Set flow ID from metadata
+    // Update flow ID if available
     if (incoming_metadata_values->currentMetadataValues & FWPS_METADATA_FIELD_FLOW_HANDLE) {
         flow_classify->flow_id = incoming_metadata_values->flowHandle;
     } else {
@@ -609,17 +611,6 @@ _net_ebpf_extension_flow_classify_copy_wfp_stream_fields(
         flow_classify_context->process_id = incoming_metadata_values->processId;
     } else {
         flow_classify_context->process_id = 0;
-    }
-
-    // Set stream data pointers - simplified for now
-    // TODO: Implement proper stream data access based on WFP stream layer documentation
-    if (layer_data != NULL) {
-        // For now, just indicate that there is data available
-        flow_classify->data_start = (uint8_t*)layer_data;
-        flow_classify->data_end = (uint8_t*)layer_data; // Will be updated when proper stream data structure is defined
-    } else {
-        flow_classify->data_start = NULL;
-        flow_classify->data_end = NULL;
     }
 }
 
@@ -690,21 +681,13 @@ net_ebpf_extension_flow_classify_flow_classify(
         goto Exit;
     }
 
+    // Update stream layer fields in flow classify context
+    // (Most connection fields were already set in flow_established callback)
+    _net_ebpf_extension_flow_classify_copy_wfp_stream_fields(
+        incoming_fixed_values, incoming_metadata_values, layer_data, &local_flow_context->context);
+
     // Copy WFP stream fields to the flow classify context
     flow_classify_context = &local_flow_context->context.context;
-
-    // Update only the fields that can change per segment
-    // (Most connection fields were already set in flow_established callback)
-
-    // Update flow ID if available
-    if (incoming_metadata_values->currentMetadataValues & FWPS_METADATA_FIELD_FLOW_HANDLE) {
-        flow_classify_context->flow_id = incoming_metadata_values->flowHandle;
-    }
-
-    // Update process ID if available
-    if (incoming_metadata_values->currentMetadataValues & FWPS_METADATA_FIELD_PROCESS_ID) {
-        local_flow_context->context.process_id = incoming_metadata_values->processId;
-    }
 
     // Set stream data pointers for this segment
     if (layer_data != NULL) {
