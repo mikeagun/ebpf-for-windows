@@ -170,7 +170,6 @@ _net_ebpf_extension_flow_classify_create_filter_context(
     ebpf_result_t result = EBPF_SUCCESS;
     net_ebpf_extension_flow_classify_wfp_filter_context_t* local_filter_context = NULL;
     uint32_t compartment_id = UNSPECIFIED_COMPARTMENT_ID;
-    uint32_t filter_count;
     FWPM_FILTER_CONDITION conditions[2] = {0}; // Space for compartment_id and protocol
     uint32_t condition_count = 0;
     const ebpf_extension_data_t* client_data = net_ebpf_extension_hook_client_get_client_data(attaching_client);
@@ -202,15 +201,16 @@ _net_ebpf_extension_flow_classify_create_filter_context(
     KeInitializeSpinLock(&local_filter_context->lock);
     InitializeListHead(&local_filter_context->flow_context_list.list_head);
 
-    filter_count = NET_EBPF_FLOW_CLASSIFY_STREAM_FILTER_COUNT;
+    // First, add stream filters (no TCP protocol condition needed for stream layer)
+    net_ebpf_ext_wfp_filter_id_t* stream_filter_ids = NULL;
     result = net_ebpf_extension_add_wfp_filters(
         local_filter_context->base.wfp_engine_handle,
-        filter_count,
+        NET_EBPF_FLOW_CLASSIFY_STREAM_FILTER_COUNT,
         _net_ebpf_extension_flow_classify_wfp_stream_filter_parameters,
         condition_count,
-        conditions,
+        (condition_count > 0) ? conditions : NULL,
         (net_ebpf_extension_wfp_filter_context_t*)local_filter_context,
-        &local_filter_context->base.filter_ids);
+        &stream_filter_ids);
     NET_EBPF_EXT_BAIL_ON_ERROR_RESULT(result);
 
     // Add TCP protocol condition for ALE filters
@@ -220,17 +220,57 @@ _net_ebpf_extension_flow_classify_create_filter_context(
     conditions[condition_count].conditionValue.uint8 = IPPROTO_TCP;
     condition_count++;
 
-    // Add WFP filters at appropriate layers and set the hook NPI client as the filter's raw context.
-    filter_count = NET_EBPF_FLOW_CLASSIFY_ALE_FILTER_COUNT;
+    // Add ALE filters with TCP protocol condition
+    net_ebpf_ext_wfp_filter_id_t* ale_filter_ids = NULL;
     result = net_ebpf_extension_add_wfp_filters(
         local_filter_context->base.wfp_engine_handle,
-        filter_count,
+        NET_EBPF_FLOW_CLASSIFY_ALE_FILTER_COUNT,
         _net_ebpf_extension_flow_classify_wfp_ale_filter_parameters,
         condition_count,
         conditions,
         (net_ebpf_extension_wfp_filter_context_t*)local_filter_context,
-        &local_filter_context->base.filter_ids);
-    NET_EBPF_EXT_BAIL_ON_ERROR_RESULT(result);
+        &ale_filter_ids);
+    if (result != EBPF_SUCCESS) {
+        // Clean up stream filters on error
+        net_ebpf_extension_delete_wfp_filters(
+            local_filter_context->base.wfp_engine_handle,
+            NET_EBPF_FLOW_CLASSIFY_STREAM_FILTER_COUNT,
+            stream_filter_ids);
+        NET_EBPF_EXT_BAIL_ON_ERROR_RESULT(result);
+    }
+
+    // Combine both filter ID arrays into a single array
+    uint32_t total_filter_count = NET_EBPF_FLOW_CLASSIFY_STREAM_FILTER_COUNT + NET_EBPF_FLOW_CLASSIFY_ALE_FILTER_COUNT;
+    net_ebpf_ext_wfp_filter_id_t* combined_filter_ids = (net_ebpf_ext_wfp_filter_id_t*)ExAllocatePoolUninitialized(
+        NonPagedPoolNx, sizeof(net_ebpf_ext_wfp_filter_id_t) * total_filter_count, NET_EBPF_EXTENSION_POOL_TAG);
+    if (combined_filter_ids == NULL) {
+        // Clean up both filter arrays on error
+        net_ebpf_extension_delete_wfp_filters(
+            local_filter_context->base.wfp_engine_handle,
+            NET_EBPF_FLOW_CLASSIFY_STREAM_FILTER_COUNT,
+            stream_filter_ids);
+        net_ebpf_extension_delete_wfp_filters(
+            local_filter_context->base.wfp_engine_handle, NET_EBPF_FLOW_CLASSIFY_ALE_FILTER_COUNT, ale_filter_ids);
+        result = EBPF_NO_MEMORY;
+        NET_EBPF_EXT_BAIL_ON_ERROR_RESULT(result);
+    }
+
+    // Copy stream filter IDs first
+    memcpy(
+        combined_filter_ids,
+        stream_filter_ids,
+        sizeof(net_ebpf_ext_wfp_filter_id_t) * NET_EBPF_FLOW_CLASSIFY_STREAM_FILTER_COUNT);
+
+    // Copy ALE filter IDs next
+    memcpy(
+        &combined_filter_ids[NET_EBPF_FLOW_CLASSIFY_STREAM_FILTER_COUNT],
+        ale_filter_ids,
+        sizeof(net_ebpf_ext_wfp_filter_id_t) * NET_EBPF_FLOW_CLASSIFY_ALE_FILTER_COUNT);
+
+    // Free the individual arrays and set the combined array
+    ExFreePool(stream_filter_ids);
+    ExFreePool(ale_filter_ids);
+    local_filter_context->base.filter_ids = combined_filter_ids;
 
     *filter_context = (net_ebpf_extension_wfp_filter_context_t*)local_filter_context;
     local_filter_context = NULL;
