@@ -9,7 +9,6 @@
  */
 
 #include "ebpf_shared_framework.h"
-#include "net_ebpf_ext_flow_classify.h"
 #include "net_ebpf_ext_sock_ops.h"
 
 //

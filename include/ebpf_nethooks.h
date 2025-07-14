@@ -211,7 +211,6 @@ typedef enum _flow_direction
 
 typedef struct _bpf_flow_classify
 {
-    // bpf_sock_op_type_t op;
     uint32_t family; ///< IP address family.
     struct
     {

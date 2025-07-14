@@ -42,7 +42,7 @@ typedef struct _net_ebpf_extension_flow_classify_wfp_flow_context_list
     LIST_ENTRY list_head; ///< Head to the list of WFP flow contexts.
 } net_ebpf_extension_flow_classify_wfp_flow_context_list_t;
 
-const net_ebpf_extension_wfp_filter_parameters_t _net_ebpf_extension_flow_classify_wfp_filter_parameters[] = {
+const net_ebpf_extension_wfp_filter_parameters_t _net_ebpf_extension_flow_classify_wfp_ale_filter_parameters[] = {
     {&FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4,
      NULL, // Default sublayer.
      &EBPF_HOOK_FLOW_CLASSIFY_ALE_FLOW_ESTABLISHED_V4_CALLOUT,
@@ -52,7 +52,9 @@ const net_ebpf_extension_wfp_filter_parameters_t _net_ebpf_extension_flow_classi
      NULL, // Default sublayer.
      &EBPF_HOOK_FLOW_CLASSIFY_ALE_FLOW_ESTABLISHED_V6_CALLOUT,
      L"net eBPF flow_classify flow established hook",
-     L"net eBPF flow_classify flow established hook WFP filter"},
+     L"net eBPF flow_classify flow established hook WFP filter"}};
+
+const net_ebpf_extension_wfp_filter_parameters_t _net_ebpf_extension_flow_classify_wfp_stream_filter_parameters[] = {
     {&FWPM_LAYER_STREAM_V4,
      NULL, // Default sublayer.
      &EBPF_HOOK_STREAM_FLOW_CLASSIFY_V4_CALLOUT,
@@ -64,7 +66,10 @@ const net_ebpf_extension_wfp_filter_parameters_t _net_ebpf_extension_flow_classi
      L"net eBPF flow_classify hook",
      L"net eBPF flow_classify hook WFP filter"}};
 
-#define NET_EBPF_FLOW_CLASSIFY_FILTER_COUNT EBPF_COUNT_OF(_net_ebpf_extension_flow_classify_wfp_filter_parameters)
+#define NET_EBPF_FLOW_CLASSIFY_ALE_FILTER_COUNT \
+    EBPF_COUNT_OF(_net_ebpf_extension_flow_classify_wfp_ale_filter_parameters)
+#define NET_EBPF_FLOW_CLASSIFY_STREAM_FILTER_COUNT \
+    EBPF_COUNT_OF(_net_ebpf_extension_flow_classify_wfp_stream_filter_parameters)
 
 typedef struct _net_ebpf_extension_flow_classify_wfp_filter_context
 {
@@ -166,7 +171,8 @@ _net_ebpf_extension_flow_classify_create_filter_context(
     net_ebpf_extension_flow_classify_wfp_filter_context_t* local_filter_context = NULL;
     uint32_t compartment_id = UNSPECIFIED_COMPARTMENT_ID;
     uint32_t filter_count;
-    FWPM_FILTER_CONDITION condition = {0};
+    FWPM_FILTER_CONDITION conditions[2] = {0}; // Space for compartment_id and protocol
+    uint32_t condition_count = 0;
     const ebpf_extension_data_t* client_data = net_ebpf_extension_hook_client_get_client_data(attaching_client);
 
     if (client_data->data != NULL) {
@@ -176,10 +182,11 @@ _net_ebpf_extension_flow_classify_create_filter_context(
 
     // Set compartment id (if not UNSPECIFIED_COMPARTMENT_ID) as WFP filter condition.
     if (compartment_id != UNSPECIFIED_COMPARTMENT_ID) {
-        condition.fieldKey = FWPM_CONDITION_COMPARTMENT_ID;
-        condition.matchType = FWP_MATCH_EQUAL;
-        condition.conditionValue.type = FWP_UINT32;
-        condition.conditionValue.uint32 = compartment_id;
+        conditions[condition_count].fieldKey = FWPM_CONDITION_COMPARTMENT_ID;
+        conditions[condition_count].matchType = FWP_MATCH_EQUAL;
+        conditions[condition_count].conditionValue.type = FWP_UINT32;
+        conditions[condition_count].conditionValue.uint32 = compartment_id;
+        condition_count++;
     }
 
     result = net_ebpf_extension_wfp_filter_context_create(
@@ -190,18 +197,37 @@ _net_ebpf_extension_flow_classify_create_filter_context(
     NET_EBPF_EXT_BAIL_ON_ERROR_RESULT(result);
 
     local_filter_context->compartment_id = compartment_id;
-    local_filter_context->base.filter_ids_count = NET_EBPF_FLOW_CLASSIFY_FILTER_COUNT;
+    local_filter_context->base.filter_ids_count =
+        NET_EBPF_FLOW_CLASSIFY_ALE_FILTER_COUNT + NET_EBPF_FLOW_CLASSIFY_STREAM_FILTER_COUNT;
     KeInitializeSpinLock(&local_filter_context->lock);
     InitializeListHead(&local_filter_context->flow_context_list.list_head);
 
-    // Add WFP filters at appropriate layers and set the hook NPI client as the filter's raw context.
-    filter_count = NET_EBPF_FLOW_CLASSIFY_FILTER_COUNT;
+    filter_count = NET_EBPF_FLOW_CLASSIFY_STREAM_FILTER_COUNT;
     result = net_ebpf_extension_add_wfp_filters(
         local_filter_context->base.wfp_engine_handle,
         filter_count,
-        _net_ebpf_extension_flow_classify_wfp_filter_parameters,
-        (compartment_id == UNSPECIFIED_COMPARTMENT_ID) ? 0 : 1,
-        (compartment_id == UNSPECIFIED_COMPARTMENT_ID) ? NULL : &condition,
+        _net_ebpf_extension_flow_classify_wfp_stream_filter_parameters,
+        condition_count,
+        conditions,
+        (net_ebpf_extension_wfp_filter_context_t*)local_filter_context,
+        &local_filter_context->base.filter_ids);
+    NET_EBPF_EXT_BAIL_ON_ERROR_RESULT(result);
+
+    // Add TCP protocol condition for ALE filters
+    conditions[condition_count].fieldKey = FWPM_CONDITION_IP_PROTOCOL;
+    conditions[condition_count].matchType = FWP_MATCH_EQUAL;
+    conditions[condition_count].conditionValue.type = FWP_UINT8;
+    conditions[condition_count].conditionValue.uint8 = IPPROTO_TCP;
+    condition_count++;
+
+    // Add WFP filters at appropriate layers and set the hook NPI client as the filter's raw context.
+    filter_count = NET_EBPF_FLOW_CLASSIFY_ALE_FILTER_COUNT;
+    result = net_ebpf_extension_add_wfp_filters(
+        local_filter_context->base.wfp_engine_handle,
+        filter_count,
+        _net_ebpf_extension_flow_classify_wfp_ale_filter_parameters,
+        condition_count,
+        conditions,
         (net_ebpf_extension_wfp_filter_context_t*)local_filter_context,
         &local_filter_context->base.filter_ids);
     NET_EBPF_EXT_BAIL_ON_ERROR_RESULT(result);

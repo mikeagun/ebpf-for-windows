@@ -1925,6 +1925,7 @@ class flow_classify_test_helper
     {
         test_classify(test_name, direction, std::string{data}, expected_result, expected_action);
     }
+
     int
     get_program_fd() const
     {
