@@ -606,7 +606,13 @@ net_ebpf_extension_flow_classify_flow_delete(uint16_t layer_id, uint32_t callout
         NET_EBPF_EXT_LOG_MESSAGE_UINT64(
             NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
             NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
-            "Empty flow deleted",
+            "New flow deleted",
+            flow_classify_context->flow_id);
+    } else if (flow_classify_context->state == FLOW_STATE_DELETED) {
+        NET_EBPF_EXT_LOG_MESSAGE_UINT64(
+            NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
+            NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+            "Flow already classified",
             flow_classify_context->flow_id);
     } else {
         flow_classify_context->data_start = NULL;
@@ -1022,6 +1028,7 @@ net_ebpf_extension_flow_classify_flow_classify(
         // classify_output->rights |= FWPS_RIGHT_ACTION_WRITE;
         classify_output->actionType = FWP_ACTION_PERMIT;
         classify_output->flags |= FWPS_CLASSIFY_OUT_FLAG_ABSORB;
+        flow_classify_context->state = FLOW_STATE_DELETED;
 
         // Remove the WFP context - program has decided, no more classifications needed
         // Note: FwpsFlowRemoveContext will trigger the flow delete callback which cleans up the context
@@ -1051,6 +1058,7 @@ net_ebpf_extension_flow_classify_flow_classify(
         // classify_output->rights |= FWPS_RIGHT_ACTION_WRITE;
         classify_output->actionType = FWP_ACTION_BLOCK;
         classify_output->flags |= FWPS_CLASSIFY_OUT_FLAG_ABSORB;
+        flow_classify_context->state = FLOW_STATE_DELETED;
 
         // Remove the WFP context - flow is being blocked
         // Note: FwpsFlowRemoveContext will trigger the flow delete callback which cleans up the context
