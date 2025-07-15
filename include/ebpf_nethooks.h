@@ -207,6 +207,14 @@ typedef enum _flow_direction
     FLOW_DIRECTION_OUTBOUND,
 } flow_direction_t;
 
+typedef enum _flow_state
+{
+    FLOW_STATE_NEW,
+    FLOW_STATE_ESTABLISHED,
+    FLOW_STATE_DELETED,
+    FLOW_STATE_INVALID,
+} flow_state_t;
+
 // typedef bpf_sock_ops_t bpf_flow_classify_t; // FIXME: temporary hack
 
 typedef struct _bpf_flow_classify
@@ -235,6 +243,7 @@ typedef struct _bpf_flow_classify
     uint64_t interface_luid; ///< Interface LUID.
     uint8_t direction;       ///< 0 = inbound, 1 = outbound
     uint64_t flow_id;        ///< WFP flow handle
+    uint32_t state;          ///< State of the flow.
     uint8_t* data_start;     ///< Pointer to start of stream segment data
     uint8_t* data_end;       ///< Pointer to end of stream segment data
 } bpf_flow_classify_t;
@@ -247,11 +256,25 @@ typedef struct _bpf_flow_classify
  * Attach type(s):
  * \ref EBPF_ATTACH_TYPE_FLOW_CLASSIFY
  *
- * @param[in] context \ref flow_classify_md_t
+ * @param[in] context \ref bpf_flow_classify_t
  * @return classification decision (allow, block, or need more data to decide)
  */
 typedef flow_classify_action_t
 flow_classify_hook_t(bpf_flow_classify_t* context);
+
+/*
+ * @brief Handle flow cleanup before deletion for flows that were never classified.
+ *
+ * Program type: \ref EBPF_PROGRAM_TYPE_FLOW_CLASSIFY
+ *
+ * Attach type(s):
+ * \ref EBPF_ATTACH_TYPE_FLOW_CLEANUP
+ *
+ * @param[in] context \ref bpf_flow_classify_t
+ * @return 0 on success
+ */
+typedef int
+flow_cleanup_hook_t(bpf_flow_classify_t* context);
 
 #ifdef _MSC_VER
 #pragma warning(pop)

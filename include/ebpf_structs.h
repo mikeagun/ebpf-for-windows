@@ -379,7 +379,13 @@ enum bpf_attach_type
      */
     BPF_FLOW_CLASSIFY,
 
-    __MAX_BPF_ATTACH_TYPE,
+    /** @brief Attach type for handling flow cleanup before deletion.
+     *
+     * **Program type:** \ref BPF_PROG_TYPE_FLOW_CLASSIFY
+     */
+    BPF_FLOW_CLEANUP,
+
+    __MAX_BPF_ATTACH_TYPE
 };
 
 typedef enum bpf_attach_type bpf_attach_type_t;

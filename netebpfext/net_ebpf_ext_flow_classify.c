@@ -173,6 +173,12 @@ _net_ebpf_extension_flow_classify_create_filter_context(
     FWPM_FILTER_CONDITION conditions[2] = {0}; // Space for compartment_id and protocol
     uint32_t condition_count = 0;
     const ebpf_extension_data_t* client_data = net_ebpf_extension_hook_client_get_client_data(attaching_client);
+    // TODO: Refactor netebpfext code so we don't need the extra temp filter id lists.
+    net_ebpf_ext_wfp_filter_id_t* ale_filter_ids = NULL;
+    net_ebpf_ext_wfp_filter_id_t* stream_filter_ids = NULL;
+    const uint32_t total_filter_count =
+        NET_EBPF_FLOW_CLASSIFY_STREAM_FILTER_COUNT + NET_EBPF_FLOW_CLASSIFY_ALE_FILTER_COUNT;
+    net_ebpf_ext_wfp_filter_id_t* combined_filter_ids = NULL;
 
     if (client_data->data != NULL) {
         // Note: No need to validate the client data here, as it has already been validated by the caller.
@@ -202,7 +208,6 @@ _net_ebpf_extension_flow_classify_create_filter_context(
     InitializeListHead(&local_filter_context->flow_context_list.list_head);
 
     // First, add stream filters (no TCP protocol condition needed for stream layer)
-    net_ebpf_ext_wfp_filter_id_t* stream_filter_ids = NULL;
     result = net_ebpf_extension_add_wfp_filters(
         local_filter_context->base.wfp_engine_handle,
         NET_EBPF_FLOW_CLASSIFY_STREAM_FILTER_COUNT,
@@ -221,7 +226,6 @@ _net_ebpf_extension_flow_classify_create_filter_context(
     condition_count++;
 
     // Add ALE filters with TCP protocol condition
-    net_ebpf_ext_wfp_filter_id_t* ale_filter_ids = NULL;
     result = net_ebpf_extension_add_wfp_filters(
         local_filter_context->base.wfp_engine_handle,
         NET_EBPF_FLOW_CLASSIFY_ALE_FILTER_COUNT,
@@ -240,8 +244,7 @@ _net_ebpf_extension_flow_classify_create_filter_context(
     }
 
     // Combine both filter ID arrays into a single array
-    uint32_t total_filter_count = NET_EBPF_FLOW_CLASSIFY_STREAM_FILTER_COUNT + NET_EBPF_FLOW_CLASSIFY_ALE_FILTER_COUNT;
-    net_ebpf_ext_wfp_filter_id_t* combined_filter_ids = (net_ebpf_ext_wfp_filter_id_t*)ExAllocatePoolUninitialized(
+    combined_filter_ids = (net_ebpf_ext_wfp_filter_id_t*)ExAllocatePoolUninitialized(
         NonPagedPoolNx, sizeof(net_ebpf_ext_wfp_filter_id_t) * total_filter_count, NET_EBPF_EXTENSION_POOL_TAG);
     if (combined_filter_ids == NULL) {
         // Clean up both filter arrays on error
@@ -269,8 +272,11 @@ _net_ebpf_extension_flow_classify_create_filter_context(
 
     // Free the individual arrays and set the combined array
     ExFreePool(stream_filter_ids);
+    stream_filter_ids = NULL;
     ExFreePool(ale_filter_ids);
+    ale_filter_ids = NULL;
     local_filter_context->base.filter_ids = combined_filter_ids;
+    combined_filter_ids = NULL;
 
     *filter_context = (net_ebpf_extension_wfp_filter_context_t*)local_filter_context;
     local_filter_context = NULL;
@@ -278,6 +284,15 @@ _net_ebpf_extension_flow_classify_create_filter_context(
 Exit:
     if (local_filter_context != NULL) {
         CLEAN_UP_FILTER_CONTEXT(&local_filter_context->base);
+    }
+    if (stream_filter_ids != NULL) {
+        ExFreePool(stream_filter_ids);
+    }
+    if (ale_filter_ids != NULL) {
+        ExFreePool(ale_filter_ids);
+    }
+    if (combined_filter_ids != NULL) {
+        ExFreePool(combined_filter_ids);
     }
 
     NET_EBPF_EXT_RETURN_RESULT(result);
@@ -408,8 +423,7 @@ net_ebpf_ext_flow_classify_register_providers()
         goto Exit;
     }
 
-    // Register the provider context and pass the pointer to the WFP filter parameters
-    // corresponding to this hook type as custom data.
+    // Register the flow_classify provider context
     status = net_ebpf_extension_hook_provider_register(
         &hook_provider_parameters,
         &dispatch_table,
@@ -420,7 +434,7 @@ net_ebpf_ext_flow_classify_register_providers()
         NET_EBPF_EXT_LOG_MESSAGE_NTSTATUS(
             NET_EBPF_EXT_TRACELOG_LEVEL_ERROR,
             NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
-            "net_ebpf_extension_hook_provider_register failed.",
+            "net_ebpf_extension_hook_provider_register failed for flow_classify.",
             status);
         goto Exit;
     }
@@ -446,6 +460,204 @@ net_ebpf_ext_flow_classify_unregister_providers()
     }
 }
 
+// //
+// // NMR Registration Helper Routines.
+// //
+//
+// static ebpf_result_t
+// _net_ebpf_extension_flow_cleanup_create_filter_context(
+//     _In_ const net_ebpf_extension_hook_client_t* attaching_client,
+//     _In_ const net_ebpf_extension_hook_provider_t* provider_context,
+//     _Outptr_ net_ebpf_extension_wfp_filter_context_t** filter_context)
+// {
+//     NET_EBPF_EXT_LOG_ENTRY();
+//     ebpf_result_t result = EBPF_SUCCESS;
+//     net_ebpf_extension_flow_classify_wfp_filter_context_t* local_filter_context = NULL;
+//     uint32_t compartment_id = UNSPECIFIED_COMPARTMENT_ID;
+//     FWPM_FILTER_CONDITION conditions[2] = {0}; // Space for compartment_id and protocol
+//     uint32_t condition_count = 0;
+//     const ebpf_extension_data_t* client_data = net_ebpf_extension_hook_client_get_client_data(attaching_client);
+//
+//     if (client_data->data != NULL) {
+//         // Note: No need to validate the client data here, as it has already been validated by the caller.
+//         compartment_id = *(uint32_t*)client_data->data;
+//     }
+//
+//     // Set compartment id (if not UNSPECIFIED_COMPARTMENT_ID) as WFP filter condition.
+//     if (compartment_id != UNSPECIFIED_COMPARTMENT_ID) {
+//         conditions[condition_count].fieldKey = FWPM_CONDITION_COMPARTMENT_ID;
+//         conditions[condition_count].matchType = FWP_MATCH_EQUAL;
+//         conditions[condition_count].conditionValue.type = FWP_UINT32;
+//         conditions[condition_count].conditionValue.uint32 = compartment_id;
+//         condition_count++;
+//     }
+//
+//     // Add TCP protocol condition for flow cleanup (only interested in TCP flows)
+//     conditions[condition_count].fieldKey = FWPM_CONDITION_IP_PROTOCOL;
+//     conditions[condition_count].matchType = FWP_MATCH_EQUAL;
+//     conditions[condition_count].conditionValue.type = FWP_UINT8;
+//     conditions[condition_count].conditionValue.uint8 = IPPROTO_TCP;
+//     condition_count++;
+//
+//     result = net_ebpf_extension_wfp_filter_context_create(
+//         sizeof(net_ebpf_extension_flow_classify_wfp_filter_context_t),
+//         attaching_client,
+//         provider_context,
+//         (net_ebpf_extension_wfp_filter_context_t**)&local_filter_context);
+//     NET_EBPF_EXT_BAIL_ON_ERROR_RESULT(result);
+//
+//     local_filter_context->compartment_id = compartment_id;
+//     local_filter_context->base.filter_ids_count = NET_EBPF_FLOW_CLEANUP_FILTER_COUNT;
+//     KeInitializeSpinLock(&local_filter_context->lock);
+//     InitializeListHead(&local_filter_context->flow_context_list.list_head);
+//
+//     // Add cleanup filters with TCP protocol condition
+//     result = net_ebpf_extension_add_wfp_filters(
+//         local_filter_context->base.wfp_engine_handle,
+//         NET_EBPF_FLOW_CLEANUP_FILTER_COUNT,
+//         _net_ebpf_extension_flow_cleanup_wfp_filter_parameters,
+//         condition_count,
+//         conditions,
+//         (net_ebpf_extension_wfp_filter_context_t*)local_filter_context,
+//         &local_filter_context->base.filter_ids);
+//     NET_EBPF_EXT_BAIL_ON_ERROR_RESULT(result);
+//
+//     *filter_context = (net_ebpf_extension_wfp_filter_context_t*)local_filter_context;
+//     local_filter_context = NULL;
+//
+// Exit:
+//     if (local_filter_context != NULL) {
+//         CLEAN_UP_FILTER_CONTEXT(&local_filter_context->base);
+//     }
+//
+//     NET_EBPF_EXT_RETURN_RESULT(result);
+// }
+//
+// static ebpf_result_t
+// _net_ebpf_extension_flow_cleanup_validate_client_data(
+//     _In_ const ebpf_extension_data_t* client_data, _Out_ bool* is_wildcard)
+// {
+//     NET_EBPF_EXT_LOG_ENTRY();
+//     ebpf_result_t result = EBPF_SUCCESS;
+//     *is_wildcard = FALSE;
+//
+//     // FLOW_CLEANUP hook clients must always provide data.
+//     if (client_data == NULL) {
+//         NET_EBPF_EXT_LOG_MESSAGE(
+//             NET_EBPF_EXT_TRACELOG_LEVEL_ERROR,
+//             NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+//             "Attach denied. client data not provided for flow cleanup.");
+//         result = EBPF_INVALID_ARGUMENT;
+//         goto Exit;
+//     }
+//
+//     if (client_data->data_size > 0) {
+//         if ((client_data->data_size != sizeof(uint32_t)) || (client_data->data == NULL)) {
+//             NET_EBPF_EXT_LOG_MESSAGE(
+//                 NET_EBPF_EXT_TRACELOG_LEVEL_ERROR,
+//                 NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+//                 "Attach denied. Invalid client data for flow cleanup.");
+//             result = EBPF_INVALID_ARGUMENT;
+//             goto Exit;
+//         }
+//     } else {
+//         // If the client did not specify any attach parameters, we treat that as a wildcard compartment id.
+//         *is_wildcard = TRUE;
+//     }
+//
+// Exit:
+//     return result;
+// }
+
+void
+net_ebpf_extension_flow_classify_flow_delete(uint16_t layer_id, uint32_t callout_id, uint64_t flow_context)
+{
+    net_ebpf_extension_flow_classify_wfp_flow_context_t* local_flow_context =
+        (net_ebpf_extension_flow_classify_wfp_flow_context_t*)(uintptr_t)flow_context;
+    net_ebpf_extension_flow_classify_wfp_filter_context_t* filter_context = NULL;
+    bpf_flow_classify_t* flow_classify_context = NULL;
+    uint32_t result = 0;
+    ebpf_result_t program_result;
+    KIRQL irql = 0;
+
+    UNREFERENCED_PARAMETER(layer_id);
+    UNREFERENCED_PARAMETER(callout_id);
+
+    NET_EBPF_EXT_LOG_ENTRY();
+
+    if (local_flow_context == NULL) {
+        goto Exit;
+    }
+
+    filter_context = local_flow_context->filter_context;
+    if (filter_context == NULL) {
+        goto Exit;
+    }
+
+    if (filter_context->base.context_deleting) {
+        goto Exit;
+    }
+
+    // Get the flow classify context
+    flow_classify_context = &local_flow_context->context.context;
+
+    // Invoke the flow_cleanup eBPF program if attached
+    if (flow_classify_context->state == FLOW_STATE_NEW) {
+        NET_EBPF_EXT_LOG_MESSAGE_UINT64(
+            NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
+            NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+            "Empty flow deleted",
+            flow_classify_context->flow_id);
+    } else {
+        flow_classify_context->data_start = NULL;
+        flow_classify_context->data_end = NULL;
+        flow_classify_context->state = FLOW_STATE_DELETED;
+        NET_EBPF_EXT_LOG_MESSAGE_UINT64(
+            NET_EBPF_EXT_TRACELOG_LEVEL_INFO,
+            NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+            "Invoking eBPF cleanup program",
+            flow_classify_context->flow_id);
+
+        program_result = net_ebpf_extension_hook_invoke_programs(flow_classify_context, &filter_context->base, &result);
+        if (program_result == EBPF_OBJECT_NOT_FOUND) {
+            // No cleanup program attached, continue with normal cleanup
+            NET_EBPF_EXT_LOG_MESSAGE(
+                NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
+                NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+                "No cleanup program attached");
+        } else if (program_result != EBPF_SUCCESS) {
+            NET_EBPF_EXT_LOG_MESSAGE_NTSTATUS(
+                NET_EBPF_EXT_TRACELOG_LEVEL_ERROR,
+                NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+                "net_ebpf_extension_hook_invoke_programs failed for cleanup",
+                program_result);
+        }
+    }
+
+    // Remove from filter context's flow list
+    KeAcquireSpinLock(&filter_context->lock, &irql);
+    RemoveEntryList(&local_flow_context->link);
+    filter_context->flow_context_list.count--;
+    KeReleaseSpinLock(&filter_context->lock, irql);
+
+    NET_EBPF_EXT_LOG_MESSAGE_UINT64(
+        NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
+        NET_EBPF_EXT_TRACELOG_KEYWORD_FLOW_CLASSIFY,
+        "Flow cleanup completed.",
+        local_flow_context->parameters.flow_id);
+
+Exit:
+    if (filter_context) {
+        DEREFERENCE_FILTER_CONTEXT(&filter_context->base);
+    }
+
+    if (local_flow_context != NULL) {
+        ExFreePool(local_flow_context);
+    }
+
+    NET_EBPF_EXT_LOG_EXIT();
+}
+
 extern wfp_ale_layer_fields_t wfp_flow_established_fields[2]; // Used for flow established hooks
 
 /**
@@ -469,9 +681,10 @@ _net_ebpf_extension_flow_classify_copy_wfp_connection_fields(
 
     FWPS_INCOMING_VALUE0* incoming_values = incoming_fixed_values->incomingValue;
 
-    // Set direction (0 = inbound, 1 = outbound)
-    flow_classify->direction =
-        (incoming_values[fields->direction_field].value.uint32 == FWP_DIRECTION_OUTBOUND) ? 1 : 0;
+    // Set direction
+    flow_classify->direction = (uint8_t)(incoming_values[fields->direction_field].value.uint32 == FWP_DIRECTION_OUTBOUND
+                                             ? FLOW_DIRECTION_OUTBOUND
+                                             : FLOW_DIRECTION_INBOUND);
 
     // Copy IP address fields.
     if (hook_id == EBPF_HOOK_ALE_FLOW_ESTABLISHED_V4) {
@@ -694,6 +907,9 @@ net_ebpf_extension_flow_classify_flow_classify(
         // layer_data is a pointer to FWPS_STREAM_DATA0 at the stream layer
         FWPS_STREAM_DATA0* stream_data = ((FWPS_STREAM_CALLOUT_IO_PACKET0*)layer_data)->streamData;
 
+        flow_classify_context->direction =
+            (uint8_t)(stream_data->flags & FWPS_STREAM_FLAG_SEND ? FLOW_DIRECTION_OUTBOUND : FLOW_DIRECTION_INBOUND);
+
         if (stream_data->netBufferListChain != NULL && stream_data->dataLength > 0) {
             // Get the first NET_BUFFER from the NET_BUFFER_LIST chain
             NET_BUFFER_LIST* nbl = stream_data->netBufferListChain;
@@ -861,6 +1077,7 @@ net_ebpf_extension_flow_classify_flow_classify(
     default:
         // Allow the segment but keep classifying future segments
         classify_output->actionType = FWP_ACTION_PERMIT;
+        flow_classify_context->state = FLOW_STATE_ESTABLISHED;
 
         NET_EBPF_EXT_LOG_MESSAGE(
             NET_EBPF_EXT_TRACELOG_LEVEL_VERBOSE,
@@ -880,50 +1097,7 @@ Exit:
 }
 
 void
-net_ebpf_extension_flow_classify_flow_established_delete(uint16_t layer_id, uint32_t callout_id, uint64_t flow_context)
-{
-    net_ebpf_extension_flow_classify_wfp_flow_context_t* local_flow_context =
-        (net_ebpf_extension_flow_classify_wfp_flow_context_t*)(uintptr_t)flow_context;
-    net_ebpf_extension_flow_classify_wfp_filter_context_t* filter_context = NULL;
-    KIRQL irql = 0;
-
-    UNREFERENCED_PARAMETER(layer_id);
-    UNREFERENCED_PARAMETER(callout_id);
-
-    NET_EBPF_EXT_LOG_ENTRY();
-
-    if (local_flow_context == NULL) {
-        goto Exit;
-    }
-
-    filter_context = local_flow_context->filter_context;
-    if (filter_context == NULL) {
-        goto Exit;
-    }
-
-    if (filter_context->base.context_deleting) {
-        goto Exit;
-    }
-
-    KeAcquireSpinLock(&filter_context->lock, &irql);
-    RemoveEntryList(&local_flow_context->link);
-    filter_context->flow_context_list.count--;
-    KeReleaseSpinLock(&filter_context->lock, irql);
-
-Exit:
-    if (filter_context) {
-        DEREFERENCE_FILTER_CONTEXT(&filter_context->base);
-    }
-
-    if (local_flow_context != NULL) {
-        ExFreePool(local_flow_context);
-    }
-
-    NET_EBPF_EXT_LOG_EXIT();
-}
-
-void
-net_ebpf_extension_flow_classify_flow_delete(uint16_t layer_id, uint32_t callout_id, uint64_t flow_context)
+net_ebpf_extension_flow_classify_flow_delete_old(uint16_t layer_id, uint32_t callout_id, uint64_t flow_context)
 {
     net_ebpf_extension_flow_classify_wfp_flow_context_t* local_flow_context =
         (net_ebpf_extension_flow_classify_wfp_flow_context_t*)(uintptr_t)flow_context;
@@ -1167,6 +1341,8 @@ net_ebpf_extension_flow_classify_flow_established_classify(
 
     // Set the flow ID after copying other fields
     local_flow_context->context.context.flow_id = incoming_metadata_values->flowHandle;
+
+    local_flow_context->context.context.state = FLOW_STATE_NEW;
 
     if (flow_context != 0) {
         NET_EBPF_EXT_LOG_MESSAGE(

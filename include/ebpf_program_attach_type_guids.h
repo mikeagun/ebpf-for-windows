@@ -125,6 +125,16 @@ extern "C"
      */
     __declspec(selectany) ebpf_attach_type_t EBPF_ATTACH_TYPE_XDP_TEST = EBPF_ATTACH_TYPE_XDP_TEST_GUID;
 
+#define EBPF_ATTACH_TYPE_FLOW_CLEANUP_GUID                                             \
+    {                                                                                  \
+        0x837d02ce, 0x3251, 0x4632, { 0x8d, 0x94, 0x60, 0xd3, 0xb4, 0x57, 0x69, 0xf4 } \
+    }
+    /** @brief Attach type for handling flow cleanup before deletion.
+     *
+     * Program type: \ref EBPF_PROGRAM_TYPE_FLOW_CLASSIFY
+     */
+    __declspec(selectany) ebpf_attach_type_t EBPF_ATTACH_TYPE_FLOW_CLEANUP = EBPF_ATTACH_TYPE_FLOW_CLEANUP_GUID;
+
     //
     // Program Types.
     //

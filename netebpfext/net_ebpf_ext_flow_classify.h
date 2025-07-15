@@ -69,6 +69,15 @@ DEFINE_GUID(
     0x00,
     0x03);
 
+// Flow cleanup callouts for flow_cleanup hook
+// d1da9d8b-4d72-11ee-be56-0242ac120004
+DEFINE_GUID(
+    EBPF_HOOK_FLOW_CLEANUP_V4_CALLOUT, 0xd1da9d8b, 0x4d72, 0x11ee, 0xbe, 0x56, 0x02, 0x42, 0xac, 0x12, 0x00, 0x04);
+
+// d1da9f3e-4d72-11ee-be56-0242ac120005
+DEFINE_GUID(
+    EBPF_HOOK_FLOW_CLEANUP_V6_CALLOUT, 0xd1da9f3e, 0x4d72, 0x11ee, 0xbe, 0x56, 0x02, 0x42, 0xac, 0x12, 0x00, 0x05);
+
 /**
  * @brief WFP classifyFn callback for EBPF_HOOK_FLOW_CLASSIFY_ALE_FLOW_ESTABLISHED_V4/6_CALLOUT.
  */
