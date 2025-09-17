@@ -24,11 +24,14 @@ struct ebpf_ring_mapping
 {
     fd_t map_fd;
     void* sample_fn; // ring_buffer_sample_fn or perf_buffer_sample_fn
+    void* lost_fn;   // nullptr for ring buffer, perf_buffer_lost_fn for perf buffer
     void* ctx;
     ebpf_ring_buffer_consumer_page_t* consumer_page;
     const ebpf_ring_buffer_producer_page_t* producer_page;
     const uint8_t* data;
     uint64_t data_size;
+    bool is_perf_buffer; // true if this is for perf buffer, false for ring buffer
+    uint32_t cpu_id;     // CPU ID for perf buffer callbacks
 };
 
 int
@@ -402,7 +405,7 @@ _convert_to_ebpf_perf_opts(const struct perf_buffer_opts* linux_opts)
     return ebpf_opts;
 }
 
-// Helper function to process ring buffer records from memory pages.
+// Helper function to process ring records from memory pages (shared by ring buffer and perf buffer).
 static int
 _process_ring_records(_In_ const ebpf_ring_mapping& mapping, bool consume_all)
 {
@@ -436,11 +439,24 @@ _process_ring_records(_In_ const ebpf_ring_mapping& mapping, bool consume_all)
         } else {
             uint32_t data_length = ebpf_ring_buffer_record_length(record);
 
-            // Call the user callback with the record data.
-            int callback_result = ((ring_buffer_sample_fn)mapping.sample_fn)(
-                mapping.ctx,
-                (void*)record->data, // Point to data portion of record.
-                data_length);
+            // Call the appropriate user callback based on buffer type.
+            int callback_result = 0;
+            if (mapping.is_perf_buffer) {
+                // Perf buffer callback: void (*)(void* ctx, int cpu, void* data, __u32 size)
+                ((perf_buffer_sample_fn)mapping.sample_fn)(
+                    mapping.ctx,
+                    mapping.cpu_id,
+                    (void*)record->data, // Point to data portion of record.
+                    data_length);
+                // Perf buffer callbacks don't return values, so assume success
+                callback_result = 0;
+            } else {
+                // Ring buffer callback: int (*)(void* ctx, void* data, size_t size)
+                callback_result = ((ring_buffer_sample_fn)mapping.sample_fn)(
+                    mapping.ctx,
+                    (void*)record->data, // Point to data portion of record.
+                    data_length);
+            }
 
             if (callback_result < 0) {
                 // User callback requested to stop processing.
@@ -527,7 +543,10 @@ ebpf_ring_buffer__new(
             ebpf_ring_mapping map_info{};
             map_info.map_fd = map_fd;
             map_info.sample_fn = (void*)sample_cb;
+            map_info.lost_fn = nullptr; // Not used for ring buffer
             map_info.ctx = ctx;
+            map_info.is_perf_buffer = false; // This is a ring buffer
+            map_info.cpu_id = 0;             // Not used for ring buffer
 
             // Set the shared wait handle for this map to receive notifications
             result = ebpf_map_set_wait_handle(map_fd, 0, ring_buffer->wait_handle);
@@ -620,7 +639,10 @@ ring_buffer__add(struct ring_buffer* rb, int map_fd, ring_buffer_sample_fn sampl
     ebpf_ring_mapping map_info{};
     map_info.map_fd = map_fd;
     map_info.sample_fn = (void*)sample_cb;
+    map_info.lost_fn = nullptr; // Not used for ring buffer
     map_info.ctx = ctx;
+    map_info.is_perf_buffer = false; // This is a ring buffer
+    map_info.cpu_id = 0;             // Not used for ring buffer
 
     // Set the shared wait handle for this map to receive notifications
     ebpf_result_t result = ebpf_map_set_wait_handle(map_fd, 0, rb->wait_handle);
@@ -780,6 +802,12 @@ libbpf_bpf_map_type_str(enum bpf_map_type t)
 typedef struct perf_buffer
 {
     std::vector<ebpf_map_subscription_t*> subscriptions;
+
+    // Synchronous mode mapping info.
+    std::vector<ebpf_ring_mapping> sync_maps;
+    ebpf_handle_t wait_handle = ebpf_handle_invalid; // Single wait handle shared by all maps.
+
+    bool is_async_mode = false; // True for async callbacks, false for sync processing.
 } perf_buffer_t;
 
 struct perf_buffer*
@@ -805,70 +833,300 @@ ebpf_perf_buffer__new(
     _In_opt_ void* ctx,
     _In_opt_ const struct ebpf_perf_buffer_opts* opts) EBPF_NO_EXCEPT
 {
-    ebpf_result result = EBPF_SUCCESS;
-    perf_buffer_t* local_perf_buffer = nullptr;
-    std::vector<uint32_t> cpu_ids;
+    ebpf_result_t result = EBPF_SUCCESS;
+    struct perf_buffer* local_perf_buffer = nullptr;
 
     if ((sample_cb == nullptr) || (lost_cb == nullptr)) {
-        result = EBPF_INVALID_ARGUMENT;
-        goto Exit;
+        errno = EBPF_INVALID_ARGUMENT;
+        return nullptr;
     }
 
     if (page_cnt != 0) {
-        result = EBPF_INVALID_ARGUMENT;
-        goto Exit;
+        errno = EBPF_INVALID_ARGUMENT;
+        return nullptr;
     }
 
     try {
         bool use_async_callbacks = opts != nullptr && (opts->flags & EBPF_PERFBUF_FLAG_AUTO_CALLBACK) != 0;
-        if (!use_async_callbacks) {
-            result = EBPF_OPERATION_NOT_SUPPORTED;
-            goto Exit;
-        }
 
-        std::unique_ptr<perf_buffer_t> perf_buffer = std::make_unique<perf_buffer_t>();
-        uint32_t ring_count = libbpf_num_possible_cpus();
-        ebpf_map_subscription_t* subscription = nullptr;
+        std::unique_ptr<struct perf_buffer> perf_buffer = std::make_unique<struct perf_buffer>();
 
-        for (uint32_t cpu_id = 0; cpu_id < ring_count; cpu_id++) {
-            cpu_ids.push_back(cpu_id);
-        }
+        perf_buffer->is_async_mode = use_async_callbacks;
 
-        result = ebpf_map_subscribe(
-            map_fd, cpu_ids.data(), cpu_ids.size(), ctx, (void*)sample_cb, (void*)lost_cb, &subscription);
+        if (perf_buffer->is_async_mode) {
+            // Use the original async callback mechanism from main branch
+            std::vector<uint32_t> cpu_ids;
+            uint32_t ring_count = libbpf_num_possible_cpus();
 
-        if (result != EBPF_SUCCESS) {
-            goto Exit;
-        }
+            for (uint32_t cpu_id = 0; cpu_id < ring_count; cpu_id++) {
+                cpu_ids.push_back(cpu_id);
+            }
 
-        try {
-            perf_buffer->subscriptions.push_back(subscription);
-        } catch (const std::bad_alloc&) {
-            ebpf_map_unsubscribe(subscription);
-            result = EBPF_NO_MEMORY;
-            goto Exit;
+            ebpf_map_subscription_t* subscription = nullptr;
+            result = ebpf_map_subscribe(
+                map_fd, cpu_ids.data(), cpu_ids.size(), ctx, (void*)sample_cb, (void*)lost_cb, &subscription);
+
+            if (result != EBPF_SUCCESS) {
+                errno = ebpf_result_to_errno(result);
+                return nullptr;
+            }
+
+            try {
+                perf_buffer->subscriptions.push_back(subscription);
+            } catch (const std::bad_alloc&) {
+                ebpf_map_unsubscribe(subscription);
+                errno = ENOMEM;
+                return nullptr;
+            }
+        } else {
+            // Synchronous mode - create per-CPU ring buffer mappings
+            HANDLE wait_handle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+            if (wait_handle == nullptr) {
+                errno = ENOMEM;
+                return nullptr;
+            }
+            perf_buffer->wait_handle = reinterpret_cast<ebpf_handle_t>(wait_handle);
+
+            uint32_t cpu_count = libbpf_num_possible_cpus();
+
+            // Create mapping for each CPU
+            for (uint32_t cpu_id = 0; cpu_id < cpu_count; cpu_id++) {
+                ebpf_ring_mapping map_info{};
+                map_info.map_fd = map_fd;
+                map_info.sample_fn = (void*)sample_cb;
+                map_info.lost_fn = (void*)lost_cb;
+                map_info.ctx = ctx;
+                map_info.is_perf_buffer = true; // This is a perf buffer
+                map_info.cpu_id = cpu_id;
+
+                // Set the shared wait handle for this CPU to receive notifications
+                result = ebpf_map_set_wait_handle(map_fd, cpu_id, perf_buffer->wait_handle);
+                if (result != EBPF_SUCCESS) {
+                    CloseHandle(wait_handle);
+                    perf_buffer->wait_handle = ebpf_handle_invalid;
+                    errno = ebpf_result_to_errno(result);
+                    return nullptr;
+                }
+
+                // Get direct memory access to the perf buffer map for this CPU
+                result = ebpf_ring_buffer_map_map_buffer(
+                    map_fd,
+                    reinterpret_cast<void**>(&map_info.consumer_page),
+                    reinterpret_cast<const void**>(&map_info.producer_page),
+                    &map_info.data,
+                    &map_info.data_size);
+                if (result != EBPF_SUCCESS) {
+                    CloseHandle(wait_handle);
+                    perf_buffer->wait_handle = ebpf_handle_invalid;
+                    errno = ebpf_result_to_errno(result);
+                    return nullptr;
+                }
+
+                try {
+                    perf_buffer->sync_maps.push_back(map_info);
+                } catch (const std::bad_alloc&) {
+                    CloseHandle(wait_handle);
+                    perf_buffer->wait_handle = ebpf_handle_invalid;
+                    (void)ebpf_ring_buffer_map_unmap_buffer(
+                        map_fd, map_info.consumer_page, map_info.producer_page, map_info.data);
+                    errno = ENOMEM;
+                    return nullptr;
+                }
+            }
         }
 
         local_perf_buffer = perf_buffer.release();
+
     } catch (const std::bad_alloc&) {
-        result = EBPF_NO_MEMORY;
-        goto Exit;
+        errno = ENOMEM;
+        return nullptr;
     }
-Exit:
-    if (result != EBPF_SUCCESS) {
-        errno = ebpf_result_to_errno(result);
-        EBPF_LOG_FUNCTION_ERROR(result);
-    }
-    EBPF_RETURN_POINTER(perf_buffer*, local_perf_buffer);
+
+    return local_perf_buffer;
 }
 
 void
 perf_buffer__free(struct perf_buffer* pb)
 {
+    if (!pb) {
+        return;
+    }
+
+    // Clean up async subscriptions
     for (auto& subscription : pb->subscriptions) {
         ebpf_map_unsubscribe(subscription);
     }
-
     pb->subscriptions.clear();
+
+    // Clean up sync mappings
+    for (auto& map_info : pb->sync_maps) {
+        (void)ebpf_ring_buffer_map_unmap_buffer(
+            map_info.map_fd, map_info.consumer_page, map_info.producer_page, map_info.data);
+    }
+    pb->sync_maps.clear();
+
+    // Clean up wait handle
+    if (pb->wait_handle != ebpf_handle_invalid) {
+        CloseHandle(reinterpret_cast<HANDLE>(pb->wait_handle));
+        pb->wait_handle = ebpf_handle_invalid;
+    }
+
     delete pb;
+}
+
+int
+perf_buffer__poll(struct perf_buffer* pb, int timeout_ms)
+{
+    if (!pb) {
+        return -EINVAL;
+    }
+
+    if (pb->is_async_mode) {
+        // For async mode, polling doesn't make sense since callbacks are automatic
+        return 0; // Return success to indicate the perf buffer is operational
+    }
+
+    if (pb->sync_maps.empty()) {
+        return -EINVAL;
+    }
+
+    // First a non-blocking wait to clear the auto-reset event if already set.
+    DWORD wait_result = WaitForSingleObject(reinterpret_cast<HANDLE>(pb->wait_handle), 0);
+
+    // Next, try to consume any immediately available data.
+    int total_records = perf_buffer__consume(pb);
+    if (total_records != 0) {
+        return total_records; // Return records found or error.
+    }
+
+    // No data is immediately available, so wait if timeout allows.
+    if (timeout_ms == 0) {
+        return 0; // Non-blocking, return immediately with no data.
+    }
+
+    // Wait on the shared handle until data becomes available or timeout.
+    wait_result = WaitForSingleObject(
+        reinterpret_cast<HANDLE>(pb->wait_handle), timeout_ms < 0 ? INFINITE : static_cast<DWORD>(timeout_ms));
+
+    if (wait_result == WAIT_TIMEOUT) {
+        return 0; // Timeout with no data.
+    }
+
+    if (wait_result == WAIT_OBJECT_0) {
+        // Data is now available, consume all available data.
+        return perf_buffer__consume(pb);
+    }
+
+    return -EINVAL; // Wait failed
+}
+
+int
+perf_buffer__consume(struct perf_buffer* pb)
+{
+    if (!pb) {
+        return -EINVAL;
+    }
+
+    if (pb->is_async_mode) {
+        // For async mode, consuming doesn't make sense since callbacks are automatic
+        return 0; // Return success to indicate the perf buffer is operational
+    }
+
+    int total_records = 0;
+
+    // Process all available data from all perf buffers
+    for (const auto& map_info : pb->sync_maps) {
+        int result = _process_ring_records(map_info, true); // Process all records
+
+        if (result < 0) {
+            return result; // Return error
+        }
+
+        total_records += result;
+    }
+
+    return total_records;
+}
+
+int
+perf_buffer__consume_buffer(struct perf_buffer* pb, size_t cpu)
+{
+    if (!pb) {
+        return -EINVAL;
+    }
+
+    if (pb->is_async_mode) {
+        // For async mode, consuming doesn't make sense since callbacks are automatic
+        return 0; // Return success to indicate the perf buffer is operational
+    }
+
+    if (cpu >= pb->sync_maps.size()) {
+        return -EINVAL; // Invalid CPU index
+    }
+
+    // Process available data from the specific CPU buffer
+    const auto& map_info = pb->sync_maps[cpu];
+    return _process_ring_records(map_info, true); // Process all records
+}
+
+size_t
+perf_buffer__buffer_cnt(const struct perf_buffer* pb)
+{
+    if (!pb) {
+        return 0;
+    }
+
+    if (pb->is_async_mode) {
+        // For async mode, return the number of subscriptions
+        return pb->subscriptions.size();
+    }
+
+    // For sync mode, return the number of mapped buffers
+    return pb->sync_maps.size();
+}
+
+ebpf_handle_t
+ebpf_perf_buffer_get_wait_handle(_In_ const struct perf_buffer* pb) EBPF_NO_EXCEPT
+{
+    if (!pb) {
+        return ebpf_handle_invalid;
+    }
+
+    if (pb->is_async_mode) {
+        // For async mode, the wait handle is not currently set.
+        return ebpf_handle_invalid;
+    }
+
+    return pb->wait_handle;
+}
+
+_Must_inspect_result_ _Success_(return == EBPF_SUCCESS) ebpf_result_t ebpf_perf_buffer_get_buffer(
+    _In_ struct perf_buffer* pb,
+    _In_ uint32_t index,
+    _Outptr_result_maybenull_ ebpf_ring_buffer_consumer_page_t** consumer_page,
+    _Outptr_result_maybenull_ const ebpf_ring_buffer_producer_page_t** producer_page,
+    _Outptr_result_buffer_maybenull_(*data_size) const uint8_t** data,
+    _Out_opt_ uint64_t* data_size) EBPF_NO_EXCEPT
+{
+    if (!pb || !consumer_page || !producer_page || !data || !data_size) {
+        return EBPF_INVALID_ARGUMENT;
+    }
+
+    if (pb->is_async_mode) {
+        // For async mode, direct buffer access isn't currently supported.
+        return EBPF_INVALID_ARGUMENT;
+    }
+
+    if (index >= pb->sync_maps.size()) {
+        return EBPF_OBJECT_NOT_FOUND;
+    }
+
+    // Return buffer info for the specified map (CPU)
+    const auto& map_info = pb->sync_maps[index];
+    *consumer_page = static_cast<ebpf_ring_buffer_consumer_page_t*>(map_info.consumer_page);
+    *producer_page = static_cast<const ebpf_ring_buffer_producer_page_t*>(map_info.producer_page);
+    *data = map_info.data;
+    *data_size = map_info.data_size;
+
+    return EBPF_SUCCESS;
 }
