@@ -255,7 +255,6 @@ typedef struct _ebpf_core_ring_buffer_map
 __declspec(align(EBPF_CACHE_LINE_SIZE)) typedef struct _ebpf_core_perf_ring
 {
     ebpf_ring_buffer_t* ring;
-    volatile size_t lost_records;
     ebpf_core_map_async_contexts_t async;
 } ebpf_core_perf_ring_t;
 
@@ -2353,7 +2352,8 @@ _query_perf_event_array_map(
         EBPF_FROM_FIELD(ebpf_core_perf_event_array_map_t, core_map, map);
     ebpf_core_perf_ring_t* ring = &perf_event_array_map->rings[(uint32_t)index];
     ebpf_ring_buffer_query(ring->ring, &async_query_result->consumer, &async_query_result->producer);
-    async_query_result->lost_count = ring->lost_records;
+    ebpf_perf_event_array_producer_page_t* producer_page = ebpf_perf_event_array_get_producer_page(ring->ring);
+    async_query_result->lost_count = producer_page->lost_records;
 }
 
 static void
@@ -2893,7 +2893,8 @@ ebpf_perf_event_array_map_output(_Inout_ ebpf_map_t* map, _In_reads_bytes_(lengt
     uint8_t* record_data;
     ebpf_result_t result = ebpf_ring_buffer_reserve_exclusive(ring->ring, &record_data, length);
     if (result != EBPF_SUCCESS) {
-        ring->lost_records++;
+        ebpf_perf_event_array_producer_page_t* producer_page = ebpf_perf_event_array_get_producer_page(ring->ring);
+        producer_page->lost_records++;
         goto Exit;
     }
     memcpy(record_data, data, length);
@@ -2977,7 +2978,8 @@ ebpf_perf_event_array_map_output_with_capture(
     uint8_t* record_data;
     result = ebpf_ring_buffer_reserve_exclusive(ring->ring, &record_data, length + extra_length);
     if (result != EBPF_SUCCESS) {
-        ring->lost_records++;
+        ebpf_perf_event_array_producer_page_t* producer_page = ebpf_perf_event_array_get_producer_page(ring->ring);
+        producer_page->lost_records++;
         goto Exit;
     }
     memcpy(record_data, data, length);
