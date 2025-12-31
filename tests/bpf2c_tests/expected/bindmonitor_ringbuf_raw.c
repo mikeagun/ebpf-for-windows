@@ -133,9 +133,9 @@ bind_monitor(void* context, const program_runtime_context_t* runtime_context)
 #line 29 "sample/bindmonitor_ringbuf.c"
     r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
 label_1:
-    // EBPF_OP_MOV64_IMM pc=10 dst=r0 src=r0 offset=0 imm=0
+    // EBPF_OP_MOV64_IMM pc=10 dst=r0 src=r0 offset=0 imm=1
 #line 36 "sample/bindmonitor_ringbuf.c"
-    r0 = IMMEDIATE(0);
+    r0 = IMMEDIATE(1);
     // EBPF_OP_EXIT pc=11 dst=r0 src=r0 offset=0 imm=0
 #line 36 "sample/bindmonitor_ringbuf.c"
     return r0;
