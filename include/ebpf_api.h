@@ -67,14 +67,14 @@ extern "C"
     } ebpf_api_program_info_t;
 
     /**
-      * @brief Get list of programs and stats in an eBPF file.
-      * @param[in] file Name of file containing eBPF programs.
-      * @param[in] verbose Obtain additional info about the programs.
-      * @param[out] infos On success points to a list of eBPF programs.
-      * The caller is responsible for freeing the list via ebpf_free_programs().
-      * @param[out] error_message On failure points to a text description of
-      *  the error.
-      */
+     * @brief Get list of programs and stats in an eBPF file.
+     * @param[in] file Name of file containing eBPF programs.
+     * @param[in] verbose Obtain additional info about the programs.
+     * @param[out] infos On success points to a list of eBPF programs.
+     * The caller is responsible for freeing the list via ebpf_free_programs().
+     * @param[out] error_message On failure points to a text description of
+     *  the error.
+     */
     _Must_inspect_result_ ebpf_result_t
     ebpf_enumerate_programs(
         _In_z_ const char* file,
@@ -740,7 +740,7 @@ extern "C"
     typedef struct _ebpf_perf_event_array_producer_page
     {
         volatile uint64_t producer_offset; ///< Producer(s) have reserved up to this offset.
-        uint64_t pad[7];                   ///< Padding.
+        uint64_t pad[7];                   ///< Padding to 64 bytes (cache line).
         volatile uint64_t lost_records;    ///< Number of lost records.
     } ebpf_perf_event_array_producer_page_t;
 

@@ -1,6 +1,6 @@
 # Perf Event Array
 
-This document describes the support for the bpf map type BPF_MAP_TYPE_PERF_EVENT_ARRAY ([#658](https://github.com/microsoft/ebpf-for-windows/issues/658)).
+This document describes the support for the bpf map type BPF_MAP_TYPE_PERF_EVENT_ARRAY.
 
 NOTE: With [#4640](https://github.com/microsoft/ebpf-for-windows/pull/4640) The default behavior has been changed to be linux-compatible.
 - Code expecting asynchonous callbacks should switch to `ebpf_perf_buffer__new` with `EBPF_PERFBUF_FLAG_AUTO_CALLBACK` set in the opts flags.
@@ -428,9 +428,9 @@ The following Linux libbpf perf buffer APIs are **not supported** in ebpf-for-wi
 - `perf_buffer__epoll_fd()` - Get epoll file descriptor (Windows uses wait handles instead)
 
 ### Memory Layout Differences
-Unlike Linux, **Windows does not expose direct memory-mapped access** to perf event array buffers because:
-1. Windows perf event arrays use a different internal memory layout than Linux
-2. Windows uses wait handles instead of epoll for event notification
-3. The per-CPU buffer implementation differs between platforms
+Unlike Linux, **Windows does not expose direct memory-mapped access** to perf event array buffers:
+1. Windows perf event arrays use a different internal memory layout than Linux.
+2. Windows uses wait handles instead of epoll for event notification.
+3. The per-CPU buffer implementation differs between platforms.
 
-For direct memory access patterns, consider using ring buffer maps instead, which do support memory-mapped access on Windows.
+For direct memory access to rings, consider using ring buffer maps instead, which do support memory-mapped access.
