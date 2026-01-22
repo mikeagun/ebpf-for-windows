@@ -335,9 +335,9 @@ TEST_CASE("batch_test", "[sample_ext_test]")
 }
 #endif
 
-void
-utility_helpers_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("utility_helpers_test", "[sample_ext_test]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     struct bpf_object* object = nullptr;
     hook_helper_t hook(EBPF_ATTACH_TYPE_SAMPLE);
     native_module_helper_t native_module_helper;
@@ -360,14 +360,6 @@ utility_helpers_test(ebpf_execution_type_t execution_type)
 
     verify_utility_helper_results(object, true);
 }
-
-#if !defined(CONFIG_BPF_INTERPRETER_DISABLED)
-TEST_CASE("utility_helpers_test_interpret", "[sample_ext_test]") { utility_helpers_test(EBPF_EXECUTION_INTERPRET); }
-#endif
-#if !defined(CONFIG_BPF_JIT_DISABLED)
-TEST_CASE("utility_helpers_test_jit", "[sample_ext_test]") { utility_helpers_test(EBPF_EXECUTION_JIT); }
-#endif
-TEST_CASE("utility_helpers_test_native", "[sample_ext_test]") { utility_helpers_test(EBPF_EXECUTION_NATIVE); }
 
 #if !defined(CONFIG_BPF_JIT_DISABLED)
 TEST_CASE("netsh_add_program_test_sample_ebpf", "[sample_ext_test]")

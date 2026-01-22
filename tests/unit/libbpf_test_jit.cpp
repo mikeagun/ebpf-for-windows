@@ -8,6 +8,7 @@
 #pragma warning(pop)
 #include "capture_helper.hpp"
 #include "catch_wrapper.hpp"
+#include "common_tests.h"
 #include "ebpf_execution_type.h"
 #include "ebpf_platform.h"
 #include "ebpf_vm_isa.hpp"
@@ -117,38 +118,30 @@ ebpf_test_tail_call(_In_z_ const char* filename, uint32_t expected_result)
     bpf_object__close(object);
 }
 
-#if !defined(CONFIG_BPF_JIT_DISABLED)
-TEST_CASE("good_tail_call-jit", "[libbpf]")
+JIT_TEST_CASE("good_tail_call", "[libbpf]")
 {
     // Verify that 42 is returned, which is done by the callee.
     ebpf_test_tail_call("tail_call.o", 42);
 }
 
-TEST_CASE("bad_tail_call-jit", "[libbpf]")
+JIT_TEST_CASE("bad_tail_call", "[libbpf]")
 {
     ebpf_test_tail_call("tail_call_bad.o", (uint32_t)(-EBPF_INVALID_ARGUMENT));
 }
-#endif
 
-#if !defined(CONFIG_BPF_JIT_DISABLED)
 void
 test_invalid_bpf_action(char log_buffer[])
 {
+#if !defined(CONFIG_BPF_JIT_DISABLED)
     REQUIRE(errno == EACCES);
     REQUIRE(strcmp(log_buffer, "0: Invalid type (r0.type == number)\n\n") == 0);
-}
 #else
-void
-test_invalid_bpf_action(char log_buffer[])
-{
     UNREFERENCED_PARAMETER(log_buffer);
     REQUIRE(errno == ENOTSUP);
-}
 #endif
+}
 
-#if !defined(CONFIG_BPF_JIT_DISABLED)
-static void
-test_libbpf_load_program()
+JIT_TEST_CASE("libbpf load program", "[libbpf][deprecated]")
 {
     _test_helper_libbpf test_helper;
     test_helper.initialize();
@@ -163,10 +156,7 @@ test_libbpf_load_program()
     bpf_object__close(object);
 }
 
-TEST_CASE("libbpf load program-jit", "[libbpf][deprecated]") { test_libbpf_load_program(); }
-
-static void
-test_libbpf_prog_test_run()
+JIT_TEST_CASE("libbpf prog test run", "[libbpf][deprecated]")
 {
     _test_helper_libbpf test_helper;
     test_helper.initialize();
@@ -249,10 +239,7 @@ test_libbpf_prog_test_run()
     bpf_object__close(object);
 }
 
-TEST_CASE("libbpf prog test run-jit", "[libbpf][deprecated]") { test_libbpf_prog_test_run(); }
-
-static void
-_test_valid_bpf_load_program()
+JIT_TEST_CASE("valid bpf_load_program", "[libbpf][deprecated]")
 {
     _test_helper_libbpf test_helper;
     test_helper.initialize();
@@ -282,10 +269,7 @@ _test_valid_bpf_load_program()
     Platform::_close(program_fd);
 }
 
-TEST_CASE("valid bpf_load_program-jit", "[libbpf][deprecated]") { _test_valid_bpf_load_program(); }
-
-static void
-_test_valid_bpf_prog_load()
+JIT_TEST_CASE("valid bpf_prog_load", "[libbpf]")
 {
     _test_helper_libbpf test_helper;
     test_helper.initialize();
@@ -315,10 +299,7 @@ _test_valid_bpf_prog_load()
     Platform::_close(program_fd);
 }
 
-TEST_CASE("valid bpf_prog_load-jit", "[libbpf]") { _test_valid_bpf_prog_load(); }
-
-static void
-_test_valid_bpf_load_program_xattr()
+JIT_TEST_CASE("valid bpf_load_program_xattr", "[libbpf][deprecated]")
 {
     _test_helper_libbpf test_helper;
     test_helper.initialize();
@@ -353,9 +334,6 @@ _test_valid_bpf_load_program_xattr()
     Platform::_close(program_fd);
 }
 
-TEST_CASE("valid bpf_load_program_xattr-jit", "[libbpf][deprecated]") { _test_valid_bpf_load_program_xattr(); }
-#endif
-
 // Define macros that appear in the Linux man page to values in ebpf_vm_isa.h.
 #define BPF_LD_MAP_FD(reg, fd) {INST_OP_LDDW_IMM, (reg), 1, 0, (fd)}, {0}
 #define BPF_ALU64_IMM(op, reg, imm) {INST_CLS_ALU64 | INST_SRC_IMM | ((op) << 4), (reg), 0, 0, (imm)}
@@ -372,9 +350,7 @@ TEST_CASE("valid bpf_load_program_xattr-jit", "[libbpf][deprecated]") { _test_va
 #define BPF_REG_10 R10_STACK_POINTER
 #define BPF_ADD 0
 
-#if !defined(CONFIG_BPF_JIT_DISABLED)
-static void
-test_valid_bpf_load_program_with_map()
+JIT_TEST_CASE("valid bpf_load_program with map", "[libbpf][deprecated]")
 {
     _test_helper_libbpf test_helper;
     test_helper.initialize();
@@ -418,12 +394,7 @@ test_valid_bpf_load_program_with_map()
     Platform::_close(map_fd);
 }
 
-TEST_CASE("valid bpf_load_program with map-jit", "[libbpf][deprecated]") { test_valid_bpf_load_program_with_map(); }
-#endif
-
-#if !defined(CONFIG_BPF_JIT_DISABLED)
-static void
-_test_bpf_object_load_with_o()
+JIT_TEST_CASE("bpf_object__load with .o", "[libbpf]")
 {
     _test_helper_libbpf test_helper;
     test_helper.initialize();
@@ -491,10 +462,7 @@ _test_bpf_object_load_with_o()
     bpf_object__close(object);
 }
 
-TEST_CASE("bpf_object__load with .o-jit", "[libbpf]") { _test_bpf_object_load_with_o(); }
-
-static void
-_test_bpf_object_load_with_o_from_memory()
+JIT_TEST_CASE("bpf_object__load with .o from memory", "[libbpf]")
 {
     _test_helper_libbpf test_helper;
     test_helper.initialize();
@@ -530,7 +498,7 @@ _test_bpf_object_load_with_o_from_memory()
 
     REQUIRE(bpf_program__set_type(program, BPF_PROG_TYPE_CGROUP_SOCK_ADDR) == 0);
 
-      struct bpf_map* map = bpf_object__next_map(object, nullptr);
+    struct bpf_map* map = bpf_object__next_map(object, nullptr);
     REQUIRE(map != nullptr);
     REQUIRE(strcmp(bpf_map__name(map), "socket_cookie_map") == 0);
     REQUIRE(bpf_map__fd(map) == ebpf_fd_invalid);
@@ -573,10 +541,8 @@ _test_bpf_object_load_with_o_from_memory()
     bpf_object__close(object);
 }
 
-TEST_CASE("bpf_object__load with .o from memory-jit", "[libbpf]") { _test_bpf_object_load_with_o_from_memory(); }
-
-static void
-_test_bpf_backwards_compatibility()
+// Test that bpf() accepts a smaller and a larger bpf_attr.
+JIT_TEST_CASE("bpf() backwards compatibility", "[libbpf][bpf]")
 {
     _test_helper_libbpf test_helper;
     test_helper.initialize();
@@ -610,11 +576,11 @@ _test_bpf_backwards_compatibility()
     REQUIRE(map_fd == -EINVAL);
 }
 
-// Test that bpf() accepts a smaller and a larger bpf_attr.
-TEST_CASE("bpf() backwards compatibility-jit", "[libbpf][bpf]") { _test_bpf_backwards_compatibility(); }
-
-static void
-_test_bpf_prog_bind_map_etc()
+// Test bpf() with the following command ids:
+// BPF_PROG_LOAD, BPF_OBJ_GET_INFO_BY_FD, BPF_PROG_GET_NEXT_ID,
+// BPF_MAP_CREATE, BPF_MAP_GET_NEXT_ID, BPF_PROG_BIND_MAP,
+// BPF_PROG_GET_FD_BY_ID, BPF_MAP_GET_FD_BY_ID, and BPF_MAP_GET_FD_BY_ID.
+JIT_TEST_CASE("BPF_PROG_BIND_MAP etc.", "[libbpf][bpf]")
 {
     _test_helper_libbpf test_helper;
     test_helper.initialize();
@@ -760,13 +726,8 @@ _test_bpf_prog_bind_map_etc()
 }
 
 // Test bpf() with the following command ids:
-// BPF_PROG_LOAD, BPF_OBJ_GET_INFO_BY_FD, BPF_PROG_GET_NEXT_ID,
-// BPF_MAP_CREATE, BPF_MAP_GET_NEXT_ID, BPF_PROG_BIND_MAP,
-// BPF_PROG_GET_FD_BY_ID, BPF_MAP_GET_FD_BY_ID, and BPF_MAP_GET_FD_BY_ID.
-TEST_CASE("BPF_PROG_BIND_MAP etc.-jit", "[libbpf][bpf]") { _test_bpf_prog_bind_map_etc(); }
-
-void
-test_bpf_prog_attach_macro()
+//  BPF_PROG_ATTACH, BPF_PROG_DETACH
+JIT_TEST_CASE("BPF_PROG_ATTACH", "[libbpf][bpf]")
 {
     _test_helper_libbpf test_helper;
     test_helper.initialize();
@@ -813,11 +774,6 @@ test_bpf_prog_attach_macro()
     attr.prog_detach.attach_type = BPF_ATTACH_TYPE_SAMPLE;
     REQUIRE(bpf(BPF_PROG_DETACH, &attr, sizeof(attr)) == -ENOTSUP);
 }
-
-// Test bpf() with the following command ids:
-//  BPF_PROG_ATTACH, BPF_PROG_DETACH
-TEST_CASE("BPF_PROG_ATTACH-jit", "[libbpf][bpf]") { test_bpf_prog_attach_macro(); }
-#endif
 
 TEST_CASE("BPF_PROG_LOAD logging-jit", "[libbpf][bpf]")
 {

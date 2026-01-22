@@ -6,6 +6,7 @@
 #pragma warning(disable : 4200)
 #include "bpf/libbpf.h"
 #pragma warning(pop)
+#include "common_tests.h"
 #include "cxplat_fault_injection.h"
 #include "ebpf_epoch.h"
 #include "netsh_test_helper.h"
@@ -498,8 +499,7 @@ verify_no_programs_exist()
                   "======  ====  =====  =========  =============  ====================\n");
 }
 
-#if !defined(CONFIG_BPF_JIT_DISABLED) || !defined(CONFIG_BPF_INTERPRETER_DISABLED)
-TEST_CASE("pin first program", "[netsh][programs]")
+TEMPLATE_TEST_CASE("pin first program", "[netsh][programs]", ANY_JIT_IF_ENABLED)
 {
     _test_helper_netsh test_helper;
     test_helper.initialize();
@@ -528,7 +528,7 @@ TEST_CASE("pin first program", "[netsh][programs]")
     verify_no_programs_exist();
 }
 
-TEST_CASE("pin all programs", "[netsh][programs]")
+TEMPLATE_TEST_CASE("pin all programs", "[netsh][programs]", ANY_JIT_IF_ENABLED)
 {
     _test_helper_netsh test_helper;
     test_helper.initialize();
@@ -561,7 +561,7 @@ TEST_CASE("pin all programs", "[netsh][programs]")
     verify_no_programs_exist();
 }
 
-TEST_CASE("show programs", "[netsh][programs]")
+TEMPLATE_TEST_CASE("show programs", "[netsh][programs]", ANY_JIT_IF_ENABLED)
 {
     _test_helper_netsh test_helper;
     test_helper.initialize();
@@ -653,7 +653,7 @@ TEST_CASE("show programs", "[netsh][programs]")
     verify_no_programs_exist();
 }
 
-TEST_CASE("set program", "[netsh][programs]")
+TEMPLATE_TEST_CASE("set program", "[netsh][programs]", ANY_JIT_IF_ENABLED)
 {
     _test_helper_netsh test_helper;
     test_helper.initialize();
@@ -707,7 +707,7 @@ TEST_CASE("set program", "[netsh][programs]")
     verify_no_programs_exist();
 }
 
-TEST_CASE("show maps", "[netsh][maps]")
+TEMPLATE_TEST_CASE("show maps", "[netsh][maps]", ANY_JIT_IF_ENABLED)
 {
     _test_helper_netsh test_helper;
     test_helper.initialize();
@@ -743,7 +743,7 @@ TEST_CASE("show maps", "[netsh][maps]")
                   "=======  ==================  ====  =====  =======  =====  ====  ========\n");
 }
 
-TEST_CASE("show links", "[netsh][links]")
+TEMPLATE_TEST_CASE("show links", "[netsh][links]", ANY_JIT_IF_ENABLED)
 {
     _test_helper_netsh test_helper;
     test_helper.initialize();
@@ -777,7 +777,7 @@ TEST_CASE("show links", "[netsh][links]")
                   "=======  =======  =============\n");
 }
 
-TEST_CASE("show pins", "[netsh][pins]")
+TEMPLATE_TEST_CASE("show pins", "[netsh][pins]", ANY_JIT_IF_ENABLED)
 {
     _test_helper_netsh test_helper;
     test_helper.initialize();
@@ -809,7 +809,7 @@ TEST_CASE("show pins", "[netsh][pins]")
     verify_no_programs_exist();
 }
 
-TEST_CASE("delete pinned program", "[netsh][programs]")
+TEMPLATE_TEST_CASE("delete pinned program", "[netsh][programs]", ANY_JIT_IF_ENABLED)
 {
     _test_helper_netsh test_helper;
     test_helper.initialize();
@@ -839,7 +839,7 @@ TEST_CASE("delete pinned program", "[netsh][programs]")
     verify_no_programs_exist();
 }
 
-TEST_CASE("unpin program", "[netsh][programs]")
+TEMPLATE_TEST_CASE("unpin program", "[netsh][programs]", ANY_JIT_IF_ENABLED)
 {
     _test_helper_netsh test_helper;
     test_helper.initialize();
@@ -865,7 +865,7 @@ TEST_CASE("unpin program", "[netsh][programs]")
     verify_no_programs_exist();
 }
 
-TEST_CASE("xdp interface parameter", "[netsh][programs]")
+TEMPLATE_TEST_CASE("xdp interface parameter", "[netsh][programs]", ANY_JIT_IF_ENABLED)
 {
     _test_helper_netsh test_helper;
     test_helper.initialize();
@@ -945,7 +945,7 @@ TEST_CASE("xdp interface parameter", "[netsh][programs]")
     ebpf_epoch_synchronize();
 }
 
-TEST_CASE("cgroup_sock_addr compartment parameter", "[netsh][programs]")
+TEMPLATE_TEST_CASE("cgroup_sock_addr compartment parameter", "[netsh][programs]", ANY_JIT_IF_ENABLED)
 {
     _test_helper_netsh test_helper;
     test_helper.initialize();
@@ -981,7 +981,6 @@ TEST_CASE("cgroup_sock_addr compartment parameter", "[netsh][programs]")
 
     ebpf_epoch_synchronize();
 }
-#endif // !defined(CONFIG_BPF_JIT_DISABLED) || !defined(CONFIG_BPF_INTERPRETER_DISABLED)
 
 TEST_CASE("show processes", "[netsh][processes]")
 {
@@ -1007,9 +1006,9 @@ TEST_CASE("show processes", "[netsh][processes]")
     }
 }
 
-static void
-_test_pin_unpin_program(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("pin/unpin program", "[netsh][pin]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_netsh test_helper;
     test_helper.initialize();
     int result = 0;
@@ -1053,11 +1052,9 @@ _test_pin_unpin_program(ebpf_execution_type_t execution_type)
     _run_netsh_command(handle_ebpf_delete_program, sid.c_str(), nullptr, nullptr, &result);
 }
 
-DECLARE_ALL_TEST_CASES("pin/unpin program", "[netsh][pin]", _test_pin_unpin_program);
-
-static void
-_test_pin_unpin_map(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("pin/unpin map", "[netsh][pin]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_netsh test_helper;
     test_helper.initialize();
     int result = 0;
@@ -1112,5 +1109,3 @@ _test_pin_unpin_map(ebpf_execution_type_t execution_type)
 
     _run_netsh_command(handle_ebpf_delete_program, std::to_wstring(pid).c_str(), nullptr, nullptr, &result);
 }
-
-DECLARE_ALL_TEST_CASES("pin/unpin map", "[netsh][pin]", _test_pin_unpin_map);

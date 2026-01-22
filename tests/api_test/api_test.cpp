@@ -5,7 +5,6 @@
 
 #include "api_internal.h"
 #include "api_test.h"
-#include "api_test_jit.h"
 #include "bpf/libbpf.h"
 #include "catch_wrapper.hpp"
 #include "common_tests.h"
@@ -44,22 +43,70 @@ CATCH_REGISTER_LISTENER(_watchdog)
 
 #define WAIT_TIME_IN_MS 5000
 
-using hash_map_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_HASH>;
-using array_map_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_ARRAY>;
-using percpu_hash_map_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_PERCPU_HASH>;
-using percpu_array_map_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_PERCPU_ARRAY>;
-using lru_hash_map_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_LRU_HASH>;
-using queue_map_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_QUEUE>;
-using stack_map_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_STACK>;
-using ringbuf_map_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_RINGBUF>;
-using perf_event_array_map_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_PERF_EVENT_ARRAY>;
-using lpm_trie_map_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_LPM_TRIE>;
-using array_of_maps_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_ARRAY_OF_MAPS>;
-using hash_of_maps_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_HASH_OF_MAPS>;
+#define SAMPLE_PROGRAM_COUNT 1
+#define BIND_MONITOR_PROGRAM_COUNT 1
 
-#define ALL_INNER_MAP_TYPES                                                                                   \
-    hash_map_t, array_map_t, percpu_hash_map_t, percpu_array_map_t, lru_hash_map_t, queue_map_t, stack_map_t, \
-        ringbuf_map_t, perf_event_array_map_t
+#define SAMPLE_MAP_COUNT 1
+#define BIND_MONITOR_MAP_COUNT 3
+
+#if !defined(CONFIG_BPF_JIT_DISABLED) || !defined(CONFIG_BPF_INTERPRETER_DISABLED)
+#define EBPF_SERVICE_BINARY_NAME L"ebpfsvc.exe"
+#define EBPF_SERVICE_NAME L"ebpfsvc"
+
+inline service_install_helper
+    ebpf_service_helper(EBPF_SERVICE_NAME, EBPF_SERVICE_BINARY_NAME, SERVICE_WIN32_OWN_PROCESS);
+#endif
+
+// Type tuples for TEMPLATE_TEST_CASE: (address_family, protocol).
+using tcp_v4_params =
+    std::tuple<std::integral_constant<ADDRESS_FAMILY, AF_INET>, std::integral_constant<IPPROTO, IPPROTO_TCP>>;
+using tcp_v6_params =
+    std::tuple<std::integral_constant<ADDRESS_FAMILY, AF_INET6>, std::integral_constant<IPPROTO, IPPROTO_TCP>>;
+using udp_v4_params =
+    std::tuple<std::integral_constant<ADDRESS_FAMILY, AF_INET>, std::integral_constant<IPPROTO, IPPROTO_UDP>>;
+using udp_v6_params =
+    std::tuple<std::integral_constant<ADDRESS_FAMILY, AF_INET6>, std::integral_constant<IPPROTO, IPPROTO_UDP>>;
+
+#define ALL_CONNECTION_TEST_PARAMS tcp_v4_params, tcp_v6_params, udp_v4_params, udp_v6_params
+
+typedef struct _audit_entry
+{
+    uint64_t logon_id;
+    int32_t is_admin;
+} audit_entry_t;
+
+static void
+perform_socket_bind(const uint16_t test_port, bool expect_success = true)
+{
+    WSAData data;
+    int error = WSAStartup(2, &data);
+    if (error != 0) {
+        FAIL("Unable to load Winsock: " << error);
+        return;
+    }
+
+    SOCKET _socket = INVALID_SOCKET;
+    _socket = WSASocket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, nullptr, 0, 0);
+    REQUIRE(_socket != INVALID_SOCKET);
+    uint32_t ipv6_option = 0;
+    REQUIRE(
+        setsockopt(
+            _socket, IPPROTO_IPV6, IPV6_V6ONLY, reinterpret_cast<const char*>(&ipv6_option), sizeof(unsigned long)) ==
+        0);
+    SOCKADDR_STORAGE sock_addr;
+    sock_addr.ss_family = AF_INET6;
+    INETADDR_SETANY((PSOCKADDR)&sock_addr);
+
+    // Perform bind operation.
+    ((PSOCKADDR_IN6)&sock_addr)->sin6_port = htons(test_port);
+    if (expect_success) {
+        REQUIRE(bind(_socket, (PSOCKADDR)&sock_addr, sizeof(sock_addr)) == 0);
+    } else {
+        REQUIRE(bind(_socket, (PSOCKADDR)&sock_addr, sizeof(sock_addr)) != 0);
+    }
+
+    WSACleanup();
+}
 
 static service_install_helper
     _ebpf_core_driver_helper(EBPF_CORE_DRIVER_NAME, EBPF_CORE_DRIVER_BINARY_NAME, SERVICE_KERNEL_DRIVER);
@@ -185,12 +232,6 @@ TEST_CASE("pinned_map_enum2", "[pinned_map_enum]") { ebpf_test_pinned_map_enum(f
         _test_program_load(file, program_type, execution_type, expected_result);                        \
     }
 
-#if defined(CONFIG_BPF_INTERPRETER_DISABLED)
-#define INTERPRET_LOAD_RESULT -ENOTSUP
-#else
-#define INTERPRET_LOAD_RESULT 0
-#endif
-
 // Load test_sample_ebpf (JIT) without providing expected program type.
 DECLARE_LOAD_TEST_CASE("test_sample_ebpf.o", BPF_PROG_TYPE_UNSPEC, EBPF_EXECUTION_JIT, JIT_LOAD_RESULT);
 
@@ -219,47 +260,89 @@ DECLARE_LOAD_TEST_CASE("bindmonitor.o", BPF_PROG_TYPE_UNSPEC, EBPF_EXECUTION_INT
 DECLARE_LOAD_TEST_CASE("bindmonitor.o", BPF_PROG_TYPE_BIND, EBPF_EXECUTION_JIT, JIT_LOAD_RESULT);
 
 // Try to load bindmonitor with providing wrong program type.
-DECLARE_LOAD_TEST_CASE("bindmonitor.o", BPF_PROG_TYPE_SAMPLE, EBPF_EXECUTION_ANY, get_expected_jit_result(-EACCES));
+DECLARE_LOAD_TEST_CASE(
+    "bindmonitor.o", BPF_PROG_TYPE_SAMPLE, EBPF_EXECUTION_ANY, get_expected_jit_load_result(-EACCES));
 
 // Try to load an unsafe program.
-DECLARE_LOAD_TEST_CASE("printk_unsafe.o", BPF_PROG_TYPE_UNSPEC, EBPF_EXECUTION_ANY, get_expected_jit_result(-EACCES));
+DECLARE_LOAD_TEST_CASE(
+    "printk_unsafe.o", BPF_PROG_TYPE_UNSPEC, EBPF_EXECUTION_ANY, get_expected_jit_load_result(-EACCES));
 
 // Try to load multiple programs of different program types
-TEST_CASE("test_ebpf_multiple_programs_load_jit")
+TEMPLATE_TEST_CASE("multiple_programs_load", "[program_load]", ENABLED_JIT_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     struct _ebpf_program_load_test_parameters test_parameters[] = {
         {"test_sample_ebpf.o", BPF_PROG_TYPE_SAMPLE}, {"bindmonitor.o", BPF_PROG_TYPE_BIND}};
-    _test_multiple_programs_load(_countof(test_parameters), test_parameters, EBPF_EXECUTION_JIT, JIT_LOAD_RESULT);
+    int expected_result = (execution_type == EBPF_EXECUTION_INTERPRET) ? INTERPRET_LOAD_RESULT : JIT_LOAD_RESULT;
+    _test_multiple_programs_load(_countof(test_parameters), test_parameters, execution_type, expected_result);
 }
 
-TEST_CASE("test_ebpf_multiple_programs_load_interpret")
+TEMPLATE_TEST_CASE("program_next_previous_jit", "[test_ebpf_program_next_previous]", ENABLED_EXECUTION_TYPES)
 {
-    struct _ebpf_program_load_test_parameters test_parameters[] = {
-        {"test_sample_ebpf.o", BPF_PROG_TYPE_SAMPLE}, {"bindmonitor.o", BPF_PROG_TYPE_BIND}};
-    _test_multiple_programs_load(
-        _countof(test_parameters), test_parameters, EBPF_EXECUTION_INTERPRET, INTERPRET_LOAD_RESULT);
-}
-
-TEST_CASE("test_ebpf_program_next_previous_native", "[test_ebpf_program_next_previous]")
-{
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     native_module_helper_t test_sample_ebpf_helper;
-    test_sample_ebpf_helper.initialize("test_sample_ebpf", EBPF_EXECUTION_NATIVE);
+    test_sample_ebpf_helper.initialize("test_sample_ebpf", execution_type);
     test_program_next_previous(test_sample_ebpf_helper.get_file_name().c_str(), SAMPLE_PROGRAM_COUNT);
 
     native_module_helper_t bindmonitor_helper;
-    bindmonitor_helper.initialize("bindmonitor", EBPF_EXECUTION_NATIVE);
+    bindmonitor_helper.initialize("bindmonitor", execution_type);
     test_program_next_previous(bindmonitor_helper.get_file_name().c_str(), BIND_MONITOR_PROGRAM_COUNT);
 }
 
-TEST_CASE("test_ebpf_map_next_previous_native", "[test_ebpf_map_next_previous]")
+TEMPLATE_TEST_CASE("map_next_previous", "[test_ebpf_map_next_previous]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     native_module_helper_t test_sample_ebpf_helper;
-    test_sample_ebpf_helper.initialize("test_sample_ebpf", EBPF_EXECUTION_NATIVE);
+    test_sample_ebpf_helper.initialize("test_sample_ebpf", execution_type);
     test_map_next_previous(test_sample_ebpf_helper.get_file_name().c_str(), SAMPLE_MAP_COUNT);
 
     native_module_helper_t bindmonitor_helper;
-    bindmonitor_helper.initialize("bindmonitor", EBPF_EXECUTION_NATIVE);
+    bindmonitor_helper.initialize("bindmonitor", execution_type);
     test_map_next_previous(bindmonitor_helper.get_file_name().c_str(), BIND_MONITOR_MAP_COUNT);
+}
+
+TEMPLATE_TEST_CASE("ringbuf_api", "[test_ringbuf_api][ring_buffer]", ENABLED_JIT_EXECUTION_TYPES)
+{
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
+    struct bpf_object* object = nullptr;
+    hook_helper_t hook(EBPF_ATTACH_TYPE_BIND);
+    program_load_attach_helper_t _helper;
+    _helper.initialize("bindmonitor_ringbuf.o", BPF_PROG_TYPE_BIND, "bind_monitor", execution_type, nullptr, 0, hook);
+    object = _helper.get_object();
+
+    fd_t process_map_fd = bpf_object__find_map_fd_by_name(object, "process_map");
+    REQUIRE(process_map_fd > 0);
+
+    // Create a list of fake app IDs and set it to event context.
+    std::wstring app_id = L"api_test.exe";
+    std::vector<std::vector<char>> app_ids;
+    char* p = reinterpret_cast<char*>(&app_id[0]);
+    std::vector<char> temp(p, p + (app_id.size() + 1) * sizeof(wchar_t));
+
+    // ring_buffer_api_test_helper expects a list of app IDs of size RING_BUFFER_TEST_EVENT_COUNT.
+    for (auto i = 0; i < RING_BUFFER_TEST_EVENT_COUNT; i++) {
+        app_ids.push_back(temp);
+    }
+
+    ring_buffer_api_test_helper(process_map_fd, app_ids, [](int i) {
+        const uint16_t _test_port = 12345 + static_cast<uint16_t>(i);
+        perform_socket_bind(_test_port);
+    });
+}
+
+// See also divide_by_zero_test_um in end_to_end.cpp for the user-mode equivalent.
+TEMPLATE_TEST_CASE("divide_by_zero", "[divide_by_zero]", ENABLED_JIT_EXECUTION_TYPES)
+{
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
+    struct bpf_object* object = nullptr;
+    hook_helper_t hook(EBPF_ATTACH_TYPE_BIND);
+    program_load_attach_helper_t _helper;
+    _helper.initialize("divide_by_zero.o", BPF_PROG_TYPE_BIND, "divide_by_zero", execution_type, nullptr, 0, hook);
+    object = _helper.get_object();
+
+    perform_socket_bind(0, true);
+
+    // If we don't bug-check, the test passed.
 }
 
 TEST_CASE("ring_buffer_mmap_consumer", "[ring_buffer]")
@@ -364,9 +447,9 @@ TEST_CASE("ring_buffer_mmap_consumer", "[ring_buffer]")
     _close(map_fd);
 }
 
-void
-_test_nested_maps(bpf_map_type type)
+TEMPLATE_TEST_CASE("map_of_maps", "[map_in_map]", MAP_OF_MAPS_TYPES)
 {
+    constexpr bpf_map_type type = TestType::value;
     // Create first inner map.
     fd_t inner_map_fd1 =
         bpf_map_create(BPF_MAP_TYPE_ARRAY, "inner_map1", sizeof(uint32_t), sizeof(uint32_t), 1, nullptr);
@@ -428,9 +511,6 @@ _test_nested_maps(bpf_map_type type)
     _close(inner_map_fd2);
     _close(outer_map_fd);
 }
-
-TEST_CASE("array_map_of_maps", "[map_in_map]") { _test_nested_maps(BPF_MAP_TYPE_ARRAY_OF_MAPS); }
-TEST_CASE("hash_map_of_maps", "[map_in_map]") { _test_nested_maps(BPF_MAP_TYPE_HASH_OF_MAPS); }
 
 // Test API with different inner map types for nested maps
 static void
@@ -528,7 +608,48 @@ TEST_CASE("duplicate_fd", "")
     REQUIRE(ebpf_close_fd(map_fd1) == EBPF_SUCCESS);
 }
 
-TEST_CASE("tailcall_load_test_native", "[tailcall_load_test]") { tailcall_load_test("tail_call_multiple.sys"); }
+TEMPLATE_TEST_CASE("tailcall_load_test", "[tailcall_load_test]", ENABLED_EXECUTION_TYPES)
+{
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
+    int result;
+    struct bpf_object* object = nullptr;
+    fd_t program_fd;
+
+    result = program_load_helper("tail_call_multiple", BPF_PROG_TYPE_SAMPLE, execution_type, &object, &program_fd);
+    REQUIRE(result == 0);
+
+    REQUIRE(program_fd > 0);
+
+    // Set up tail calls.
+    struct bpf_program* callee0 = bpf_object__find_program_by_name(object, "callee0");
+    REQUIRE(callee0 != nullptr);
+    fd_t callee0_fd = bpf_program__fd(callee0);
+    REQUIRE(callee0_fd > 0);
+
+    struct bpf_program* callee1 = bpf_object__find_program_by_name(object, "callee1");
+    REQUIRE(callee1 != nullptr);
+    fd_t callee1_fd = bpf_program__fd(callee1);
+    REQUIRE(callee1_fd > 0);
+
+    // Test a legacy libbpf api alias.
+    REQUIRE(bpf_program__get_type(callee0) == BPF_PROG_TYPE_SAMPLE);
+
+    fd_t prog_map_fd = bpf_object__find_map_fd_by_name(object, "map");
+    REQUIRE(prog_map_fd > 0);
+
+    uint32_t index = 0;
+    REQUIRE(bpf_map_update_elem(prog_map_fd, &index, &callee0_fd, 0) == 0);
+    index = 1;
+    REQUIRE(bpf_map_update_elem(prog_map_fd, &index, &callee1_fd, 0) == 0);
+
+    // Cleanup tail calls.
+    index = 0;
+    REQUIRE(bpf_map_update_elem(prog_map_fd, &index, &ebpf_fd_invalid, 0) == 0);
+    index = 1;
+    REQUIRE(bpf_map_update_elem(prog_map_fd, &index, &ebpf_fd_invalid, 0) == 0);
+
+    bpf_object__close(object);
+}
 
 int
 perform_bind(_Out_ SOCKET* socket, uint16_t port_number)
@@ -736,9 +857,11 @@ send_traffic(IPPROTO protocol, bool is_ipv6)
     }
 }
 
-void
-run_process_start_key_test(IPPROTO protocol, bool is_ipv6)
+TEMPLATE_TEST_CASE("bpf_get_process_start_key_udp_ipv4", "[helpers]", ALL_CONNECTION_TEST_PARAMS)
 {
+    constexpr ADDRESS_FAMILY family = std::tuple_element_t<0, TestType>::value;
+    constexpr IPPROTO protocol = std::tuple_element_t<1, TestType>::value;
+    constexpr bool is_ipv6 = family == AF_INET6;
     // Load and attach ebpf program.
     hook_helper_t hook(is_ipv6 ? EBPF_ATTACH_TYPE_CGROUP_INET6_CONNECT : EBPF_ATTACH_TYPE_CGROUP_INET4_CONNECT);
     uint32_t ifindex = 0;
@@ -794,9 +917,11 @@ run_process_start_key_test(IPPROTO protocol, bool is_ipv6)
     }
 }
 
-void
-run_thread_start_time_test(IPPROTO protocol, bool is_ipv6)
+TEMPLATE_TEST_CASE("bpf_get_thread_start_time", "[helpers]", ALL_CONNECTION_TEST_PARAMS)
 {
+    constexpr ADDRESS_FAMILY family = std::tuple_element_t<0, TestType>::value;
+    constexpr IPPROTO protocol = std::tuple_element_t<1, TestType>::value;
+    constexpr bool is_ipv6 = family == AF_INET6;
     // Load and attach ebpf program.
     hook_helper_t hook(is_ipv6 ? EBPF_ATTACH_TYPE_CGROUP_INET6_CONNECT : EBPF_ATTACH_TYPE_CGROUP_INET4_CONNECT);
     uint32_t ifindex = 0;
@@ -945,21 +1070,6 @@ TEST_CASE("bpf_get_current_pid_tgid", "[helpers]")
     WSACleanup();
 }
 
-TEST_CASE("bpf_get_process_start_key_udp_ipv4", "[helpers]") { run_process_start_key_test(IPPROTO_UDP, false); }
-
-TEST_CASE("bpf_get_process_start_key_udp_ipv6", "[helpers]") { run_process_start_key_test(IPPROTO_UDP, true); }
-
-TEST_CASE("bpf_get_process_start_key_tcp_ipv4", "[helpers]") { run_process_start_key_test(IPPROTO_TCP, false); }
-
-TEST_CASE("bpf_get_process_start_key_tcp_ipv6", "[helpers]") { run_process_start_key_test(IPPROTO_TCP, true); }
-
-TEST_CASE("bpf_get_thread_start_time_udp_ipv4", "[helpers]") { run_thread_start_time_test(IPPROTO_UDP, false); }
-
-TEST_CASE("bpf_get_thread_start_time_udp_ipv6", "[helpers]") { run_thread_start_time_test(IPPROTO_UDP, true); }
-TEST_CASE("bpf_get_thread_start_time_tcp_ipv4", "[helpers]") { run_thread_start_time_test(IPPROTO_TCP, false); }
-
-TEST_CASE("bpf_get_thread_start_time_tcp_ipv6", "[helpers]") { run_thread_start_time_test(IPPROTO_TCP, true); }
-
 TEST_CASE("native_module_handle_test", "[native_tests]")
 {
     int result;
@@ -1033,7 +1143,42 @@ TEST_CASE("nomap_load_test", "[native_tests]")
     REQUIRE(object != nullptr);
 }
 
-TEST_CASE("bpf_user_helpers_test_native", "[api_test]") { bpf_user_helpers_test(EBPF_EXECUTION_NATIVE); }
+// Tests the following helper functions:
+// 1. bpf_get_current_pid_tgid()
+// 2. bpf_get_current_logon_id()
+// 3. bpf_is_current_admin()
+TEMPLATE_TEST_CASE("bpf_user_helpers_test", "[api_test]", ENABLED_EXECUTION_TYPES)
+{
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
+    struct bpf_object* object = nullptr;
+    uint64_t process_thread_id = get_current_pid_tgid();
+    hook_helper_t hook(EBPF_ATTACH_TYPE_BIND);
+    native_module_helper_t module_helper;
+    module_helper.initialize("bindmonitor", execution_type);
+    program_load_attach_helper_t _helper;
+    _helper.initialize(
+        module_helper.get_file_name().c_str(), BPF_PROG_TYPE_BIND, "BindMonitor", execution_type, nullptr, 0, hook);
+    object = _helper.get_object();
+
+    perform_socket_bind(0, true);
+
+    // Validate the contents of the audit map.
+    fd_t audit_map_fd = bpf_object__find_map_fd_by_name(object, "audit_map");
+    REQUIRE(audit_map_fd > 0);
+
+    audit_entry_t entry = {0};
+    int result = bpf_map_lookup_elem(audit_map_fd, &process_thread_id, &entry);
+    REQUIRE(result == 0);
+
+    REQUIRE(entry.is_admin == -1);
+
+    REQUIRE(entry.logon_id != 0);
+    SECURITY_LOGON_SESSION_DATA* data = NULL;
+    result = LsaGetLogonSessionData((PLUID)&entry.logon_id, &data);
+    REQUIRE(result == ERROR_SUCCESS);
+
+    LsaFreeReturnBuffer(data);
+}
 
 // This test tests resource reclamation and clean-up after a premature/abnormal user mode application exit.
 TEST_CASE("close_unload_test", "[native_tests][native_close_cleanup_tests]")
@@ -1540,15 +1685,13 @@ TEST_CASE("Test program order", "[native_tests]")
 }
 
 /**
- * @brief This function tests that reference from outer map to inner map is maintained
+ * Test that reference from outer map to inner map is maintained
  * even when the inner map FD is closed. Also, when the outer map FD id closed, the inner
  * map reference is released.
- *
- * @param map_type The type of the outer map.
  */
-void
-_test_nested_maps_user_reference(bpf_map_type map_type)
+TEMPLATE_TEST_CASE("map_of_maps_user_reference", "[user_reference]", MAP_OF_MAPS_TYPES)
 {
+    constexpr bpf_map_type map_type = TestType::value;
     const int num_inner_maps = 5;
     fd_t inner_map_fds[num_inner_maps];
     uint32_t inner_map_ids[num_inner_maps];
@@ -1628,25 +1771,14 @@ _test_nested_maps_user_reference(bpf_map_type map_type)
     }
 }
 
-TEST_CASE("array_map_of_maps_user_reference", "[user_reference]")
-{
-    _test_nested_maps_user_reference(BPF_MAP_TYPE_ARRAY_OF_MAPS);
-}
-TEST_CASE("hash_map_of_maps_user_reference", "[user_reference]")
-{
-    _test_nested_maps_user_reference(BPF_MAP_TYPE_HASH_OF_MAPS);
-}
-
 /**
- * @brief This function tests that reference from prog array map to programs is maintained
+ * This tests that reference from prog array map to programs is maintained
  * even when the program FD is closed. Also, when the outer map FD is closed, the program
  * references are also released.
- *
- * @param execution_type The type of execution for the eBPF programs.
  */
-void
-_test_prog_array_map_user_reference(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("prog_array_map_user_reference", "[user_reference]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     int result;
     struct bpf_object* object = nullptr;
     const int program_count = 3;
@@ -1716,17 +1848,6 @@ _test_prog_array_map_user_reference(ebpf_execution_type_t execution_type)
         REQUIRE(bpf_prog_get_fd_by_id(program_ids[i]) < 0);
     }
     REQUIRE(bpf_map_get_fd_by_id(info.id) < 0);
-}
-
-#if !defined(CONFIG_BPF_JIT_DISABLED)
-TEST_CASE("prog_array_map_user_reference-jit", "[user_reference]")
-{
-    _test_prog_array_map_user_reference(EBPF_EXECUTION_JIT);
-}
-#endif
-TEST_CASE("prog_array_map_user_reference-native", "[user_reference]")
-{
-    _test_prog_array_map_user_reference(EBPF_EXECUTION_NATIVE);
 }
 
 TEST_CASE("native_load_retry_after_insufficient_buffers", "[native_tests]")

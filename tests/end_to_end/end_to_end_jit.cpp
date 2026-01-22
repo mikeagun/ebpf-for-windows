@@ -131,9 +131,9 @@ cgroup_sock_addr_load_test(
     cgroup_load_test(file, name, EBPF_PROGRAM_TYPE_CGROUP_SOCK_ADDR, attach_type, execution_type);
 }
 
-static void
-ebpf_program_attach_fds_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("ebpf_program_attach_by_fds", "[end_to_end]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
@@ -165,8 +165,7 @@ ebpf_program_attach_fds_test(ebpf_execution_type_t execution_type)
     bpf_object__close(unique_object.release());
 }
 
-#if !defined(CONFIG_BPF_JIT_DISABLED)
-TEST_CASE("cgroup_sockops_load_test", "[cgroup_sockops]")
+TEMPLATE_TEST_CASE("cgroup_sockops_load_test", "[cgroup_sockops]", JIT_IF_ENABLED)
 {
     cgroup_load_test(
         "sockops.o",
@@ -259,11 +258,9 @@ test_enumerate_and_query_programs()
     }
 }
 
-TEST_CASE("enumerate_and_query_programs", "[end_to_end]") { test_enumerate_and_query_programs(); }
-
-void
-test_implicit_detach()
+TEMPLATE_TEST_CASE("enumerate_and_query_programs", "[end_to_end]", JIT_IF_ENABLED)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     // This test case does the following:
     // 1. Close program handle. An implicit detach should not happen and program
     //    object should not be deleted.
@@ -287,7 +284,7 @@ test_implicit_detach()
     result = ebpf_program_load(
         SAMPLE_PATH "test_sample_ebpf.o",
         BPF_PROG_TYPE_UNSPEC,
-        EBPF_EXECUTION_JIT,
+        execution_type,
         &unique_object,
         &program_fd,
         &error_message);
@@ -316,12 +313,11 @@ test_implicit_detach()
     REQUIRE(bpf_prog_get_next_id(0, &program_id) == -ENOENT);
 }
 
-// This test uses ebpf_link_close() to test implicit detach.
-TEST_CASE("implicit_detach", "[end_to_end]") { test_implicit_detach(); }
-
-void
-test_implicit_detach_2()
+// This test uses bpf_link__disconnect() and bpf_link__destroy() to test
+// implicit detach.
+TEMPLATE_TEST_CASE("implicit_detach_2", "[end_to_end]", JIT_IF_ENABLED)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     // This test case does the following:
     // 1. Close program handle. An implicit detach should not happen and the
     // program object should not be deleted.
@@ -344,7 +340,7 @@ test_implicit_detach_2()
     result = ebpf_program_load(
         SAMPLE_PATH "test_sample_ebpf.o",
         BPF_PROG_TYPE_UNSPEC,
-        EBPF_EXECUTION_JIT,
+        execution_type,
         &unique_object,
         &program_fd,
         &error_message);
@@ -386,19 +382,10 @@ test_implicit_detach_2()
     REQUIRE(bpf_prog_get_next_id(0, &program_id) == -ENOENT);
 }
 
-// This test uses bpf_link__disconnect() and bpf_link__destroy() to test
-// implicit detach.
-TEST_CASE("implicit_detach_2", "[end_to_end]") { test_implicit_detach_2(); }
-
-TEST_CASE("ebpf_program_attach_by_fds-jit", "[end_to_end]") { ebpf_program_attach_fds_test(EBPF_EXECUTION_JIT); }
-#endif
-
-TEST_CASE("ebpf_program_attach_by_fds-native", "[end_to_end]") { ebpf_program_attach_fds_test(EBPF_EXECUTION_NATIVE); }
-
-#if !defined(CONFIG_BPF_INTERPRETER_DISABLED) || !defined(CONFIG_BPF_JIT_DISABLED)
-void
-test_ebpf_program_load_bytes_name_gen()
+TEMPLATE_TEST_CASE("ebpf_program_load_bytes_name_gen", "[end_to_end]", ANY_JIT_IF_ENABLED)
 {
+    // "ebpf_program_load_bytes_name_gen - jit"
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
@@ -424,7 +411,7 @@ test_ebpf_program_load_bytes_name_gen()
     ebpf_result_t result = ebpf_program_load_bytes(
         program_type,
         nullptr,
-        EBPF_EXECUTION_ANY,
+        execution_type,
         reinterpret_cast<const ebpf_inst*>(instructions),
         insn_cnt,
         nullptr,
@@ -451,12 +438,7 @@ test_ebpf_program_load_bytes_name_gen()
     Platform::_close(program_fd);
 }
 
-TEST_CASE("ebpf_program_load_bytes-name-gen", "[end-to-end]") { test_ebpf_program_load_bytes_name_gen(); }
-#endif
-
-#if !defined(CONFIG_BPF_JIT_DISABLED)
-void
-test_auto_pinned_maps_custom_path()
+TEMPLATE_TEST_CASE("auto_pinned_maps_custom_path", "[end_to_end]", JIT_IF_ENABLED)
 {
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
@@ -528,15 +510,12 @@ test_auto_pinned_maps_custom_path()
     REQUIRE(ebpf_object_unpin("/custompath/global/port_map") == EBPF_SUCCESS);
 }
 
-TEST_CASE("auto_pinned_maps_custom_path", "[end_to_end]") { test_auto_pinned_maps_custom_path(); }
-#endif
-
 // This test validates that a different program type (sample_ext in this case) cannot call
 // a helper function that is not implemented for that program type. Program load should
 // fail for such a program.
-void
-test_invalid_bpf_get_socket_cookie(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("invalid_bpf_get_socket_cookie", "[end_to_end]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
@@ -549,7 +528,8 @@ test_invalid_bpf_get_socket_cookie(ebpf_execution_type_t execution_type)
     REQUIRE(sample_program_info.initialize(EBPF_PROGRAM_TYPE_SAMPLE) == EBPF_SUCCESS);
 
     const char* file_name =
-        (execution_type == EBPF_EXECUTION_NATIVE ? "test_sample_invalid_socket_cookie.dll" : "test_sample_invalid_socket_cookie.o");
+        (execution_type == EBPF_EXECUTION_NATIVE ? "test_sample_invalid_socket_cookie.dll"
+                                                 : "test_sample_invalid_socket_cookie.o");
     result =
         ebpf_program_load(file_name, BPF_PROG_TYPE_UNSPEC, execution_type, &unique_object, &program_fd, &error_message);
 
@@ -558,15 +538,4 @@ test_invalid_bpf_get_socket_cookie(ebpf_execution_type_t execution_type)
         ebpf_free((void*)error_message);
     }
     REQUIRE(result == -22);
-}
-
-TEST_CASE("invalid_bpf_get_socket_cookie", "[end_to_end]")
-{
-#if !defined(CONFIG_BPF_JIT_DISABLED)
-    test_invalid_bpf_get_socket_cookie(EBPF_EXECUTION_JIT);
-#endif
-#if !defined(CONFIG_BPF_INTERPRETER_DISABLED)
-    test_invalid_bpf_get_socket_cookie(EBPF_EXECUTION_INTERPRET);
-#endif
-    test_invalid_bpf_get_socket_cookie(EBPF_EXECUTION_NATIVE);
 }

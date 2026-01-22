@@ -163,9 +163,9 @@ TEST_CASE("invalid bpf_prog_load - wrong type", "[libbpf]")
     REQUIRE(errno == EINVAL);
 }
 
-static void
-_test_libbpf_program(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("libbpf program", "[libbpf]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_libbpf test_helper;
     test_helper.initialize();
 
@@ -201,7 +201,7 @@ _test_libbpf_program(ebpf_execution_type_t execution_type)
     REQUIRE(fd2 != ebpf_fd_invalid);
 
     size_t size = bpf_program__insn_cnt(program);
-    if (execution_type == EBPF_EXECUTION_NATIVE) {
+    if constexpr (execution_type == EBPF_EXECUTION_NATIVE) {
         // Native modules don't contain eBPF bytecode.
         REQUIRE(size == 0);
     } else {
@@ -210,7 +210,7 @@ _test_libbpf_program(ebpf_execution_type_t execution_type)
 
 #pragma warning(suppress : 4996) // deprecated
     size = bpf_program__size(program);
-    if (execution_type == EBPF_EXECUTION_NATIVE) {
+    if constexpr (execution_type == EBPF_EXECUTION_NATIVE) {
         // Native modules don't contain eBPF bytecode.
         REQUIRE(size == 0);
     } else {
@@ -225,11 +225,9 @@ _test_libbpf_program(ebpf_execution_type_t execution_type)
     bpf_object__close(object);
 }
 
-DECLARE_ALL_TEST_CASES("libbpf program", "[libbpf]", _test_libbpf_program);
-
-static void
-_test_libbpf_subprogram(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("libbpf subprogram", "[libbpf]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_libbpf test_helper;
     test_helper.initialize();
 
@@ -258,11 +256,9 @@ _test_libbpf_subprogram(ebpf_execution_type_t execution_type)
     bpf_object__close(object);
 }
 
-DECLARE_ALL_TEST_CASES("libbpf subprogram", "[libbpf]", _test_libbpf_subprogram);
-
-static void
-_test_program_autoload(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("libbpf program autoload", "[libbpf]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
     program_info_provider_t sample_program_info;
@@ -316,11 +312,9 @@ _test_program_autoload(ebpf_execution_type_t execution_type)
     bpf_object__close(object);
 }
 
-DECLARE_ALL_TEST_CASES("libbpf program autoload", "[libbpf]", _test_program_autoload);
-
-static void
-_test_libbpf_program_pinning(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("libbpf program pinning", "[libbpf]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_libbpf test_helper;
     test_helper.initialize();
     const char* pin_path = "\\temp\\test";
@@ -392,11 +386,9 @@ _test_libbpf_program_pinning(ebpf_execution_type_t execution_type)
     bpf_object__close(object);
 }
 
-DECLARE_ALL_TEST_CASES("libbpf program pinning", "[libbpf]", _test_libbpf_program_pinning);
-
-static void
-_test_libbpf_program_attach(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("libbpf program attach", "[libbpf]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_libbpf test_helper;
     test_helper.initialize();
 
@@ -442,8 +434,6 @@ _test_libbpf_program_attach(ebpf_execution_type_t execution_type)
 
     bpf_object__close(object);
 }
-
-DECLARE_ALL_TEST_CASES("libbpf program attach", "[libbpf]", _test_libbpf_program_attach);
 
 #define TEST_IFINDEX 17
 // This is a set of tests which utilize the libbpf XDP APIs.
@@ -494,9 +484,9 @@ test_xdp_ifindex(uint32_t ifindex, int program_fd[2], bpf_prog_info program_info
     REQUIRE(errno == ENOENT);
 }
 
-static void
-_test_bpf_set_link_xdp_fd(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("bpf_set_link_xdp_fd", "[libbpf]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_libbpf test_helper;
     test_helper.initialize();
 
@@ -527,11 +517,9 @@ _test_bpf_set_link_xdp_fd(ebpf_execution_type_t execution_type)
     bpf_object__close(object[1]);
 }
 
-DECLARE_ALL_TEST_CASES("bpf_set_link_xdp_fd", "[libbpf]", _test_bpf_set_link_xdp_fd);
-
-static void
-_test_libbpf_map(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("libbpf map", "[libbpf]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_libbpf test_helper;
     test_helper.initialize();
     std::vector<std::string> expected_map_names = {
@@ -775,8 +763,6 @@ _test_libbpf_map(ebpf_execution_type_t execution_type)
     bpf_object__close(object);
 }
 
-DECLARE_ALL_TEST_CASES("libbpf map", "[libbpf]", _test_libbpf_map);
-
 TEST_CASE("libbpf create queue", "[libbpf]")
 {
     _test_helper_libbpf test_helper;
@@ -883,9 +869,9 @@ TEST_CASE("libbpf create ringbuf", "[libbpf]")
     Platform::_close(map_fd);
 }
 
-static void
-_test_libbpf_map_binding(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("libbpf map binding", "[libbpf]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_libbpf test_helper;
     test_helper.initialize();
 
@@ -943,11 +929,9 @@ _test_libbpf_map_binding(ebpf_execution_type_t execution_type)
     REQUIRE(bpf_map_get_fd_by_id(map_id) < 0);
 }
 
-DECLARE_ALL_TEST_CASES("libbpf map binding", "[libbpf]", _test_libbpf_map_binding);
-
-static void
-_test_libbpf_map_pinning(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("libbpf map pinning", "[libbpf]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_libbpf test_helper;
     test_helper.initialize();
     const char* pin_path = "\\temp\\test";
@@ -1048,11 +1032,9 @@ _test_libbpf_map_pinning(ebpf_execution_type_t execution_type)
     bpf_object__close(object);
 }
 
-DECLARE_ALL_TEST_CASES("libbpf map pinning", "[libbpf]", _test_libbpf_map_pinning);
-
-static void
-_test_libbpf_obj_pinning(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("libbpf obj pinning", "[libbpf]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_libbpf test_helper;
     test_helper.initialize();
     const char* pin_path = "\\temp\\test";
@@ -1092,8 +1074,6 @@ _test_libbpf_obj_pinning(ebpf_execution_type_t execution_type)
     bpf_object__close(object);
 }
 
-DECLARE_ALL_TEST_CASES("libbpf obj pinning", "[libbpf]", _test_libbpf_obj_pinning);
-
 TEST_CASE("good_tail_call-native", "[libbpf]")
 {
     // Verify that 42 is returned, which is done by the callee.
@@ -1111,9 +1091,9 @@ TEST_CASE("bad_tail_call-native", "[libbpf]")
     ebpf_test_tail_call("tail_call_bad_um.dll", (uint32_t)(-EBPF_INVALID_ARGUMENT));
 }
 
-static void
-_multiple_tail_calls_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("multiple tail calls", "[libbpf]", JIT_NATIVE_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
     single_instance_hook_t hook(EBPF_PROGRAM_TYPE_SAMPLE, EBPF_ATTACH_TYPE_SAMPLE);
@@ -1205,11 +1185,9 @@ _multiple_tail_calls_test(ebpf_execution_type_t execution_type)
     bpf_object__close(object);
 }
 
-DECLARE_JIT_TEST_CASES("multiple tail calls", "[libbpf]", _multiple_tail_calls_test);
-
-static void
-_test_bind_fd_to_prog_array(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("disallow setting bind fd in sample prog array", "[libbpf]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
     program_info_provider_t bind_program_info;
@@ -1264,11 +1242,9 @@ _test_bind_fd_to_prog_array(ebpf_execution_type_t execution_type)
     bpf_object__close(sample_object);
 }
 
-DECLARE_ALL_TEST_CASES("disallow setting bind fd in sample prog array", "[libbpf]", _test_bind_fd_to_prog_array);
-
-static void
-_load_inner_map(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("Test loading BPF program with anonymous inner map", "[libbpf]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
     program_info_provider_t sample_program_info;
@@ -1288,11 +1264,9 @@ _load_inner_map(ebpf_execution_type_t execution_type)
     bpf_object__close(sample_object);
 }
 
-DECLARE_ALL_TEST_CASES("Test loading BPF program with anonymous inner map", "[libbpf]", _load_inner_map);
-
-static void
-_test_disallow_prog_array_mixed_program_type_values(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("disallow prog_array mixed program type values", "[libbpf]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
     program_info_provider_t bind_program_info;
@@ -1338,12 +1312,9 @@ _test_disallow_prog_array_mixed_program_type_values(ebpf_execution_type_t execut
     bpf_object__close(sample_object);
 }
 
-DECLARE_ALL_TEST_CASES(
-    "disallow prog_array mixed program type values", "[libbpf]", _test_disallow_prog_array_mixed_program_type_values);
-
-static void
-_enumerate_program_ids_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("enumerate program IDs", "[libbpf]", JIT_NATIVE_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
     program_info_provider_t sample_program_info;
@@ -1384,8 +1355,6 @@ _enumerate_program_ids_test(ebpf_execution_type_t execution_type)
     bpf_object__close(sample_object);
 }
 
-DECLARE_JIT_TEST_CASES("enumerate program IDs", "[libbpf]", _enumerate_program_ids_test);
-
 static uint32_t
 _ebpf_test_count_entries_map_in_map(int outer_map_fd)
 {
@@ -1401,9 +1370,10 @@ _ebpf_test_count_entries_map_in_map(int outer_map_fd)
     return entries_count;
 }
 
-static void
-_ebpf_test_map_in_map(ebpf_map_type_t type)
+// Verify libbpf can create and update hash/array of maps.
+TEMPLATE_TEST_CASE("simple map of maps", "[libbpf]", MAP_OF_MAPS_TYPES)
 {
+    constexpr ebpf_map_type_t type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
@@ -1437,7 +1407,7 @@ _ebpf_test_map_in_map(ebpf_map_type_t type)
 
     uint32_t count = _ebpf_test_count_entries_map_in_map(outer_map_fd);
     // Verify the number of elements in the outer map.
-    if (type == BPF_MAP_TYPE_HASH_OF_MAPS) {
+    if constexpr (type == BPF_MAP_TYPE_HASH_OF_MAPS) {
         REQUIRE(count == 1);
     } else {
         // For ARRAY_OF_MAPS, the count is max_entries.
@@ -1460,7 +1430,7 @@ _ebpf_test_map_in_map(ebpf_map_type_t type)
     REQUIRE(error < 0);
     REQUIRE(errno == EBADF);
 
-    if (type == BPF_MAP_TYPE_HASH_OF_MAPS) {
+    if constexpr (type == BPF_MAP_TYPE_HASH_OF_MAPS) {
         // Try deleting outer key that doesn't exist.
         error = bpf_map_delete_elem(outer_map_fd, &outer_key);
         REQUIRE(error < 0);
@@ -1473,7 +1443,7 @@ _ebpf_test_map_in_map(ebpf_map_type_t type)
     REQUIRE(error == 0);
 
     // Verify the number of elements in the outer map is 0.
-    if (type == BPF_MAP_TYPE_HASH_OF_MAPS) {
+    if constexpr (type == BPF_MAP_TYPE_HASH_OF_MAPS) {
         REQUIRE(_ebpf_test_count_entries_map_in_map(outer_map_fd) == 0);
     } else {
         // For ARRAY_OF_MAPS, the count is max_entries.
@@ -1488,12 +1458,6 @@ _ebpf_test_map_in_map(ebpf_map_type_t type)
     REQUIRE(bpf_map_get_next_id(0, &id) < 0);
     REQUIRE(errno == ENOENT);
 }
-
-// Verify libbpf can create and update arrays of maps.
-TEST_CASE("simple array of maps", "[libbpf]") { _ebpf_test_map_in_map(BPF_MAP_TYPE_ARRAY_OF_MAPS); }
-
-// Verify libbpf can create and update hash tables of maps.
-TEST_CASE("simple hash of maps", "[libbpf]") { _ebpf_test_map_in_map(BPF_MAP_TYPE_HASH_OF_MAPS); }
 
 // Verify an app can communicate with an eBPF program via an array of maps.
 static void
@@ -1555,35 +1519,29 @@ _array_of_maps_test(ebpf_execution_type_t execution_type, _In_ PCSTR dll_name, _
 }
 
 // Create a map-in-map using BTF ids.
-static void
-_array_of_btf_maps_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("array of btf maps", "[libbpf]", JIT_NATIVE_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _array_of_maps_test(execution_type, "map_in_map_btf_um.dll", "map_in_map_btf.o");
 }
 
-DECLARE_JIT_TEST_CASES("array of btf maps", "[libbpf]", _array_of_btf_maps_test);
-
 // Create a map-in-map using id and inner_id.
-static void
-_array_of_id_maps_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("array of id maps", "[libbpf]", JIT_NATIVE_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _array_of_maps_test(execution_type, "map_in_map_legacy_id_um.dll", "map_in_map_legacy_id.o");
 }
 
-DECLARE_JIT_TEST_CASES("array of id maps", "[libbpf]", _array_of_id_maps_test);
-
 // Create a map-in-map using map indices.
-static void
-_array_of_idx_maps_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("array of idx maps", "[libbpf]", JIT_NATIVE_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _array_of_maps_test(execution_type, "map_in_map_legacy_idx_um.dll", "map_in_map_legacy_idx.o");
 }
 
-DECLARE_JIT_TEST_CASES("array of idx maps", "[libbpf]", _array_of_idx_maps_test);
-
-static void
-_wrong_inner_map_types_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("disallow wrong inner map types", "[libbpf]", JIT_NATIVE_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
     program_info_provider_t sample_program_info;
@@ -1640,8 +1598,6 @@ _wrong_inner_map_types_test(ebpf_execution_type_t execution_type)
 
     bpf_object__close(sample_object);
 }
-
-DECLARE_JIT_TEST_CASES("disallow wrong inner map types", "[libbpf]", _wrong_inner_map_types_test);
 
 TEST_CASE("create map with name", "[libbpf]")
 {
@@ -1704,9 +1660,9 @@ TEST_CASE("enumerate map IDs", "[libbpf]")
     Platform::_close(fd2);
 }
 
-static void
-_test_enumerate_link_IDs(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("enumerate link IDs", "[libbpf]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
     program_info_provider_t sample_program_info;
@@ -1755,11 +1711,9 @@ _test_enumerate_link_IDs(ebpf_execution_type_t execution_type)
     REQUIRE(errno == ENOENT);
 }
 
-DECLARE_ALL_TEST_CASES("enumerate link IDs", "[libbpf]", _test_enumerate_link_IDs);
-
-static void
-_test_enumerate_link_IDs_with_bpf(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("enumerate link IDs with bpf", "[libbpf][bpf]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
     program_info_provider_t sample_program_info;
@@ -1841,7 +1795,7 @@ _test_enumerate_link_IDs_with_bpf(ebpf_execution_type_t execution_type)
     // Pin the detached link.
     memset(&attr, 0, sizeof(attr));
     attr.obj_pin.bpf_fd = fd1;
-    attr.obj_pin.pathname = (uintptr_t) "MyPath";
+    attr.obj_pin.pathname = (uintptr_t)"MyPath";
     REQUIRE(bpf(BPF_OBJ_PIN, &attr, sizeof(attr)) == 0);
 
     // Verify that bpf_fd must be 0 when calling BPF_OBJ_GET.
@@ -1882,11 +1836,9 @@ _test_enumerate_link_IDs_with_bpf(ebpf_execution_type_t execution_type)
     Platform::_close(fd3);
 }
 
-DECLARE_ALL_TEST_CASES("enumerate link IDs with bpf", "[libbpf][bpf]", _test_enumerate_link_IDs_with_bpf);
-
-static void
-_test_bpf_prog_attach(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("bpf_prog_attach", "[libbpf]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_libbpf test_helper;
     test_helper.initialize();
 
@@ -1923,11 +1875,9 @@ _test_bpf_prog_attach(ebpf_execution_type_t execution_type)
     bpf_object__close(object);
 }
 
-DECLARE_ALL_TEST_CASES("bpf_prog_attach", "[libbpf]", _test_bpf_prog_attach);
-
-static void
-_test_bpf_link_pin(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("bpf_link__pin", "[libbpf]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_libbpf test_helper;
     test_helper.initialize();
 
@@ -1975,11 +1925,9 @@ _test_bpf_link_pin(ebpf_execution_type_t execution_type)
     bpf_object__close(object);
 }
 
-DECLARE_ALL_TEST_CASES("bpf_link__pin", "[libbpf]", _test_bpf_link_pin);
-
-static void
-_test_bpf_obj_get_info_by_fd(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("bpf_obj_get_info_by_fd", "[libbpf]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
     program_info_provider_t sample_program_info;
@@ -2164,11 +2112,9 @@ _test_bpf_obj_get_info_by_fd(ebpf_execution_type_t execution_type)
     Platform::_close(link_fd);
 }
 
-DECLARE_ALL_TEST_CASES("bpf_obj_get_info_by_fd", "[libbpf]", _test_bpf_obj_get_info_by_fd);
-
-static void
-_test_bpf_obj_get_info_by_fd_2(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("bpf_obj_get_info_by_fd_2", "[libbpf]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
     program_info_provider_t sock_addr_program_info;
@@ -2222,8 +2168,6 @@ _test_bpf_obj_get_info_by_fd_2(ebpf_execution_type_t execution_type)
     Platform::_close(link_fd);
 }
 
-DECLARE_ALL_TEST_CASES("bpf_obj_get_info_by_fd_2", "[libbpf]", _test_bpf_obj_get_info_by_fd_2);
-
 TEST_CASE("libbpf_prog_type_by_name_test", "[libbpf]")
 {
     _test_helper_end_to_end test_helper;
@@ -2231,7 +2175,7 @@ TEST_CASE("libbpf_prog_type_by_name_test", "[libbpf]")
     bpf_prog_type prog_type;
     bpf_attach_type expected_attach_type;
 
-     // Try a cross-platform type.
+    // Try a cross-platform type.
     REQUIRE(libbpf_prog_type_by_name("sockops", &prog_type, &expected_attach_type) == 0);
     REQUIRE(prog_type == BPF_PROG_TYPE_SOCK_OPS);
     REQUIRE(expected_attach_type == BPF_CGROUP_SOCK_OPS);
@@ -2673,9 +2617,9 @@ TEST_CASE("libbpf_num_possible_cpus", "[libbpf]")
     REQUIRE(cpu_count > 0);
 }
 
-void
-_test_nested_maps(bpf_map_type map_type)
+TEMPLATE_TEST_CASE("map_of_maps", "[libbpf]", MAP_OF_MAPS_TYPES)
 {
+    constexpr ebpf_map_type_t map_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
@@ -2717,13 +2661,10 @@ _test_nested_maps(bpf_map_type map_type)
     Platform::_close(outer_map_fd);
 }
 
-TEST_CASE("array_map_of_maps", "[libbpf]") { _test_nested_maps(BPF_MAP_TYPE_ARRAY_OF_MAPS); }
-TEST_CASE("hash_map_of_maps", "[libbpf]") { _test_nested_maps(BPF_MAP_TYPE_HASH_OF_MAPS); }
-
 // Test Hash of Maps with different inner map types (without static initializer)
-static void
-_test_hash_of_maps_with_different_inner_types(bpf_map_type inner_map_type)
+TEMPLATE_TEST_CASE("hash_of_maps_with_inner", "[libbpf]", ALL_INNER_MAP_TYPES)
 {
+    constexpr ebpf_map_type_t inner_map_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
@@ -2731,17 +2672,17 @@ _test_hash_of_maps_with_different_inner_types(bpf_map_type inner_map_type)
     int key_size = sizeof(uint32_t);
     int value_size = sizeof(uint32_t);
     int max_entries = 1;
-    
+
     // Adjust parameters for different map types
-    if (inner_map_type == BPF_MAP_TYPE_LPM_TRIE) {
+    if constexpr (inner_map_type == BPF_MAP_TYPE_LPM_TRIE) {
         // LPM_TRIE has special key format requirements
         key_size = sizeof(uint64_t); // prefix + data
         max_entries = 10;
-    } else if (inner_map_type == BPF_MAP_TYPE_QUEUE || inner_map_type == BPF_MAP_TYPE_STACK) {
+    } else if constexpr (inner_map_type == BPF_MAP_TYPE_QUEUE || inner_map_type == BPF_MAP_TYPE_STACK) {
         // Queue and stack maps don't use keys
         key_size = 0;
         max_entries = 10;
-    } else if (inner_map_type == BPF_MAP_TYPE_RINGBUF || inner_map_type == BPF_MAP_TYPE_PERF_EVENT_ARRAY) {
+    } else if constexpr (inner_map_type == BPF_MAP_TYPE_RINGBUF || inner_map_type == BPF_MAP_TYPE_PERF_EVENT_ARRAY) {
         // Ring buffer and perf event array require max_entries to be power of 2 and multiple of page size
         key_size = 0;
         value_size = 0;
@@ -2753,7 +2694,8 @@ _test_hash_of_maps_with_different_inner_types(bpf_map_type inner_map_type)
 
     // Create outer hash map with the inner map as template
     bpf_map_create_opts opts = {.inner_map_fd = (uint32_t)inner_map_fd};
-    fd_t outer_map_fd = bpf_map_create(BPF_MAP_TYPE_HASH_OF_MAPS, "outer_map", sizeof(uint32_t), sizeof(fd_t), 10, &opts);
+    fd_t outer_map_fd =
+        bpf_map_create(BPF_MAP_TYPE_HASH_OF_MAPS, "outer_map", sizeof(uint32_t), sizeof(fd_t), 10, &opts);
     REQUIRE(outer_map_fd > 0);
 
     // Create second inner map of the same type
@@ -2773,7 +2715,7 @@ _test_hash_of_maps_with_different_inner_types(bpf_map_type inner_map_type)
     ebpf_id_t inner_map_id;
     outer_key = 1;
     REQUIRE(bpf_map_lookup_elem(outer_map_fd, &outer_key, &inner_map_id) == 0);
-    
+
     outer_key = 2;
     REQUIRE(bpf_map_lookup_elem(outer_map_fd, &outer_key, &inner_map_id) == 0);
 
@@ -2791,11 +2733,12 @@ _test_hash_of_maps_with_different_inner_types(bpf_map_type inner_map_type)
     Platform::_close(outer_map_fd);
 }
 
-// Test Array of Maps with different inner map types (with static initializer)
-static void
-_test_array_of_maps_with_different_inner_types_static_init(ebpf_execution_type_t execution_type, bpf_map_type inner_map_type)
+// Test Array of Maps with different inner map types (with static initializer).
+TEMPLATE_PRODUCT_TEST_CASE(
+    "array_of_maps_with_inner_static_init", "[libbpf]", (JIT_NATIVE_EXECUTION_MAP_TYPES), (ALL_INNER_MAP_TYPES))
 {
-    UNREFERENCED_PARAMETER(execution_type);
+    [[maybe_unused]] constexpr ebpf_execution_type_t execution_type = TestType::first_type::value;
+    constexpr ebpf_map_type_t inner_map_type = TestType::second_type::value;
     _test_helper_libbpf test_helper;
     test_helper.initialize();
 
@@ -2803,7 +2746,7 @@ _test_array_of_maps_with_different_inner_types_static_init(ebpf_execution_type_t
     // Since we can't dynamically create BPF programs with different inner map types,
     // we'll test with the existing hash_of_map and inner_map samples
     // and create a runtime test for array of maps
-    
+
     // Create inner maps of different types at runtime
     _test_helper_end_to_end end_to_end_helper;
     end_to_end_helper.initialize();
@@ -2811,15 +2754,15 @@ _test_array_of_maps_with_different_inner_types_static_init(ebpf_execution_type_t
     int key_size = sizeof(uint32_t);
     int value_size = sizeof(uint32_t);
     int max_entries = 1;
-    
+
     // Adjust parameters for different map types
-    if (inner_map_type == BPF_MAP_TYPE_LPM_TRIE) {
+    if constexpr (inner_map_type == BPF_MAP_TYPE_LPM_TRIE) {
         key_size = sizeof(uint64_t);
         max_entries = 10;
-    } else if (inner_map_type == BPF_MAP_TYPE_QUEUE || inner_map_type == BPF_MAP_TYPE_STACK) {
+    } else if constexpr (inner_map_type == BPF_MAP_TYPE_QUEUE || inner_map_type == BPF_MAP_TYPE_STACK) {
         key_size = 0;
         max_entries = 10;
-    } else if (inner_map_type == BPF_MAP_TYPE_RINGBUF || inner_map_type == BPF_MAP_TYPE_PERF_EVENT_ARRAY) {
+    } else if constexpr (inner_map_type == BPF_MAP_TYPE_RINGBUF || inner_map_type == BPF_MAP_TYPE_PERF_EVENT_ARRAY) {
         // Ring buffer and perf event array require max_entries to be power of 2 and multiple of page size
         key_size = 0;
         value_size = 0;
@@ -2831,7 +2774,8 @@ _test_array_of_maps_with_different_inner_types_static_init(ebpf_execution_type_t
 
     // Create outer array map with the inner map as template
     bpf_map_create_opts opts = {.inner_map_fd = (uint32_t)inner_map_fd};
-    fd_t outer_map_fd = bpf_map_create(BPF_MAP_TYPE_ARRAY_OF_MAPS, "outer_map", sizeof(uint32_t), sizeof(fd_t), 10, &opts);
+    fd_t outer_map_fd =
+        bpf_map_create(BPF_MAP_TYPE_ARRAY_OF_MAPS, "outer_map", sizeof(uint32_t), sizeof(fd_t), 10, &opts);
     REQUIRE(outer_map_fd > 0);
 
     // Create second inner map of the same type
@@ -2851,7 +2795,7 @@ _test_array_of_maps_with_different_inner_types_static_init(ebpf_execution_type_t
     ebpf_id_t inner_map_id;
     outer_key = 0;
     REQUIRE(bpf_map_lookup_elem(outer_map_fd, &outer_key, &inner_map_id) == 0);
-    
+
     outer_key = 1;
     REQUIRE(bpf_map_lookup_elem(outer_map_fd, &outer_key, &inner_map_id) == 0);
 
@@ -2860,99 +2804,6 @@ _test_array_of_maps_with_different_inner_types_static_init(ebpf_execution_type_t
     Platform::_close(inner_map_fd2);
     Platform::_close(outer_map_fd);
 }
-
-// Test cases for Hash of Maps with different inner map types (without static initializer)
-TEST_CASE("hash_of_maps_with_hash_inner", "[libbpf]") { _test_hash_of_maps_with_different_inner_types(BPF_MAP_TYPE_HASH); }
-TEST_CASE("hash_of_maps_with_array_inner", "[libbpf]") { _test_hash_of_maps_with_different_inner_types(BPF_MAP_TYPE_ARRAY); }
-TEST_CASE("hash_of_maps_with_percpu_hash_inner", "[libbpf]") { _test_hash_of_maps_with_different_inner_types(BPF_MAP_TYPE_PERCPU_HASH); }
-TEST_CASE("hash_of_maps_with_percpu_array_inner", "[libbpf]") { _test_hash_of_maps_with_different_inner_types(BPF_MAP_TYPE_PERCPU_ARRAY); }
-TEST_CASE("hash_of_maps_with_lru_hash_inner", "[libbpf]") { _test_hash_of_maps_with_different_inner_types(BPF_MAP_TYPE_LRU_HASH); }
-TEST_CASE("hash_of_maps_with_lru_percpu_hash_inner", "[libbpf]") { _test_hash_of_maps_with_different_inner_types(BPF_MAP_TYPE_LRU_PERCPU_HASH); }
-TEST_CASE("hash_of_maps_with_lpm_trie_inner", "[libbpf]") { _test_hash_of_maps_with_different_inner_types(BPF_MAP_TYPE_LPM_TRIE); }
-TEST_CASE("hash_of_maps_with_queue_inner", "[libbpf]") { _test_hash_of_maps_with_different_inner_types(BPF_MAP_TYPE_QUEUE); }
-TEST_CASE("hash_of_maps_with_stack_inner", "[libbpf]") { _test_hash_of_maps_with_different_inner_types(BPF_MAP_TYPE_STACK); }
-TEST_CASE("hash_of_maps_with_ringbuf_inner", "[libbpf]") { _test_hash_of_maps_with_different_inner_types(BPF_MAP_TYPE_RINGBUF); }
-TEST_CASE("hash_of_maps_with_perf_event_array_inner", "[libbpf]") { _test_hash_of_maps_with_different_inner_types(BPF_MAP_TYPE_PERF_EVENT_ARRAY); }
-
-// Test function for Array of Maps with different inner map types (with static initializer)
-static void
-_array_of_maps_with_hash_inner_static_init(ebpf_execution_type_t execution_type)
-{
-    _test_array_of_maps_with_different_inner_types_static_init(execution_type, BPF_MAP_TYPE_HASH);
-}
-
-static void
-_array_of_maps_with_array_inner_static_init(ebpf_execution_type_t execution_type)
-{
-    _test_array_of_maps_with_different_inner_types_static_init(execution_type, BPF_MAP_TYPE_ARRAY);
-}
-
-static void
-_array_of_maps_with_percpu_hash_inner_static_init(ebpf_execution_type_t execution_type)
-{
-    _test_array_of_maps_with_different_inner_types_static_init(execution_type, BPF_MAP_TYPE_PERCPU_HASH);
-}
-
-static void
-_array_of_maps_with_percpu_array_inner_static_init(ebpf_execution_type_t execution_type)
-{
-    _test_array_of_maps_with_different_inner_types_static_init(execution_type, BPF_MAP_TYPE_PERCPU_ARRAY);
-}
-
-static void
-_array_of_maps_with_lru_hash_inner_static_init(ebpf_execution_type_t execution_type)
-{
-    _test_array_of_maps_with_different_inner_types_static_init(execution_type, BPF_MAP_TYPE_LRU_HASH);
-}
-
-static void
-_array_of_maps_with_lru_percpu_hash_inner_static_init(ebpf_execution_type_t execution_type)
-{
-    _test_array_of_maps_with_different_inner_types_static_init(execution_type, BPF_MAP_TYPE_LRU_PERCPU_HASH);
-}
-
-static void
-_array_of_maps_with_lpm_trie_inner_static_init(ebpf_execution_type_t execution_type)
-{
-    _test_array_of_maps_with_different_inner_types_static_init(execution_type, BPF_MAP_TYPE_LPM_TRIE);
-}
-
-static void
-_array_of_maps_with_queue_inner_static_init(ebpf_execution_type_t execution_type)
-{
-    _test_array_of_maps_with_different_inner_types_static_init(execution_type, BPF_MAP_TYPE_QUEUE);
-}
-
-static void
-_array_of_maps_with_stack_inner_static_init(ebpf_execution_type_t execution_type)
-{
-    _test_array_of_maps_with_different_inner_types_static_init(execution_type, BPF_MAP_TYPE_STACK);
-}
-
-static void
-_array_of_maps_with_ringbuf_inner_static_init(ebpf_execution_type_t execution_type)
-{
-    _test_array_of_maps_with_different_inner_types_static_init(execution_type, BPF_MAP_TYPE_RINGBUF);
-}
-
-static void
-_array_of_maps_with_perf_event_array_inner_static_init(ebpf_execution_type_t execution_type)
-{
-    _test_array_of_maps_with_different_inner_types_static_init(execution_type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);
-}
-
-// Test cases for Array of Maps with different inner map types (with static initializer)
-DECLARE_JIT_TEST_CASES("array_of_maps_with_hash_inner_static_init", "[libbpf]", _array_of_maps_with_hash_inner_static_init);
-DECLARE_JIT_TEST_CASES("array_of_maps_with_array_inner_static_init", "[libbpf]", _array_of_maps_with_array_inner_static_init);
-DECLARE_JIT_TEST_CASES("array_of_maps_with_percpu_hash_inner_static_init", "[libbpf]", _array_of_maps_with_percpu_hash_inner_static_init);
-DECLARE_JIT_TEST_CASES("array_of_maps_with_percpu_array_inner_static_init", "[libbpf]", _array_of_maps_with_percpu_array_inner_static_init);
-DECLARE_JIT_TEST_CASES("array_of_maps_with_lru_hash_inner_static_init", "[libbpf]", _array_of_maps_with_lru_hash_inner_static_init);
-DECLARE_JIT_TEST_CASES("array_of_maps_with_lru_percpu_hash_inner_static_init", "[libbpf]", _array_of_maps_with_lru_percpu_hash_inner_static_init);
-DECLARE_JIT_TEST_CASES("array_of_maps_with_lpm_trie_inner_static_init", "[libbpf]", _array_of_maps_with_lpm_trie_inner_static_init);
-DECLARE_JIT_TEST_CASES("array_of_maps_with_queue_inner_static_init", "[libbpf]", _array_of_maps_with_queue_inner_static_init);
-DECLARE_JIT_TEST_CASES("array_of_maps_with_stack_inner_static_init", "[libbpf]", _array_of_maps_with_stack_inner_static_init);
-DECLARE_JIT_TEST_CASES("array_of_maps_with_ringbuf_inner_static_init", "[libbpf]", _array_of_maps_with_ringbuf_inner_static_init);
-DECLARE_JIT_TEST_CASES("array_of_maps_with_perf_event_array_inner_static_init", "[libbpf]", _array_of_maps_with_perf_event_array_inner_static_init);
 
 TEST_CASE("libbpf_load_stress", "[libbpf]")
 {
@@ -3289,15 +3140,15 @@ _test_batch_iteration_maps(
     }
 }
 
-void
-_test_maps_batch(bpf_map_type map_type)
+TEMPLATE_TEST_CASE("libbpf map batch", "[libbpf]", hash_map_t, lru_hash_map_t, percpu_hash_map_t, lru_percpu_hash_map_t)
 {
+    constexpr ebpf_map_type_t map_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
     int num_of_cpus = 1;
     size_t value_size = 1;
 
-    if (BPF_MAP_TYPE_PER_CPU(map_type)) {
+    if constexpr (BPF_MAP_TYPE_PER_CPU(map_type)) {
         // Get the number of possible CPUs that the host kernel supports and expects.
         num_of_cpus = libbpf_num_possible_cpus();
         REQUIRE(num_of_cpus > 0);
@@ -3500,17 +3351,11 @@ _test_maps_batch(bpf_map_type map_type)
     REQUIRE(bpf_map_delete_batch(invalid_map_fd, keys.data(), &delete_batch_size, &opts) == -EBADF);
 }
 
-TEST_CASE("libbpf hash map batch", "[libbpf]") { _test_maps_batch(BPF_MAP_TYPE_HASH); }
-
-TEST_CASE("libbpf lru hash map batch", "[libbpf]") { _test_maps_batch(BPF_MAP_TYPE_LRU_HASH); }
-
-TEST_CASE("libbpf percpu hash map batch", "[libbpf]") { _test_maps_batch(BPF_MAP_TYPE_PERCPU_HASH); }
-
-TEST_CASE("libbpf lru percpu hash map batch", "[libbpf]") { _test_maps_batch(BPF_MAP_TYPE_LRU_PERCPU_HASH); }
-
-void
-_hash_of_map_initial_value_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("hash_of_map", "[libbpf]", native_t)
 {
+    // Only native execution supports map of maps with static initializers.
+    // - Issue: https://github.com/microsoft/ebpf-for-windows/issues/3210
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_libbpf test_helper;
     test_helper.initialize();
 
@@ -3536,12 +3381,6 @@ _hash_of_map_initial_value_test(ebpf_execution_type_t execution_type)
 
     fd_t inner_map_fd = bpf_map__fd(inner_map);
     REQUIRE(inner_map_fd > 0);
-
-    // Issue: https://github.com/microsoft/ebpf-for-windows/issues/3210
-    // Only native execution supports map of maps with static initializers.
-    if (execution_type != EBPF_EXECUTION_NATIVE) {
-        return;
-    }
 
     uint32_t key = 0;
     uint32_t inner_map_id = 0;
@@ -3572,17 +3411,9 @@ _hash_of_map_initial_value_test(ebpf_execution_type_t execution_type)
     REQUIRE(errno == ENOENT);
 }
 
-TEST_CASE("hash_of_map", "[libbpf]")
+TEMPLATE_TEST_CASE("utility_test", "[libbpf]", ENABLED_EXECUTION_TYPES)
 {
-#if !defined(CONFIG_BPF_JIT_DISABLED)
-    _hash_of_map_initial_value_test(EBPF_EXECUTION_JIT);
-#endif
-    _hash_of_map_initial_value_test(EBPF_EXECUTION_NATIVE);
-}
-
-static void
-_utility_test(ebpf_execution_type_t execution_type)
-{
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     const char dll_name[] = "utility_um.dll";
     const char obj_name[] = "utility.o";
@@ -3621,11 +3452,9 @@ _utility_test(ebpf_execution_type_t execution_type)
     bpf_object__close(process_object);
 }
 
-DECLARE_ALL_TEST_CASES("utility_test", "[libbpf]", _utility_test);
-
-static void
-_strings_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("strings_test", "[libbpf]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     const char dll_name[] = "strings_um.dll";
     const char obj_name[] = "strings.o";
@@ -3662,11 +3491,10 @@ _strings_test(ebpf_execution_type_t execution_type)
 
     bpf_object__close(process_object);
 }
-DECLARE_ALL_TEST_CASES("strings_test", "[libbpf]", _strings_test);
 
-static void
-_program_flags_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("program_flag_test", "[libbpf]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     const char dll_name[] = "utility_um.dll";
     const char obj_name[] = "utility.o";
@@ -3726,5 +3554,3 @@ _program_flags_test(ebpf_execution_type_t execution_type)
     REQUIRE(result == 0);
     bpf_object__close(process_object);
 }
-
-DECLARE_ALL_TEST_CASES("program_flag_test", "[libbpf]", _program_flags_test);

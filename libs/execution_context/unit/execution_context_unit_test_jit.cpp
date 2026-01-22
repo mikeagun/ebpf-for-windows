@@ -12,6 +12,37 @@
 #include "helpers.h"
 #include "test_helper.hpp"
 
+using jit_t = std::integral_constant<ebpf_execution_type_t, EBPF_EXECUTION_JIT>;
+using native_t = std::integral_constant<ebpf_execution_type_t, EBPF_EXECUTION_NATIVE>;
+using interpret_t = std::integral_constant<ebpf_execution_type_t, EBPF_EXECUTION_INTERPRET>;
+using any_t = std::integral_constant<ebpf_execution_type_t, EBPF_EXECUTION_ANY>;
+// resolves to any, but filtered out by enabled_exec_types if both JIT and interpreter are disabled.
+using any_jit_t = std::integral_constant<ebpf_execution_type_t, EBPF_EXECUTION_ANY>;
+
+#if defined(CONFIG_BPF_JIT_DISABLED) && defined(CONFIG_BPF_INTERPRETER_DISABLED)
+#define ENABLED_EXECUTION_TYPES native_t
+#undef ENABLED_JIT_EXECUTION_TYPES
+#elif defined(CONFIG_BPF_JIT_DISABLED)
+#define ENABLED_EXECUTION_TYPES native_t, interpret_t
+#define ENABLED_JIT_EXECUTION_TYPES interpret_t
+#elif defined(CONFIG_BPF_INTERPRETER_DISABLED)
+#define ENABLED_EXECUTION_TYPES native_t, jit_t
+#define ENABLED_JIT_EXECUTION_TYPES jit_t
+#else
+#define ENABLED_EXECUTION_TYPES native_t, jit_t, interpret_t
+#define ENABLED_JIT_EXECUTION_TYPES jit_t, interpret_t
+#endif
+
+#if defined(CONFIG_BPF_JIT_DISABLED)
+#define JIT_LOAD_RESULT -ENOTSUP
+#undef JIT_IF_ENABLED
+#else
+#define JIT_LOAD_RESULT 0
+#define JIT_IF_ENABLED jit_t
+#endif
+
+// #define JIT_TEST_CASE(name, tags) TEMPLATE_TEST_CASE(name, tags, JIT_IF_ENABLED)
+
 _ebpf_async_wrapper::_ebpf_async_wrapper()
 {
     _event = CreateEvent(nullptr, false, false, nullptr);
@@ -69,10 +100,7 @@ _ebpf_core_initializer::initialize()
     REQUIRE(ebpf_core_initiate() == EBPF_SUCCESS);
 }
 
-_ebpf_core_initializer::~_ebpf_core_initializer()
-{
-    ebpf_core_terminate();
-}
+_ebpf_core_initializer::~_ebpf_core_initializer() { ebpf_core_terminate(); }
 
 void
 create_various_objects(std::vector<ebpf_handle_t>& program_handles, std::map<std::string, ebpf_handle_t>& map_handles)
@@ -238,24 +266,21 @@ TEST_CASE("EBPF_OPERATION_LOAD_CODE", "[execution_context][negative]")
 }
 #endif
 
-#if !defined(CONFIG_BPF_JIT_DISABLED)
-
-struct program_info_provider_reference_guard
+TEMPLATE_TEST_CASE("program", "[execution_context]", JIT_IF_ENABLED)
 {
-  public:
-    program_info_provider_reference_guard(ebpf_program_t* program) : _program(program)
+    struct program_info_provider_reference_guard
     {
-        REQUIRE(ebpf_program_reference_providers(program) == EBPF_SUCCESS);
-    }
-    ~program_info_provider_reference_guard() { ebpf_program_dereference_providers(_program); }
+      public:
+        program_info_provider_reference_guard(ebpf_program_t* program) : _program(program)
+        {
+            REQUIRE(ebpf_program_reference_providers(program) == EBPF_SUCCESS);
+        }
+        ~program_info_provider_reference_guard() { ebpf_program_dereference_providers(_program); }
 
-  private:
-    ebpf_program_t* _program;
-};
+      private:
+        ebpf_program_t* _program;
+    };
 
-void
-test_program_context()
-{
     // single_instance_hook_t call ebpapi functions, which requires calling ebpf_api_initiate/ebpf_api_terminate.
     _test_helper_end_to_end end_to_end;
     end_to_end.initialize();
@@ -436,13 +461,6 @@ test_program_context()
 
     ebpf_free_trampoline_table(table.release());
 }
-
-// Only run the test if JIT is enabled.
-TEST_CASE("program", "[execution_context]")
-{
-    test_program_context();
-}
-#endif
 
 #if !defined(CONFIG_BPF_JIT_DISABLED)
 // These tests exist to verify ebpf_core's parsing of messages.

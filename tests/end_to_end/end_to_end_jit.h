@@ -17,13 +17,6 @@ namespace ebpf {
 #define SAMPLE_PATH ""
 
 #if !defined(CONFIG_BPF_JIT_DISABLED)
-#define DECLARE_JIT_TEST(_name, _group, _function) \
-    DECLARE_TEST_CASE(_name, _group, _function, "-jit", EBPF_EXECUTION_JIT)
-#else
-#define DECLARE_JIT_TEST(_name, _group, _function)
-#endif
-
-#if !defined(CONFIG_BPF_JIT_DISABLED)
 #define DECLARE_CGROUP_SOCK_ADDR_LOAD_JIT_TEST(file, name, attach_type) \
     DECLARE_CGROUP_SOCK_ADDR_LOAD_TEST2(file, name, attach_type, "jit", ".o", EBPF_EXECUTION_JIT)
 #else

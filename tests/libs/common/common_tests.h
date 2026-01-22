@@ -20,6 +20,89 @@
 #define RING_BUFFER_TEST_EVENT_COUNT 10
 #define PERF_BUFFER_TEST_EVENT_COUNT 10
 
+using hash_map_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_HASH>;
+using array_map_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_ARRAY>;
+using percpu_hash_map_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_PERCPU_HASH>;
+using percpu_array_map_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_PERCPU_ARRAY>;
+using lru_hash_map_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_LRU_HASH>;
+using lru_percpu_hash_map_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_LRU_PERCPU_HASH>;
+using queue_map_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_QUEUE>;
+using stack_map_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_STACK>;
+using ringbuf_map_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_RINGBUF>;
+using perf_event_array_map_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_PERF_EVENT_ARRAY>;
+using lpm_trie_map_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_LPM_TRIE>;
+using array_of_maps_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_ARRAY_OF_MAPS>;
+using hash_of_maps_t = std::integral_constant<bpf_map_type, BPF_MAP_TYPE_HASH_OF_MAPS>;
+
+#define MAP_OF_MAPS_TYPES array_of_maps_t, hash_of_maps_t
+
+#define ALL_INNER_MAP_TYPES                                                                                   \
+    hash_map_t, array_map_t, percpu_hash_map_t, percpu_array_map_t, lru_hash_map_t, queue_map_t, stack_map_t, \
+        ringbuf_map_t, perf_event_array_map_t
+
+using jit_t = std::integral_constant<ebpf_execution_type_t, EBPF_EXECUTION_JIT>;
+using native_t = std::integral_constant<ebpf_execution_type_t, EBPF_EXECUTION_NATIVE>;
+using interpret_t = std::integral_constant<ebpf_execution_type_t, EBPF_EXECUTION_INTERPRET>;
+using any_t = std::integral_constant<ebpf_execution_type_t, EBPF_EXECUTION_ANY>;
+// resolves to any, but filtered out by enabled_exec_types if both JIT and interpreter are disabled.
+using any_jit_t = std::integral_constant<ebpf_execution_type_t, EBPF_EXECUTION_ANY>;
+
+#if defined(CONFIG_BPF_JIT_DISABLED) && defined(CONFIG_BPF_INTERPRETER_DISABLED)
+#define ENABLED_EXECUTION_TYPES native_t
+#undef ENABLED_JIT_EXECUTION_TYPES
+#elif defined(CONFIG_BPF_JIT_DISABLED)
+#define ENABLED_EXECUTION_TYPES native_t, interpret_t
+#define ENABLED_JIT_EXECUTION_TYPES interpret_t
+#elif defined(CONFIG_BPF_INTERPRETER_DISABLED)
+#define ENABLED_EXECUTION_TYPES native_t, jit_t
+#define ENABLED_JIT_EXECUTION_TYPES jit_t
+#else
+#define ENABLED_EXECUTION_TYPES native_t, jit_t, interpret_t
+#define ENABLED_JIT_EXECUTION_TYPES jit_t, interpret_t
+#endif
+
+#if defined(CONFIG_BPF_JIT_DISABLED) && defined(CONFIG_BPF_INTERPRETER_DISABLED)
+#undef ANY_JIT_IF_ENABLED
+#else
+#define ANY_JIT_IF_ENABLED any_jit_t
+#endif
+
+template <typename MapType> using jit_map_t = std::pair<jit_t, MapType>;
+template <typename MapType> using native_map_t = std::pair<native_t, MapType>;
+
+#if defined(CONFIG_BPF_JIT_DISABLED)
+#define JIT_NATIVE_EXECUTION_TYPES native_t
+#define JIT_NATIVE_EXECUTION_MAP_TYPES native_map_t
+#define JIT_LOAD_RESULT -ENOTSUP
+#undef JIT_IF_ENABLED
+#else
+#define JIT_NATIVE_EXECUTION_TYPES native_t, jit_t
+#define JIT_NATIVE_EXECUTION_MAP_TYPES native_map_t, jit_map_t
+#define JIT_LOAD_RESULT 0
+#define JIT_IF_ENABLED jit_t
+#endif
+
+#define JIT_TEST_CASE(name, tags) TEMPLATE_TEST_CASE(name, tags, JIT_IF_ENABLED)
+
+#if defined(CONFIG_BPF_INTERPRETER_DISABLED)
+#define INTERPRET_LOAD_RESULT -ENOTSUP
+#undef INTERPRET_IF_ENABLED
+#else
+#define INTERPRET_LOAD_RESULT 0
+#define INTERPRET_IF_ENABLED interpret_t
+#endif
+
+inline int32_t
+get_expected_jit_load_result(int32_t expected_result)
+{
+#if defined(CONFIG_BPF_JIT_DISABLED)
+    UNREFERENCED_PARAMETER(expected_result);
+    return -ENOTSUP;
+#else
+    return expected_result;
+#endif
+}
+
 typedef struct _close_bpf_object
 {
     void

@@ -56,15 +56,6 @@ CATCH_REGISTER_LISTENER(_watchdog)
 #define BPF_PROG_TYPE_INVALID 100
 #define BPF_ATTACH_TYPE_INVALID 100
 
-#define DECLARE_ALL_TEST_CASES(_name, _group, _function) \
-    DECLARE_JIT_TEST(_name, _group, _function)           \
-    DECLARE_NATIVE_TEST(_name, _group, _function)        \
-    DECLARE_INTERPRET_TEST(_name, _group, _function)
-
-#define DECLARE_JIT_TEST_CASES(_name, _group, _function) \
-    DECLARE_JIT_TEST(_name, _group, _function)           \
-    DECLARE_NATIVE_TEST(_name, _group, _function)
-
 void
 append_udp_header(uint16_t udp_length, std::vector<uint8_t>& ip_packet)
 {
@@ -154,9 +145,9 @@ ebpf_authorize_native_module_wrapper(_In_ const GUID* module_id, _In_z_ const ch
 }
 
 // This test validates the User Mode Mock Test XDP Provider.
-void
-droppacket_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("droppacket", "[end_to_end]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
@@ -274,9 +265,9 @@ droppacket_test(ebpf_execution_type_t execution_type)
 }
 
 // See also divide_by_zero_test_km in api_test.cpp for the kernel-mode equivalent.
-void
-divide_by_zero_test_um(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("divide_by_zero", "[end_to_end]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
@@ -316,9 +307,9 @@ divide_by_zero_test_um(ebpf_execution_type_t execution_type)
     bpf_object__close(unique_object.release());
 }
 
-void
-bad_map_name_um(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("bad_map_name", "[end_to_end]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
@@ -424,9 +415,9 @@ _get_current_pid_tgid()
     return ((uint64_t)GetCurrentProcessId() << 32 | GetCurrentThreadId());
 }
 
-void
-bindmonitor_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("bindmonitor", "[end_to_end]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
@@ -520,9 +511,9 @@ bindmonitor_test(ebpf_execution_type_t execution_type)
     bpf_object__close(unique_object.release());
 }
 
-static void
-_bindmonitor_bpf2bpf_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("bindmonitor-bpf2bpf", "[end_to_end]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
@@ -545,9 +536,9 @@ _bindmonitor_bpf2bpf_test(ebpf_execution_type_t execution_type)
     REQUIRE(emulate_bind(invoke, 2, "fake_app_2") == BIND_PERMIT_SOFT);
 }
 
-void
-bindmonitor_tailcall_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("bindmonitor-tailcall", "[end_to_end]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
@@ -668,9 +659,9 @@ bindmonitor_tailcall_test(ebpf_execution_type_t execution_type)
     bpf_object__close(unique_object.release());
 }
 
-void
-negative_ring_buffer_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("negative_ring_buffer_test", "[end_to_end]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
@@ -707,9 +698,9 @@ negative_ring_buffer_test(ebpf_execution_type_t execution_type)
     bpf_object__close(unique_object.release());
 }
 
-void
-bindmonitor_ring_buffer_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("bindmonitor-ringbuf", "[end_to_end]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
@@ -772,9 +763,9 @@ bindmonitor_ring_buffer_test(ebpf_execution_type_t execution_type)
     bpf_object__close(unique_object.release());
 }
 
-static void
-_utility_helper_functions_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("utility-helpers", "[end_to_end]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
     single_instance_hook_t hook(EBPF_PROGRAM_TYPE_SAMPLE, EBPF_ATTACH_TYPE_SAMPLE);
@@ -798,9 +789,9 @@ _utility_helper_functions_test(ebpf_execution_type_t execution_type)
     verify_utility_helper_results(object, true);
 }
 
-void
-map_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("map", "[end_to_end]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
@@ -838,9 +829,10 @@ map_test(ebpf_execution_type_t execution_type)
     bpf_object__close(unique_object.release());
 }
 
-void
-global_variable_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("global_variable", "[end_to_end]", native_t)
 {
+    // Only runs for native.
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
@@ -849,11 +841,6 @@ global_variable_test(ebpf_execution_type_t execution_type)
     bpf_object_ptr unique_object;
     fd_t program_fd;
     bpf_link_ptr link;
-
-    if (execution_type != EBPF_EXECUTION_NATIVE) {
-        // Skip this test in JIT-compiled and interpreted mode.
-        return;
-    }
 
     single_instance_hook_t hook(EBPF_PROGRAM_TYPE_SAMPLE, EBPF_ATTACH_TYPE_SAMPLE);
     REQUIRE(hook.initialize() == EBPF_SUCCESS);
@@ -914,9 +901,10 @@ global_variable_test(ebpf_execution_type_t execution_type)
     bpf_object__close(unique_object.release());
 }
 
-void
-global_variable_and_map_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("global_variable_and_map", "[end_to_end]", native_t)
 {
+    // This test only runs for native.
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     typedef struct _some_config_struct
     {
         int some_config_field;
@@ -933,11 +921,6 @@ global_variable_and_map_test(ebpf_execution_type_t execution_type)
     bpf_object_ptr unique_object;
     fd_t program_fd;
     bpf_link_ptr link;
-
-    if (execution_type != EBPF_EXECUTION_NATIVE) {
-        // Skip this test in JIT-compiled and interpreted mode.
-        return;
-    }
 
     single_instance_hook_t hook(EBPF_PROGRAM_TYPE_SAMPLE, EBPF_ATTACH_TYPE_SAMPLE);
     REQUIRE(hook.initialize() == EBPF_SUCCESS);
@@ -1000,19 +983,6 @@ global_variable_and_map_test(ebpf_execution_type_t execution_type)
 
     bpf_object__close(unique_object.release());
 }
-
-DECLARE_ALL_TEST_CASES("droppacket", "[end_to_end]", droppacket_test);
-DECLARE_ALL_TEST_CASES("divide_by_zero", "[end_to_end]", divide_by_zero_test_um);
-DECLARE_ALL_TEST_CASES("bindmonitor", "[end_to_end]", bindmonitor_test);
-DECLARE_ALL_TEST_CASES("bindmonitor-bpf2bpf", "[end_to_end]", _bindmonitor_bpf2bpf_test);
-DECLARE_ALL_TEST_CASES("bindmonitor-tailcall", "[end_to_end]", bindmonitor_tailcall_test);
-DECLARE_ALL_TEST_CASES("bindmonitor-ringbuf", "[end_to_end]", bindmonitor_ring_buffer_test);
-DECLARE_ALL_TEST_CASES("negative_ring_buffer_test", "[end_to_end]", negative_ring_buffer_test);
-DECLARE_ALL_TEST_CASES("utility-helpers", "[end_to_end]", _utility_helper_functions_test);
-DECLARE_ALL_TEST_CASES("map", "[end_to_end]", map_test);
-DECLARE_ALL_TEST_CASES("bad_map_name", "[end_to_end]", bad_map_name_um);
-DECLARE_ALL_TEST_CASES("global_variable", "[end_to_end]", global_variable_test);
-DECLARE_ALL_TEST_CASES("global_variable_and_map", "[end_to_end]", global_variable_and_map_test);
 
 TEST_CASE("enum programs", "[end_to_end]")
 {
@@ -1170,8 +1140,7 @@ TEST_CASE("verify_test1", "[sample_extension]")
     REQUIRE(result == 0);
 }
 
-#if !defined(CONFIG_BPF_INTERPRETER_DISABLED)
-TEST_CASE("map_pinning_test", "[end_to_end]")
+TEMPLATE_TEST_CASE("map_pinning_test", "[end_to_end]", INTERPRET_IF_ENABLED)
 {
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
@@ -1234,7 +1203,6 @@ TEST_CASE("map_pinning_test", "[end_to_end]")
 
     bpf_object__close(unique_object.release());
 }
-#endif
 
 TEST_CASE("pinned_map_enum", "[end_to_end]")
 {
@@ -1461,8 +1429,7 @@ TEST_CASE("ebpf_get_next_pinned_object_path", "[end_to_end][pinning]")
     bpf_object__close(unique_object.release());
 }
 
-#if !defined(CONFIG_BPF_INTERPRETER_DISABLED)
-TEST_CASE("explicit_detach", "[end_to_end]")
+TEMPLATE_TEST_CASE("explicit_detach", "[end_to_end]", INTERPRET_IF_ENABLED)
 {
     // This test case does the following:
     // 1. Call detach API and then close the link handle. The link object
@@ -1513,7 +1480,7 @@ TEST_CASE("explicit_detach", "[end_to_end]")
     REQUIRE(bpf_prog_get_next_id(0, &program_id) == -ENOENT);
 }
 
-TEST_CASE("implicit_explicit_detach", "[end_to_end]")
+TEMPLATE_TEST_CASE("implicit_explicit_detach", "[end_to_end]", INTERPRET_IF_ENABLED)
 {
     // This test case does the following:
     // 1. Close the program handle so that an implicit detach happens.
@@ -1564,8 +1531,6 @@ TEST_CASE("implicit_explicit_detach", "[end_to_end]")
     // Program should be unloaded.
     REQUIRE(bpf_prog_get_next_id(0, &program_id) == -ENOENT);
 }
-
-#endif
 
 TEST_CASE("create_map", "[end_to_end]")
 {
@@ -1686,8 +1651,7 @@ TEST_CASE("array_of_maps_large_index_test", "[end_to_end]")
     Platform::_close(outer_map_fd);
 }
 
-#if !defined(CONFIG_BPF_INTERPRETER_DISABLED)
-TEST_CASE("printk", "[end_to_end]")
+TEMPLATE_TEST_CASE("printk", "[end_to_end]", INTERPRET_IF_ENABLED)
 {
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
@@ -1742,10 +1706,8 @@ TEST_CASE("printk", "[end_to_end]")
     // so subtract 6 from the length to get the expected return value.
     REQUIRE(hook_result == output_length - 6);
 }
-#endif
 
-#if !defined(CONFIG_BPF_INTERPRETER_DISABLED)
-TEST_CASE("link_tests", "[end_to_end]")
+TEMPLATE_TEST_CASE("link_tests", "[end_to_end]", INTERPRET_IF_ENABLED)
 {
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
@@ -1770,11 +1732,10 @@ TEST_CASE("link_tests", "[end_to_end]")
 
     hook.detach();
 }
-#endif
 
-static void
-_map_reuse_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("map_reuse", "[end_to_end]", JIT_NATIVE_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
     single_instance_hook_t hook(EBPF_PROGRAM_TYPE_SAMPLE, EBPF_ATTACH_TYPE_SAMPLE);
@@ -1849,12 +1810,10 @@ _map_reuse_test(ebpf_execution_type_t execution_type)
     REQUIRE(ebpf_object_unpin("/ebpf/global/port_map") == EBPF_SUCCESS);
 }
 
-DECLARE_JIT_TEST_CASES("map_reuse", "[end_to_end]", _map_reuse_test);
-
 // Try to reuse a map of the wrong type.
-static void
-_wrong_map_reuse_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("wrong_map_reuse", "[end_to_end]", JIT_NATIVE_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
     single_instance_hook_t hook(EBPF_PROGRAM_TYPE_SAMPLE, EBPF_ATTACH_TYPE_SAMPLE);
@@ -1902,11 +1861,9 @@ _wrong_map_reuse_test(ebpf_execution_type_t execution_type)
     REQUIRE(ebpf_object_unpin("/ebpf/global/port_map") == EBPF_SUCCESS);
 }
 
-DECLARE_JIT_TEST_CASES("wrong_map_reuse", "[end_to_end]", _wrong_map_reuse_test);
-
-static void
-_auto_pinned_maps_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("auto_pinned_maps", "[end_to_end]", JIT_NATIVE_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
     single_instance_hook_t hook(EBPF_PROGRAM_TYPE_SAMPLE, EBPF_ATTACH_TYPE_SAMPLE);
@@ -1957,11 +1914,9 @@ _auto_pinned_maps_test(ebpf_execution_type_t execution_type)
     REQUIRE(ebpf_object_unpin("/ebpf/global/port_map") == EBPF_SUCCESS);
 }
 
-DECLARE_JIT_TEST_CASES("auto_pinned_maps", "[end_to_end]", _auto_pinned_maps_test);
-
-static void
-_map_reuse_invalid_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("map_reuse_invalid", "[end_to_end]", JIT_NATIVE_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
     single_instance_hook_t hook(EBPF_PROGRAM_TYPE_SAMPLE, EBPF_ATTACH_TYPE_SAMPLE);
@@ -2001,11 +1956,9 @@ _map_reuse_invalid_test(ebpf_execution_type_t execution_type)
     REQUIRE(ebpf_object_unpin("/ebpf/global/port_map") == EBPF_SUCCESS);
 }
 
-DECLARE_JIT_TEST_CASES("map_reuse_invalid", "[end_to_end]", _map_reuse_invalid_test);
-
-static void
-_map_reuse_2_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("map_reuse_2", "[end_to_end]", JIT_NATIVE_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
     single_instance_hook_t hook(EBPF_PROGRAM_TYPE_SAMPLE, EBPF_ATTACH_TYPE_SAMPLE);
@@ -2073,11 +2026,9 @@ _map_reuse_2_test(ebpf_execution_type_t execution_type)
     REQUIRE(ebpf_object_unpin("/ebpf/global/inner_map") == EBPF_SUCCESS);
 }
 
-DECLARE_JIT_TEST_CASES("map_reuse_2", "[end_to_end]", _map_reuse_2_test);
-
-static void
-_map_reuse_3_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("map_reuse_3", "[end_to_end]", JIT_NATIVE_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
     single_instance_hook_t hook(EBPF_PROGRAM_TYPE_SAMPLE, EBPF_ATTACH_TYPE_SAMPLE);
@@ -2145,8 +2096,6 @@ _map_reuse_3_test(ebpf_execution_type_t execution_type)
     REQUIRE(ebpf_object_unpin("/ebpf/global/inner_map") == EBPF_SUCCESS);
     REQUIRE(ebpf_object_unpin("/ebpf/global/port_map") == EBPF_SUCCESS);
 }
-
-DECLARE_JIT_TEST_CASES("map_reuse_3", "[end_to_end]", _map_reuse_3_test);
 
 static void
 _create_service_helper(
@@ -2821,25 +2770,20 @@ extension_reload_test_common(_In_ const char* file_name, ebpf_execution_type_t e
     }
 }
 
-static void
-extension_reload_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("extension_reload_test", "[end_to_end]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     const char* file_name = execution_type == EBPF_EXECUTION_NATIVE ? "test_sample_ebpf_um.dll" : "test_sample_ebpf.o";
     extension_reload_test_common(file_name, execution_type);
 }
 
-DECLARE_ALL_TEST_CASES("extension_reload_test", "[end_to_end]", extension_reload_test);
-
-static void
-_extension_reload_test_implicit_context(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("extension_reload_test_implicit_context", "[end_to_end]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     const char* file_name = execution_type == EBPF_EXECUTION_NATIVE ? "test_sample_implicit_helpers_um.dll"
                                                                     : "test_sample_implicit_helpers.o";
     extension_reload_test_common(file_name, execution_type);
 }
-
-DECLARE_ALL_TEST_CASES(
-    "extension_reload_test_implicit_context", "[end_to_end]", _extension_reload_test_implicit_context);
 
 // This test tests resource reclamation and clean-up after a premature/abnormal user mode application exit.
 TEST_CASE("close_unload_test", "[close_cleanup]")
@@ -3117,9 +3061,9 @@ TEST_CASE("test_map_entries_limit", "[end_to_end]")
     test_no_limit_map_entries(BPF_MAP_TYPE_LRU_PERCPU_HASH, true);
 }
 
-static void
-_implicit_context_helpers_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("implicit_context_helpers_test", "[end_to_end]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
     INITIALIZE_SAMPLE_CONTEXT
@@ -3170,11 +3114,9 @@ _implicit_context_helpers_test(ebpf_execution_type_t execution_type)
     REQUIRE(data.value_2 == data2 + 10);
 }
 
-DECLARE_ALL_TEST_CASES("implicit_context_helpers_test", "[end_to_end]", _implicit_context_helpers_test);
-
-void
-negative_perf_buffer_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("negative_perf_buffer_test", "[end_to_end]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
@@ -3217,9 +3159,9 @@ negative_perf_buffer_test(ebpf_execution_type_t execution_type)
     bpf_object__close(unique_object.release());
 }
 
-void
-bindmonitor_perf_buffer_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("bindmonitor-perfbuffer", "[end_to_end]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
@@ -3286,9 +3228,9 @@ bindmonitor_perf_buffer_test(ebpf_execution_type_t execution_type)
     bpf_object__close(unique_object.release());
 }
 
-static void
-test_sample_perf_buffer_test(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("test-sample-perfbuffer", "[end_to_end]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
     INITIALIZE_SAMPLE_CONTEXT
@@ -3357,10 +3299,6 @@ test_sample_perf_buffer_test(ebpf_execution_type_t execution_type)
     bpf_object__close(unique_test_sample_ebpf_object.release());
 }
 
-DECLARE_ALL_TEST_CASES("test-sample-perfbuffer", "[end_to_end]", test_sample_perf_buffer_test);
-DECLARE_ALL_TEST_CASES("bindmonitor-perfbuffer", "[end_to_end]", bindmonitor_perf_buffer_test);
-DECLARE_ALL_TEST_CASES("negative_perf_buffer_test", "[end_to_end]", negative_perf_buffer_test);
-
 TEST_CASE("signature_checking", "[end_to_end]")
 {
     _test_helper_end_to_end test_helper;
@@ -3424,9 +3362,9 @@ TEST_CASE("signature_checking_negative", "[end_to_end]")
  *
  * @param[in] execution_type The execution type for the eBPF program (JIT, Interpreter, or Native).
  */
-static void
-test_map_synchronized_update(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("test_map_synchronized_update", "[end_to_end]", ENABLED_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
@@ -3511,8 +3449,6 @@ test_map_synchronized_update(ebpf_execution_type_t execution_type)
 
     bpf_object__close(unique_object.release());
 }
-
-DECLARE_ALL_TEST_CASES("test_map_synchronized_update", "[end_to_end]", test_map_synchronized_update);
 
 /**
  * @brief This function tests that reference from outer map to inner map is maintained
@@ -3611,9 +3547,9 @@ TEST_CASE("hash_map_of_maps_user_reference", "[libbpf]")
  *
  * @param execution_type The type of execution for the eBPF programs.
  */
-void
-_test_prog_array_map_user_reference(ebpf_execution_type_t execution_type)
+TEMPLATE_TEST_CASE("prog_array_map_user_reference", "[end_to_end][user_reference]", JIT_NATIVE_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
@@ -3693,6 +3629,3 @@ _test_prog_array_map_user_reference(ebpf_execution_type_t execution_type)
     REQUIRE(bpf_map_get_next_id(0, &start_id) < 0);
     REQUIRE(bpf_prog_get_next_id(0, &start_id) < 0);
 }
-
-DECLARE_JIT_TEST_CASES(
-    "prog_array_map_user_reference", "[end_to_end][user_reference]", _test_prog_array_map_user_reference);

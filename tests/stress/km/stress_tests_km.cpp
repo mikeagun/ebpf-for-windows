@@ -30,9 +30,9 @@ static const std::map<std::string, test_program_attributes> _test_program_info =
 struct object_table_entry
 {
     std::unique_ptr<std::mutex> lock{nullptr};
-    _Guarded_by_(lock) bool available{true};
-    _Guarded_by_(lock) bpf_object_ptr object{nullptr};
-    _Guarded_by_(lock) bool loaded{false};
+    _Guarded_by_(lock) bool available { true };
+    _Guarded_by_(lock) bpf_object_ptr object { nullptr };
+    _Guarded_by_(lock) bool loaded { false };
     bool attach{false};
 
     // The following fields are for debugging this test itself.
@@ -1634,13 +1634,13 @@ _mt_bindmonitor_tail_call_invoke_program_test(
     WSACleanup();
 }
 
-#if !defined(CONFIG_BPF_JIT_DISABLED)
-TEST_CASE("jit_load_attach_detach_unload_random_v4_test", "[jit_mt_stress_test]")
+TEMPLATE_TEST_CASE("load_attach_detach_unload_random_v4_test", "[jit_mt_stress_test]", JIT_NATIVE_EXECUTION_TYPES)
 {
-    // This test attempts to load the same JIT'ed ebpf program multiple times in different threads.  This test
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
+    // This test attempts to load the same ebpf program multiple times in different threads.  This test
     // supports two modes:
     //
-    // 1. just load, attach, detach and unload the JIT'ed programs with each event happening in a different thread
+    // 1. just load, attach, detach and unload the programs with each event happening in a different thread
     //    with all threads executing in parallel with the bare minimum synchronization between them.
     //
     // 2. Same as #1 above, but with the addition of a dedicated thread continuously unloading/reloading the provider
@@ -1651,26 +1651,7 @@ TEST_CASE("jit_load_attach_detach_unload_random_v4_test", "[jit_mt_stress_test]"
     test_control_info local_test_control_info = _global_test_control_info;
 
     _print_test_control_info(local_test_control_info);
-    _mt_prog_load_stress_test(EBPF_EXECUTION_JIT, local_test_control_info);
-}
-#endif // !defined(CONFIG_BPF_JIT_DISABLED)
-
-TEST_CASE("native_load_attach_detach_unload_random_v4_test", "[native_mt_stress_test]")
-{
-    // This test attempts to load the same native ebpf program multiple times in different threads. Specifically:
-    //
-    // - Load, attach, detach and unload the native ebpf program with each event happening in a different thread with
-    //   all threads executing in parallel with the bare minimum synchronization between them.
-    //
-    // - Addition of a dedicated thread continuously unloading/reloading the provider extension
-    //   (if specified on the command line).
-
-    _km_test_init();
-    LOG_INFO("\nStarting test *** native_load_attach_detach_unload_random_v4_test ***");
-    test_control_info local_test_control_info = _global_test_control_info;
-
-    _print_test_control_info(local_test_control_info);
-    _mt_prog_load_stress_test(EBPF_EXECUTION_NATIVE, local_test_control_info);
+    _mt_prog_load_stress_test(execution_type, local_test_control_info);
 }
 
 TEST_CASE("native_unique_load_attach_detach_unload_random_v4_test", "[native_mt_stress_test]")
@@ -1778,8 +1759,7 @@ TEST_CASE("bindmonitor_tail_call_invoke_program_test", "[native_mt_stress_test]"
     _mt_bindmonitor_tail_call_invoke_program_test(EBPF_EXECUTION_NATIVE, local_test_control_info);
 }
 
-#if !defined(CONFIG_BPF_JIT_DISABLED)
-TEST_CASE("jit_unique_load_attach_detach_unload_random_v4_test", "[jit_mt_stress_test]")
+JIT_TEST_CASE("unique_load_attach_detach_unload_random_v4_test", "[jit_mt_stress_test]")
 {
     // This test attempts to load a unique JIT ebpf program multiple times in different threads. Specifically:
     //
@@ -1800,7 +1780,7 @@ TEST_CASE("jit_unique_load_attach_detach_unload_random_v4_test", "[jit_mt_stress
     _mt_prog_load_stress_test(EBPF_EXECUTION_JIT, local_test_control_info);
 }
 
-TEST_CASE("jit_invoke_v4_v6_programs_restart_extension_test", "[jit_mt_stress_test]")
+JIT_TEST_CASE("invoke_v4_v6_programs_restart_extension_test", "[jit_mt_stress_test]")
 {
     // Test layout:
     // 1. Create 2 'monitor' threads:
@@ -1835,7 +1815,7 @@ TEST_CASE("jit_invoke_v4_v6_programs_restart_extension_test", "[jit_mt_stress_te
     _mt_invoke_prog_stress_test(EBPF_EXECUTION_JIT, local_test_control_info);
 }
 
-TEST_CASE("jit_sockaddr_invoke_program_test", "[jit_mt_stress_test]")
+JIT_TEST_CASE("sockaddr_invoke_program_test", "[jit_mt_stress_test]")
 {
     // Test layout:
     // 1. Load the "cgroup_mt_connect6.o" JIT ebpf program.
@@ -1863,7 +1843,7 @@ TEST_CASE("jit_sockaddr_invoke_program_test", "[jit_mt_stress_test]")
     _mt_sockaddr_invoke_program_test(EBPF_EXECUTION_JIT, local_test_control_info);
 }
 
-TEST_CASE("jit_bindmonitor_tail_call_invoke_program_test", "[jit_mt_stress_test]")
+JIT_TEST_CASE("bindmonitor_tail_call_invoke_program_test", "[jit_mt_stress_test]")
 {
     // Test layout:
     // 1. Load the "bindmonitor_mt_tailcall.o" JIT ebpf program.
@@ -1879,7 +1859,6 @@ TEST_CASE("jit_bindmonitor_tail_call_invoke_program_test", "[jit_mt_stress_test]
     _print_test_control_info(local_test_control_info);
     _mt_bindmonitor_tail_call_invoke_program_test(EBPF_EXECUTION_JIT, local_test_control_info);
 }
-#endif // !defined(CONFIG_BPF_JIT_DISABLED)
 
 static void
 _mt_load_stress_test_with_restart_timing(
@@ -2067,9 +2046,9 @@ _mt_invoke_stress_test_multiple_programs(ebpf_execution_type_t program_type, con
         extension_restart_thread_context_table);
 }
 
-#if !defined(CONFIG_BPF_JIT_DISABLED)
-TEST_CASE("load_attach_stress_test_restart_during_load_jit", "[jit_mt_stress_test]")
+TEMPLATE_TEST_CASE("load_attach_stress_test_restart_during_load", "[jit_mt_stress_test]", JIT_NATIVE_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     // Test resiliency during program 'open + load + attach' sequence with extension restart.
     // Starts extension restart immediately and then begins program loading in multiple threads.
     // Tests JIT programs with multiple threads loading the same program.
@@ -2081,36 +2060,23 @@ TEST_CASE("load_attach_stress_test_restart_during_load_jit", "[jit_mt_stress_tes
     // Enable extension restart if not already enabled.
     local_test_control_info.extension_restart_enabled = true;
 
-    _print_test_control_info(local_test_control_info);
-    _mt_load_stress_test_with_restart_timing(EBPF_EXECUTION_JIT, local_test_control_info, true);
-}
-#endif // !defined(CONFIG_BPF_JIT_DISABLED)
-
-TEST_CASE("load_attach_stress_test_restart_during_load_native", "[native_mt_stress_test]")
-{
-    // Test resiliency during program 'open + load + attach' sequence with extension restart.
-    // Starts extension restart immediately and then begins program loading in multiple threads.
-    // Tests native programs with multiple threads loading copies of programs.
-
-    _km_test_init();
-    LOG_INFO("\nStarting test *** load_attach_stress_test_restart_during_load_native ***");
-    test_control_info local_test_control_info = _global_test_control_info;
-
-    // Enable extension restart and unique native programs for this test.
-    local_test_control_info.extension_restart_enabled = true;
-    local_test_control_info.use_unique_native_programs = true;
+    if constexpr (execution_type == EBPF_EXECUTION_NATIVE) {
+        // For native programs, use unique native programs for this test.
+        local_test_control_info.use_unique_native_programs = true;
+    }
 
     _print_test_control_info(local_test_control_info);
-    _mt_load_stress_test_with_restart_timing(EBPF_EXECUTION_NATIVE, local_test_control_info, true);
+    _mt_load_stress_test_with_restart_timing(execution_type, local_test_control_info, true);
 }
 
-#if !defined(CONFIG_BPF_JIT_DISABLED)
-TEST_CASE("load_attach_stress_test_restart_after_load_jit", "[jit_mt_stress_test]")
+TEMPLATE_TEST_CASE("load_attach_stress_test_restart_after_load", "[jit_mt_stress_test]", JIT_NATIVE_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     // Test resiliency after program 'open + load + attach' sequence with extension restart.
     // Completes program loading first, then starts extension restart.
     // Ensures loaded + attached programs continue to be invoked after extension restart.
     // Tests JIT programs with multiple threads loading the same program.
+    // Tests native programs with multiple threads loading copies of programs.
 
     _km_test_init();
     LOG_INFO("\nStarting test *** load_attach_stress_test_restart_after_load_jit ***");
@@ -2118,34 +2084,19 @@ TEST_CASE("load_attach_stress_test_restart_after_load_jit", "[jit_mt_stress_test
 
     // Enable extension restart if not already enabled.
     local_test_control_info.extension_restart_enabled = true;
+    if constexpr (execution_type == EBPF_EXECUTION_NATIVE) {
+        // For native programs, use unique native programs for this test.
+        local_test_control_info.use_unique_native_programs = true;
+    }
 
     _print_test_control_info(local_test_control_info);
-    _mt_load_stress_test_with_restart_timing(EBPF_EXECUTION_JIT, local_test_control_info, false);
-}
-#endif // !defined(CONFIG_BPF_JIT_DISABLED)
-
-TEST_CASE("load_attach_stress_test_restart_after_load_native", "[native_mt_stress_test]")
-{
-    // Test resiliency after program 'open + load + attach' sequence with extension restart.
-    // Completes program loading first, then starts extension restart.
-    // Ensures loaded + attached programs continue to be invoked after extension restart.
-    // Tests native programs with multiple threads loading copies of programs.
-
-    _km_test_init();
-    LOG_INFO("\nStarting test *** load_attach_stress_test_restart_after_load_native ***");
-    test_control_info local_test_control_info = _global_test_control_info;
-
-    // Enable extension restart and unique native programs for this test.
-    local_test_control_info.extension_restart_enabled = true;
-    local_test_control_info.use_unique_native_programs = true;
-
-    _print_test_control_info(local_test_control_info);
-    _mt_load_stress_test_with_restart_timing(EBPF_EXECUTION_NATIVE, local_test_control_info, false);
+    _mt_load_stress_test_with_restart_timing(execution_type, local_test_control_info, false);
 }
 
-#if !defined(CONFIG_BPF_JIT_DISABLED)
-TEST_CASE("invoke_different_programs_restart_extension_test_jit", "[jit_mt_stress_test]")
+TEMPLATE_TEST_CASE(
+    "invoke_different_programs_restart_extension_test", "[jit_mt_stress_test]", JIT_NATIVE_EXECUTION_TYPES)
 {
+    constexpr ebpf_execution_type_t execution_type = TestType::value;
     // Multi-threaded stress test where each thread loads different programs with extension restart.
     // Tests JIT programs with different programs in each thread.
 
@@ -2157,22 +2108,5 @@ TEST_CASE("invoke_different_programs_restart_extension_test_jit", "[jit_mt_stres
     local_test_control_info.threads_count = std::max(local_test_control_info.threads_count, 4u);
 
     _print_test_control_info(local_test_control_info);
-    _mt_invoke_stress_test_multiple_programs(EBPF_EXECUTION_JIT, local_test_control_info);
-}
-#endif // !defined(CONFIG_BPF_JIT_DISABLED)
-
-TEST_CASE("invoke_different_programs_restart_extension_test_native", "[native_mt_stress_test]")
-{
-    // Multi-threaded stress test where each thread loads different programs with extension restart.
-    // Tests native programs with different programs in each thread.
-
-    _km_test_init();
-    LOG_INFO("\nStarting test *** invoke_different_programs_restart_extension_test_native ***");
-    test_control_info local_test_control_info = _global_test_control_info;
-
-    // This test needs multiple threads for different programs.
-    local_test_control_info.threads_count = std::max(local_test_control_info.threads_count, 4u);
-
-    _print_test_control_info(local_test_control_info);
-    _mt_invoke_stress_test_multiple_programs(EBPF_EXECUTION_NATIVE, local_test_control_info);
+    _mt_invoke_stress_test_multiple_programs(execution_type, local_test_control_info);
 }
