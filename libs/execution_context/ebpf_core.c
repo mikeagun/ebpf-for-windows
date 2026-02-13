@@ -519,13 +519,14 @@ ebpf_core_create_map(
     _In_ const cxplat_utf8_string_t* map_name,
     _In_ const ebpf_map_definition_in_memory_t* ebpf_map_definition,
     ebpf_handle_t inner_map_handle,
+    uint32_t map_flags,
     _Out_ ebpf_handle_t* map_handle)
 {
     EBPF_LOG_ENTRY();
     ebpf_result_t retval;
     ebpf_map_t* map = NULL;
 
-    retval = ebpf_map_create(map_name, ebpf_map_definition, inner_map_handle, &map);
+    retval = ebpf_map_create(map_name, ebpf_map_definition, inner_map_handle, map_flags, &map);
     if (retval != EBPF_SUCCESS) {
         return retval;
     }
@@ -558,7 +559,8 @@ _ebpf_core_protocol_create_map(
         map_name.length = ((uint8_t*)request) + request->header.length - ((uint8_t*)request->data);
     }
 
-    retval = ebpf_core_create_map(&map_name, &request->ebpf_map_definition, request->inner_map_handle, &reply->handle);
+    retval = ebpf_core_create_map(
+        &map_name, &request->ebpf_map_definition, request->inner_map_handle, request->map_flags, &reply->handle);
 
     EBPF_RETURN_RESULT(retval);
 }
@@ -1161,7 +1163,8 @@ _ebpf_core_protocol_program_test_run(
         goto Done;
     }
 
-    options = (ebpf_program_test_run_options_t*)ebpf_allocate_with_tag(sizeof(ebpf_program_test_run_options_t), EBPF_POOL_TAG_DEFAULT);
+    options = (ebpf_program_test_run_options_t*)ebpf_allocate_with_tag(
+        sizeof(ebpf_program_test_run_options_t), EBPF_POOL_TAG_DEFAULT);
     if (!options) {
         retval = EBPF_NO_MEMORY;
         goto Done;

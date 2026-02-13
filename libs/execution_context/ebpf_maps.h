@@ -24,6 +24,7 @@ extern "C"
      * @param[in] map_name Name of the map.
      * @param[in] ebpf_map_definition Definition of the new map.
      * @param[in] inner_map_handle Handle to inner map, or ebpf_handle_invalid if none.
+     * @param[in] map_flags Map creation flags (BPF_F_RDONLY, BPF_F_WRONLY, etc.).
      * @param[out] map Pointer to memory that will contain the map on success.
      * @retval EBPF_SUCCESS The operation was successful.
      * @retval EBPF_NO_MEMORY Unable to allocate resources for this
@@ -34,6 +35,7 @@ extern "C"
         _In_ const cxplat_utf8_string_t* map_name,
         _In_ const ebpf_map_definition_in_memory_t* ebpf_map_definition,
         ebpf_handle_t inner_map_handle,
+        uint32_t map_flags,
         _Outptr_ ebpf_map_t** map);
 
     /**

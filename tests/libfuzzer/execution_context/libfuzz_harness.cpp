@@ -4,10 +4,10 @@
 #include "ebpf_core.h"
 #include "ebpf_handle.h"
 #include "ebpf_program.h"
-#include "spec/vm_isa.hpp"
 #include "helpers.h"
 #include "libfuzzer.h"
 #include "platform.h"
+#include "spec/vm_isa.hpp"
 
 #include <chrono>
 #include <condition_variable>
@@ -376,7 +376,7 @@ class fuzz_wrapper
                 inner_map_handle = map_to_handle[BPF_MAP_TYPE_HASH];
             }
 
-            if (ebpf_core_create_map(&utf8_name, &modified_def, inner_map_handle, &handle) == EBPF_SUCCESS) {
+            if (ebpf_core_create_map(&utf8_name, &modified_def, inner_map_handle, 0, &handle) == EBPF_SUCCESS) {
                 handles.push_back(handle);
             } else {
                 throw std::runtime_error("create of map " + name + " failed");

@@ -745,6 +745,120 @@ TEST_CASE("duplicate_fd", "")
     REQUIRE(ebpf_close_fd(map_fd1) == EBPF_SUCCESS);
 }
 
+TEST_CASE("map_flags_rdonly_api", "[map_flags]")
+{
+    // Create a read-only (user-mode side) hash map.
+    bpf_map_create_opts opts = {sizeof(opts)};
+    opts.map_flags = BPF_F_RDONLY;
+    fd_t map_fd = bpf_map_create(BPF_MAP_TYPE_HASH, "rdonly_map", sizeof(uint32_t), sizeof(uint32_t), 10, &opts);
+    REQUIRE(map_fd > 0);
+
+    // Verify flags in map info.
+    bpf_map_info info = {};
+    uint32_t info_size = sizeof(info);
+    REQUIRE(bpf_obj_get_info_by_fd(map_fd, &info, &info_size) == 0);
+    REQUIRE(info.map_flags == BPF_F_RDONLY);
+
+    // User-mode update should fail with EPERM.
+    uint32_t key = 1;
+    uint32_t value = 42;
+    REQUIRE(bpf_map_update_elem(map_fd, &key, &value, 0) == -EPERM);
+
+    // User-mode delete should fail with EPERM.
+    REQUIRE(bpf_map_delete_elem(map_fd, &key) == -EPERM);
+
+    // User-mode lookup is allowed (returns ENOENT because map is empty).
+    uint32_t found_value = 0;
+    REQUIRE(bpf_map_lookup_elem(map_fd, &key, &found_value) == -ENOENT);
+
+    // User-mode lookup_and_delete is a write — should fail with EPERM.
+    REQUIRE(bpf_map_lookup_and_delete_elem(map_fd, &key, &found_value) == -EPERM);
+
+    _close(map_fd);
+}
+
+TEST_CASE("map_flags_wronly_api", "[map_flags]")
+{
+    // Create a write-only (user-mode side) hash map.
+    bpf_map_create_opts opts = {sizeof(opts)};
+    opts.map_flags = BPF_F_WRONLY;
+    fd_t map_fd = bpf_map_create(BPF_MAP_TYPE_HASH, "wronly_map", sizeof(uint32_t), sizeof(uint32_t), 10, &opts);
+    REQUIRE(map_fd > 0);
+
+    // Verify flags in map info.
+    bpf_map_info info = {};
+    uint32_t info_size = sizeof(info);
+    REQUIRE(bpf_obj_get_info_by_fd(map_fd, &info, &info_size) == 0);
+    REQUIRE(info.map_flags == BPF_F_WRONLY);
+
+    // User-mode update should succeed.
+    uint32_t key = 1;
+    uint32_t value = 42;
+    REQUIRE(bpf_map_update_elem(map_fd, &key, &value, 0) == 0);
+
+    // User-mode lookup should fail with EPERM.
+    uint32_t found_value = 0;
+    REQUIRE(bpf_map_lookup_elem(map_fd, &key, &found_value) == -EPERM);
+
+    // User-mode delete should succeed (write allowed).
+    REQUIRE(bpf_map_delete_elem(map_fd, &key) == 0);
+
+    // next_key should succeed regardless of flags.
+    uint32_t next_key = 0;
+    REQUIRE(bpf_map_get_next_key(map_fd, NULL, &next_key) == -ENOENT);
+
+    _close(map_fd);
+}
+
+TEST_CASE("map_flags_create_invalid_api", "[map_flags][negative]")
+{
+    bpf_map_create_opts opts = {sizeof(opts)};
+
+    // Conflicting user-mode flags.
+    opts.map_flags = BPF_F_RDONLY | BPF_F_WRONLY;
+    fd_t map_fd = bpf_map_create(BPF_MAP_TYPE_HASH, "bad", sizeof(uint32_t), sizeof(uint32_t), 10, &opts);
+    REQUIRE(map_fd < 0);
+    REQUIRE(errno == EINVAL);
+
+    // Conflicting program-side flags.
+    opts.map_flags = BPF_F_RDONLY_PROG | BPF_F_WRONLY_PROG;
+    map_fd = bpf_map_create(BPF_MAP_TYPE_HASH, "bad", sizeof(uint32_t), sizeof(uint32_t), 10, &opts);
+    REQUIRE(map_fd < 0);
+    REQUIRE(errno == EINVAL);
+
+    // Unsupported flags.
+    opts.map_flags = 0x80000000;
+    map_fd = bpf_map_create(BPF_MAP_TYPE_HASH, "bad", sizeof(uint32_t), sizeof(uint32_t), 10, &opts);
+    REQUIRE(map_fd < 0);
+    REQUIRE(errno == EINVAL);
+}
+
+TEST_CASE("map_flags_combined_api", "[map_flags]")
+{
+    // Create with combined flags from different sides.
+    bpf_map_create_opts opts = {sizeof(opts)};
+    opts.map_flags = BPF_F_RDONLY | BPF_F_WRONLY_PROG;
+    fd_t map_fd = bpf_map_create(BPF_MAP_TYPE_HASH, "combined", sizeof(uint32_t), sizeof(uint32_t), 10, &opts);
+    REQUIRE(map_fd > 0);
+
+    // Verify flags reported correctly.
+    bpf_map_info info = {};
+    uint32_t info_size = sizeof(info);
+    REQUIRE(bpf_obj_get_info_by_fd(map_fd, &info, &info_size) == 0);
+    REQUIRE(info.map_flags == (BPF_F_RDONLY | BPF_F_WRONLY_PROG));
+
+    // User-mode write should be denied (RDONLY from user side).
+    uint32_t key = 1;
+    uint32_t value = 42;
+    REQUIRE(bpf_map_update_elem(map_fd, &key, &value, 0) == -EPERM);
+
+    // User-mode read is allowed (returns ENOENT because map is empty).
+    uint32_t found_value = 0;
+    REQUIRE(bpf_map_lookup_elem(map_fd, &key, &found_value) == -ENOENT);
+
+    _close(map_fd);
+}
+
 TEST_CASE("tailcall_load_test_native", "[tailcall_load_test]") { tailcall_load_test("tail_call_multiple.sys"); }
 
 int

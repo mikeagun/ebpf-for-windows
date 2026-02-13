@@ -143,6 +143,7 @@ typedef struct _ebpf_operation_create_map_request
     struct _ebpf_operation_header header;
     ebpf_map_definition_in_memory_t ebpf_map_definition;
     ebpf_handle_t inner_map_handle;
+    uint32_t map_flags;
     uint8_t data[1];
 } ebpf_operation_create_map_request_t;
 

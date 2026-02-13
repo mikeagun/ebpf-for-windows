@@ -59,6 +59,7 @@ typedef struct bpf_map
 
     struct bpf_map* inner_map;
     ebpf_map_definition_in_memory_t map_definition;
+    uint32_t map_flags;
     char* pin_path;
     bool pinned;
     // Whether this map is newly created or reused

@@ -69,10 +69,7 @@ _ebpf_core_initializer::initialize()
     REQUIRE(ebpf_core_initiate() == EBPF_SUCCESS);
 }
 
-_ebpf_core_initializer::~_ebpf_core_initializer()
-{
-    ebpf_core_terminate();
-}
+_ebpf_core_initializer::~_ebpf_core_initializer() { ebpf_core_terminate(); }
 
 void
 create_various_objects(std::vector<ebpf_handle_t>& program_handles, std::map<std::string, ebpf_handle_t>& map_handles)
@@ -99,7 +96,7 @@ create_various_objects(std::vector<ebpf_handle_t>& program_handles, std::map<std
         if (def.inner_map_id != 0) {
             inner_handle = map_handles.begin()->second;
         }
-        REQUIRE(ebpf_core_create_map(&utf8_name, &def, inner_handle, &handle) == EBPF_SUCCESS);
+        REQUIRE(ebpf_core_create_map(&utf8_name, &def, inner_handle, 0, &handle) == EBPF_SUCCESS);
         map_handles.insert({name, handle});
     }
 }
@@ -279,7 +276,7 @@ test_program_context()
         ebpf_map_t* local_map;
         cxplat_utf8_string_t map_name = {0};
         REQUIRE(
-            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, &local_map) == EBPF_SUCCESS);
+            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, 0, &local_map) == EBPF_SUCCESS);
         map.reset(local_map);
     }
 
@@ -438,10 +435,7 @@ test_program_context()
 }
 
 // Only run the test if JIT is enabled.
-TEST_CASE("program", "[execution_context]")
-{
-    test_program_context();
-}
+TEST_CASE("program", "[execution_context]") { test_program_context(); }
 #endif
 
 #if !defined(CONFIG_BPF_JIT_DISABLED)

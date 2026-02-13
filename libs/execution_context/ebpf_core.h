@@ -161,6 +161,7 @@ extern "C"
         _In_ const cxplat_utf8_string_t* map_name,
         _In_ const ebpf_map_definition_in_memory_t* ebpf_map_definition,
         ebpf_handle_t inner_map_handle,
+        uint32_t map_flags,
         _Out_ ebpf_handle_t* map_handle);
 
     /**

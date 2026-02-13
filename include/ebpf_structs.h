@@ -413,6 +413,17 @@ struct bpf_map_info
 #define BPF_NOEXIST 0x1
 #define BPF_EXIST 0x2
 
+/** @name Map creation flags
+ *  Flags for controlling access to BPF maps.
+ *  These match the Linux BPF_F_* flags in uapi/linux/bpf.h.
+ * @{
+ */
+#define BPF_F_RDONLY (1U << 3)      ///< Map is read-only from user-mode (syscall) side.
+#define BPF_F_WRONLY (1U << 4)      ///< Map is write-only from user-mode (syscall) side.
+#define BPF_F_RDONLY_PROG (1U << 7) ///< Map is read-only from eBPF program side.
+#define BPF_F_WRONLY_PROG (1U << 8) ///< Map is write-only from eBPF program side.
+/** @} */
+
 /**
  * @brief eBPF program information.  This structure can be retrieved by calling
  * \ref bpf_obj_get_info_by_fd on a program fd.

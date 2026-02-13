@@ -108,7 +108,7 @@ typedef class _ebpf_map_test_state
         ebpf_map_definition_in_memory_t definition{
             type, sizeof(uint32_t), sizeof(uint64_t), map_size.has_value() ? map_size.value() : ebpf_get_cpu_count()};
 
-        (void)ebpf_map_create(&name, &definition, ebpf_handle_invalid, &map);
+        (void)ebpf_map_create(&name, &definition, ebpf_handle_invalid, 0, &map);
 
         for (uint32_t i = 0; i < definition.max_entries; i++) {
             uint64_t value = 0;
@@ -219,7 +219,7 @@ typedef class _ebpf_map_lpm_trie_test_state
         ebpf_map_definition_in_memory_t definition{
             BPF_MAP_TYPE_LPM_TRIE, sizeof(uint32_t) * 2, sizeof(uint64_t), static_cast<uint32_t>(route_count)};
 
-        (void)ebpf_map_create(&name, &definition, ebpf_handle_invalid, &map);
+        (void)ebpf_map_create(&name, &definition, ebpf_handle_invalid, 0, &map);
 
         // Prefix Length Distributions from https://bgp.potaroo.net/as2.0/bgp-active.html
         std::vector<size_t> ipv4_prefix_length_distribution{

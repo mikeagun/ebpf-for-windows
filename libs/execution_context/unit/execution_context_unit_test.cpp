@@ -123,7 +123,7 @@ _test_crud_operations(ebpf_map_type_t map_type)
         ebpf_map_t* local_map;
         cxplat_utf8_string_t map_name = {0};
         REQUIRE(
-            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, &local_map) == EBPF_SUCCESS);
+            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, 0, &local_map) == EBPF_SUCCESS);
         map.reset(local_map);
     }
     std::vector<uint8_t> value(ebpf_map_get_definition(map.get())->value_size);
@@ -383,8 +383,422 @@ TEST_CASE("map_create_invalid", "[execution_context][negative]")
         ebpf_handle_t handle;
         ebpf_handle_t inner_handle = ebpf_handle_invalid;
         CAPTURE(name);
-        REQUIRE(ebpf_core_create_map(&utf8_name, &def, inner_handle, &handle) == EBPF_INVALID_ARGUMENT);
+        REQUIRE(ebpf_core_create_map(&utf8_name, &def, inner_handle, 0, &handle) == EBPF_INVALID_ARGUMENT);
     }
+}
+
+TEST_CASE("map_flags_create_valid", "[execution_context]")
+{
+    _ebpf_core_initializer core;
+    core.initialize();
+
+    ebpf_map_definition_in_memory_t map_definition{BPF_MAP_TYPE_HASH, sizeof(uint32_t), sizeof(uint64_t), 10};
+    cxplat_utf8_string_t map_name = {0};
+
+    // Create with each valid flag individually.
+    uint32_t valid_flags[] = {BPF_F_RDONLY, BPF_F_WRONLY, BPF_F_RDONLY_PROG, BPF_F_WRONLY_PROG};
+    for (auto flags : valid_flags) {
+        ebpf_map_t* local_map = nullptr;
+        CAPTURE(flags);
+        REQUIRE(
+            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, flags, &local_map) ==
+            EBPF_SUCCESS);
+        EBPF_OBJECT_RELEASE_REFERENCE(reinterpret_cast<ebpf_core_object_t*>(local_map));
+    }
+
+    // Create with combined flags (different sides) and verify get_info reports them.
+    {
+        ebpf_map_t* local_map = nullptr;
+        uint32_t combined = BPF_F_RDONLY | BPF_F_WRONLY_PROG;
+        REQUIRE(
+            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, combined, &local_map) ==
+            EBPF_SUCCESS);
+
+        bpf_map_info info = {};
+        uint16_t info_size = sizeof(info);
+        REQUIRE(ebpf_map_get_info(local_map, reinterpret_cast<uint8_t*>(&info), &info_size) == EBPF_SUCCESS);
+        REQUIRE(info.map_flags == combined);
+
+        EBPF_OBJECT_RELEASE_REFERENCE(reinterpret_cast<ebpf_core_object_t*>(local_map));
+    }
+}
+
+TEST_CASE("map_flags_create_invalid", "[execution_context][negative]")
+{
+    _ebpf_core_initializer core;
+    core.initialize();
+
+    ebpf_map_definition_in_memory_t map_definition{BPF_MAP_TYPE_HASH, sizeof(uint32_t), sizeof(uint64_t), 10};
+    cxplat_utf8_string_t map_name = {0};
+
+    // Reject conflicting flags on user-mode side.
+    {
+        ebpf_map_t* local_map = nullptr;
+        REQUIRE(
+            ebpf_map_create(
+                &map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, BPF_F_RDONLY | BPF_F_WRONLY, &local_map) ==
+            EBPF_INVALID_ARGUMENT);
+    }
+
+    // Reject conflicting flags on program side.
+    {
+        ebpf_map_t* local_map = nullptr;
+        REQUIRE(
+            ebpf_map_create(
+                &map_name,
+                &map_definition,
+                (uintptr_t)ebpf_handle_invalid,
+                BPF_F_RDONLY_PROG | BPF_F_WRONLY_PROG,
+                &local_map) == EBPF_INVALID_ARGUMENT);
+    }
+
+    // Reject unsupported flags.
+    {
+        ebpf_map_t* local_map = nullptr;
+        REQUIRE(
+            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, 0x80000000, &local_map) ==
+            EBPF_INVALID_ARGUMENT);
+    }
+}
+
+TEST_CASE("map_flags_rdonly_usermode", "[execution_context]")
+{
+    _ebpf_core_initializer core;
+    core.initialize();
+
+    ebpf_map_definition_in_memory_t map_definition{BPF_MAP_TYPE_HASH, sizeof(uint32_t), sizeof(uint64_t), 10};
+    map_ptr map;
+    {
+        ebpf_map_t* local_map = nullptr;
+        cxplat_utf8_string_t map_name = {0};
+        REQUIRE(
+            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, BPF_F_RDONLY, &local_map) ==
+            EBPF_SUCCESS);
+        map.reset(local_map);
+    }
+
+    uint32_t key = 1;
+    uint64_t value = 42;
+
+    // eBPF program side (HELPER flag) can write.
+    REQUIRE(
+        ebpf_map_update_entry(
+            map.get(),
+            sizeof(key),
+            reinterpret_cast<const uint8_t*>(&key),
+            sizeof(value),
+            reinterpret_cast<const uint8_t*>(&value),
+            EBPF_ANY,
+            EBPF_MAP_FLAG_HELPER) == EBPF_SUCCESS);
+
+    // User-mode side (no HELPER flag) can read.
+    uint64_t found_value = 0;
+    REQUIRE(
+        ebpf_map_find_entry(
+            map.get(),
+            sizeof(key),
+            reinterpret_cast<const uint8_t*>(&key),
+            sizeof(found_value),
+            reinterpret_cast<uint8_t*>(&found_value),
+            0) == EBPF_SUCCESS);
+    REQUIRE(found_value == 42);
+
+    // User-mode side update should be denied.
+    value = 99;
+    REQUIRE(
+        ebpf_map_update_entry(
+            map.get(),
+            sizeof(key),
+            reinterpret_cast<const uint8_t*>(&key),
+            sizeof(value),
+            reinterpret_cast<const uint8_t*>(&value),
+            EBPF_ANY,
+            0) == EBPF_ACCESS_DENIED);
+
+    // User-mode side delete should be denied.
+    REQUIRE(
+        ebpf_map_delete_entry(map.get(), sizeof(key), reinterpret_cast<const uint8_t*>(&key), 0) == EBPF_ACCESS_DENIED);
+
+    // User-mode side find-and-delete should be denied (write operation).
+    found_value = 0;
+    REQUIRE(
+        ebpf_map_find_entry(
+            map.get(),
+            sizeof(key),
+            reinterpret_cast<const uint8_t*>(&key),
+            sizeof(found_value),
+            reinterpret_cast<uint8_t*>(&found_value),
+            EBPF_MAP_FIND_FLAG_DELETE) == EBPF_ACCESS_DENIED);
+}
+
+TEST_CASE("map_flags_wronly_usermode", "[execution_context]")
+{
+    _ebpf_core_initializer core;
+    core.initialize();
+
+    ebpf_map_definition_in_memory_t map_definition{BPF_MAP_TYPE_HASH, sizeof(uint32_t), sizeof(uint64_t), 10};
+    map_ptr map;
+    {
+        ebpf_map_t* local_map = nullptr;
+        cxplat_utf8_string_t map_name = {0};
+        REQUIRE(
+            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, BPF_F_WRONLY, &local_map) ==
+            EBPF_SUCCESS);
+        map.reset(local_map);
+    }
+
+    uint32_t key = 1;
+    uint64_t value = 42;
+
+    // User-mode side can write.
+    REQUIRE(
+        ebpf_map_update_entry(
+            map.get(),
+            sizeof(key),
+            reinterpret_cast<const uint8_t*>(&key),
+            sizeof(value),
+            reinterpret_cast<const uint8_t*>(&value),
+            EBPF_ANY,
+            0) == EBPF_SUCCESS);
+
+    // User-mode side read should be denied.
+    uint64_t found_value = 0;
+    REQUIRE(
+        ebpf_map_find_entry(
+            map.get(),
+            sizeof(key),
+            reinterpret_cast<const uint8_t*>(&key),
+            sizeof(found_value),
+            reinterpret_cast<uint8_t*>(&found_value),
+            0) == EBPF_ACCESS_DENIED);
+
+    // next_key should always succeed regardless of flags (matches Linux behavior).
+    uint32_t next_key = 0;
+    REQUIRE(ebpf_map_next_key(map.get(), sizeof(key), nullptr, reinterpret_cast<uint8_t*>(&next_key)) == EBPF_SUCCESS);
+    REQUIRE(next_key == 1);
+}
+
+TEST_CASE("map_flags_rdonly_prog", "[execution_context]")
+{
+    _ebpf_core_initializer core;
+    core.initialize();
+
+    ebpf_map_definition_in_memory_t map_definition{BPF_MAP_TYPE_HASH, sizeof(uint32_t), sizeof(uint64_t), 10};
+    map_ptr map;
+    {
+        ebpf_map_t* local_map = nullptr;
+        cxplat_utf8_string_t map_name = {0};
+        REQUIRE(
+            ebpf_map_create(
+                &map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, BPF_F_RDONLY_PROG, &local_map) ==
+            EBPF_SUCCESS);
+        map.reset(local_map);
+    }
+
+    uint32_t key = 1;
+    uint64_t value = 42;
+
+    // User-mode side can write (RDONLY_PROG doesn't restrict user-mode).
+    REQUIRE(
+        ebpf_map_update_entry(
+            map.get(),
+            sizeof(key),
+            reinterpret_cast<const uint8_t*>(&key),
+            sizeof(value),
+            reinterpret_cast<const uint8_t*>(&value),
+            EBPF_ANY,
+            0) == EBPF_SUCCESS);
+
+    // eBPF program side can read (helper returns pointer to value).
+    uint8_t* found_ptr = nullptr;
+    REQUIRE(
+        ebpf_map_find_entry(
+            map.get(),
+            0,
+            reinterpret_cast<const uint8_t*>(&key),
+            sizeof(found_ptr),
+            reinterpret_cast<uint8_t*>(&found_ptr),
+            EBPF_MAP_FLAG_HELPER) == EBPF_SUCCESS);
+    REQUIRE(found_ptr != nullptr);
+    REQUIRE(*reinterpret_cast<uint64_t*>(found_ptr) == 42);
+
+    // eBPF program side update should be denied.
+    value = 99;
+    REQUIRE(
+        ebpf_map_update_entry(
+            map.get(),
+            sizeof(key),
+            reinterpret_cast<const uint8_t*>(&key),
+            sizeof(value),
+            reinterpret_cast<const uint8_t*>(&value),
+            EBPF_ANY,
+            EBPF_MAP_FLAG_HELPER) == EBPF_ACCESS_DENIED);
+
+    // eBPF program side delete should be denied.
+    REQUIRE(
+        ebpf_map_delete_entry(map.get(), sizeof(key), reinterpret_cast<const uint8_t*>(&key), EBPF_MAP_FLAG_HELPER) ==
+        EBPF_ACCESS_DENIED);
+}
+
+TEST_CASE("map_flags_wronly_prog", "[execution_context]")
+{
+    _ebpf_core_initializer core;
+    core.initialize();
+
+    ebpf_map_definition_in_memory_t map_definition{BPF_MAP_TYPE_HASH, sizeof(uint32_t), sizeof(uint64_t), 10};
+    map_ptr map;
+    {
+        ebpf_map_t* local_map = nullptr;
+        cxplat_utf8_string_t map_name = {0};
+        REQUIRE(
+            ebpf_map_create(
+                &map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, BPF_F_WRONLY_PROG, &local_map) ==
+            EBPF_SUCCESS);
+        map.reset(local_map);
+    }
+
+    uint32_t key = 1;
+    uint64_t value = 42;
+
+    // eBPF program side can write.
+    REQUIRE(
+        ebpf_map_update_entry(
+            map.get(),
+            sizeof(key),
+            reinterpret_cast<const uint8_t*>(&key),
+            sizeof(value),
+            reinterpret_cast<const uint8_t*>(&value),
+            EBPF_ANY,
+            EBPF_MAP_FLAG_HELPER) == EBPF_SUCCESS);
+
+    // eBPF program side read should be denied.
+    uint64_t found_value = 0;
+    REQUIRE(
+        ebpf_map_find_entry(
+            map.get(),
+            sizeof(key),
+            reinterpret_cast<const uint8_t*>(&key),
+            sizeof(found_value),
+            reinterpret_cast<uint8_t*>(&found_value),
+            EBPF_MAP_FLAG_HELPER) == EBPF_ACCESS_DENIED);
+
+    // User-mode side can read (WRONLY_PROG doesn't restrict user-mode).
+    REQUIRE(
+        ebpf_map_find_entry(
+            map.get(),
+            sizeof(key),
+            reinterpret_cast<const uint8_t*>(&key),
+            sizeof(found_value),
+            reinterpret_cast<uint8_t*>(&found_value),
+            0) == EBPF_SUCCESS);
+    REQUIRE(found_value == 42);
+}
+
+TEST_CASE("map_flags_queue_stack", "[execution_context]")
+{
+    _ebpf_core_initializer core;
+    core.initialize();
+
+    SECTION("BPF_MAP_TYPE_QUEUE")
+    {
+        ebpf_map_definition_in_memory_t map_definition{BPF_MAP_TYPE_QUEUE, 0, sizeof(uint32_t), 10};
+        map_ptr map;
+        {
+            ebpf_map_t* local_map = nullptr;
+            cxplat_utf8_string_t map_name = {0};
+            REQUIRE(
+                ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, BPF_F_RDONLY, &local_map) ==
+                EBPF_SUCCESS);
+            map.reset(local_map);
+        }
+
+        // User-mode push (write) should be denied.
+        uint32_t value = 42;
+        REQUIRE(
+            ebpf_map_push_entry(map.get(), sizeof(value), reinterpret_cast<uint8_t*>(&value), 0) == EBPF_ACCESS_DENIED);
+
+        // Program-side push should succeed.
+        REQUIRE(
+            ebpf_map_push_entry(map.get(), sizeof(value), reinterpret_cast<uint8_t*>(&value), EBPF_MAP_FLAG_HELPER) ==
+            EBPF_SUCCESS);
+
+        // User-mode peek (read) should succeed.
+        uint32_t peek_value = 0;
+        REQUIRE(
+            ebpf_map_peek_entry(map.get(), sizeof(peek_value), reinterpret_cast<uint8_t*>(&peek_value), 0) ==
+            EBPF_SUCCESS);
+        REQUIRE(peek_value == 42);
+
+        // User-mode pop (write) should be denied.
+        uint32_t pop_value = 0;
+        REQUIRE(
+            ebpf_map_pop_entry(map.get(), sizeof(pop_value), reinterpret_cast<uint8_t*>(&pop_value), 0) ==
+            EBPF_ACCESS_DENIED);
+    }
+
+    SECTION("BPF_MAP_TYPE_STACK")
+    {
+        ebpf_map_definition_in_memory_t map_definition{BPF_MAP_TYPE_STACK, 0, sizeof(uint32_t), 10};
+        map_ptr map;
+        {
+            ebpf_map_t* local_map = nullptr;
+            cxplat_utf8_string_t map_name = {0};
+            REQUIRE(
+                ebpf_map_create(
+                    &map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, BPF_F_WRONLY_PROG, &local_map) ==
+                EBPF_SUCCESS);
+            map.reset(local_map);
+        }
+
+        // User-mode push should succeed (WRONLY_PROG doesn't restrict user-mode).
+        uint32_t value = 99;
+        REQUIRE(ebpf_map_push_entry(map.get(), sizeof(value), reinterpret_cast<uint8_t*>(&value), 0) == EBPF_SUCCESS);
+
+        // Program-side push (write) should succeed.
+        value = 100;
+        REQUIRE(
+            ebpf_map_push_entry(map.get(), sizeof(value), reinterpret_cast<uint8_t*>(&value), EBPF_MAP_FLAG_HELPER) ==
+            EBPF_SUCCESS);
+
+        // Program-side peek (read) should be denied.
+        uint32_t peek_value = 0;
+        REQUIRE(
+            ebpf_map_peek_entry(
+                map.get(), sizeof(peek_value), reinterpret_cast<uint8_t*>(&peek_value), EBPF_MAP_FLAG_HELPER) ==
+            EBPF_ACCESS_DENIED);
+
+        // User-mode peek should succeed.
+        REQUIRE(
+            ebpf_map_peek_entry(map.get(), sizeof(peek_value), reinterpret_cast<uint8_t*>(&peek_value), 0) ==
+            EBPF_SUCCESS);
+        REQUIRE(peek_value == 100);
+    }
+}
+
+TEST_CASE("EBPF_OPERATION_CREATE_MAP_flags", "[execution_context][negative]")
+{
+    NEGATIVE_TEST_PROLOG();
+    std::vector<uint8_t> request(EBPF_OFFSET_OF(ebpf_operation_create_map_request_t, data));
+    std::vector<uint8_t> reply(sizeof(ebpf_operation_create_map_reply_t));
+    auto create_map_request = reinterpret_cast<ebpf_operation_create_map_request_t*>(request.data());
+
+    // Conflicting user-mode flags via IOCTL.
+    create_map_request->ebpf_map_definition = _map_definitions["BPF_MAP_TYPE_HASH"];
+    create_map_request->inner_map_handle = ebpf_handle_invalid;
+    create_map_request->map_flags = BPF_F_RDONLY | BPF_F_WRONLY;
+    REQUIRE(invoke_protocol(EBPF_OPERATION_CREATE_MAP, request, reply) == EBPF_INVALID_ARGUMENT);
+
+    // Conflicting program-side flags via IOCTL.
+    create_map_request->map_flags = BPF_F_RDONLY_PROG | BPF_F_WRONLY_PROG;
+    REQUIRE(invoke_protocol(EBPF_OPERATION_CREATE_MAP, request, reply) == EBPF_INVALID_ARGUMENT);
+
+    // Unsupported flags via IOCTL.
+    create_map_request->map_flags = 0x80000000;
+    REQUIRE(invoke_protocol(EBPF_OPERATION_CREATE_MAP, request, reply) == EBPF_INVALID_ARGUMENT);
+
+    // Valid flags should succeed.
+    create_map_request->map_flags = BPF_F_RDONLY;
+    REQUIRE(invoke_protocol(EBPF_OPERATION_CREATE_MAP, request, reply) == EBPF_SUCCESS);
 }
 
 // Helper struct to represent a 32 bit IP prefix.
@@ -455,7 +869,7 @@ TEST_CASE("map_crud_operations_lpm_trie_32", "[execution_context]")
         ebpf_map_t* local_map;
         cxplat_utf8_string_t map_name = {0};
         REQUIRE(
-            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, &local_map) == EBPF_SUCCESS);
+            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, 0, &local_map) == EBPF_SUCCESS);
         map.reset(local_map);
     }
 
@@ -558,7 +972,7 @@ TEST_CASE("map_crud_operations_lpm_trie_32", "[execution_context][negative]")
         ebpf_map_t* local_map;
         cxplat_utf8_string_t map_name = {0};
         REQUIRE(
-            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, &local_map) == EBPF_SUCCESS);
+            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, 0, &local_map) == EBPF_SUCCESS);
         map.reset(local_map);
     }
 
@@ -751,7 +1165,7 @@ TEST_CASE("map_crud_operations_lpm_trie_128", "[execution_context]")
         ebpf_map_t* local_map;
         cxplat_utf8_string_t map_name = {0};
         REQUIRE(
-            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, &local_map) == EBPF_SUCCESS);
+            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, 0, &local_map) == EBPF_SUCCESS);
         map.reset(local_map);
     }
 
@@ -877,7 +1291,7 @@ TEST_CASE("map_crud_operations_queue", "[execution_context]")
         ebpf_map_t* local_map;
         cxplat_utf8_string_t map_name = {0};
         REQUIRE(
-            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, &local_map) == EBPF_SUCCESS);
+            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, 0, &local_map) == EBPF_SUCCESS);
         map.reset(local_map);
     }
     uint32_t return_value = MAXUINT32;
@@ -962,7 +1376,7 @@ TEST_CASE("map_crud_operations_stack", "[execution_context]")
         ebpf_map_t* local_map;
         cxplat_utf8_string_t map_name = {0};
         REQUIRE(
-            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, &local_map) == EBPF_SUCCESS);
+            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, 0, &local_map) == EBPF_SUCCESS);
         map.reset(local_map);
     }
     uint32_t return_value = MAXUINT32;
@@ -1143,7 +1557,7 @@ TEST_CASE("name size", "[execution_context]")
     ebpf_map_definition_in_memory_t map_definition{BPF_MAP_TYPE_HASH, sizeof(uint32_t), sizeof(uint64_t), 10};
     ebpf_map_t* local_map;
     REQUIRE(
-        ebpf_map_create(&oversize_name, &map_definition, (uintptr_t)ebpf_handle_invalid, &local_map) ==
+        ebpf_map_create(&oversize_name, &map_definition, (uintptr_t)ebpf_handle_invalid, 0, &local_map) ==
         EBPF_INVALID_ARGUMENT);
 }
 
@@ -1179,7 +1593,7 @@ TEST_CASE("ring_buffer_async_query", "[execution_context][ring_buffer]")
         ebpf_map_t* local_map;
         cxplat_utf8_string_t map_name = {0};
         REQUIRE(
-            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, &local_map) == EBPF_SUCCESS);
+            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, 0, &local_map) == EBPF_SUCCESS);
         map.reset(local_map);
     }
 
@@ -1235,7 +1649,7 @@ TEST_CASE("ring_buffer_sync_query", "[execution_context][ring_buffer]")
         ebpf_map_t* local_map;
         cxplat_utf8_string_t map_name = {0};
         REQUIRE(
-            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, &local_map) == EBPF_SUCCESS);
+            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, 0, &local_map) == EBPF_SUCCESS);
         map.reset(local_map);
     }
 
@@ -1280,7 +1694,7 @@ TEST_CASE("perf_event_array_unsupported_ops", "[execution_context][perf_event_ar
         ebpf_map_t* local_map;
         cxplat_utf8_string_t map_name = {0};
         REQUIRE(
-            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, &local_map) == EBPF_SUCCESS);
+            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, 0, &local_map) == EBPF_SUCCESS);
         map.reset(local_map);
     }
 
@@ -1406,7 +1820,7 @@ TEST_CASE("perf_event_array_output", "[execution_context][perf_event_array]")
         ebpf_map_t* local_map;
         cxplat_utf8_string_t map_name = {0};
         REQUIRE(
-            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, &local_map) == EBPF_SUCCESS);
+            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, 0, &local_map) == EBPF_SUCCESS);
         map.reset(local_map);
     }
     uint32_t cpu_id = 0;
@@ -1472,7 +1886,7 @@ TEST_CASE("perf_event_array_output_percpu", "[execution_context][perf_event_arra
         ebpf_map_t* local_map;
         cxplat_utf8_string_t map_name = {0};
         REQUIRE(
-            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, &local_map) == EBPF_SUCCESS);
+            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, 0, &local_map) == EBPF_SUCCESS);
         map.reset(local_map);
     }
 
@@ -1580,7 +1994,7 @@ TEST_CASE("perf_event_array_output_capture", "[execution_context][perf_event_arr
         ebpf_map_t* local_map;
         cxplat_utf8_string_t map_name = {0};
         REQUIRE(
-            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, &local_map) == EBPF_SUCCESS);
+            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, 0, &local_map) == EBPF_SUCCESS);
         map.reset(local_map);
     }
     uint32_t cpu_id = 0;
@@ -1726,7 +2140,7 @@ TEST_CASE("perf_event_array_async_query", "[execution_context][perf_event_array]
         ebpf_map_t* local_map;
         cxplat_utf8_string_t map_name = {0};
         REQUIRE(
-            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, &local_map) == EBPF_SUCCESS);
+            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, 0, &local_map) == EBPF_SUCCESS);
         map.reset(local_map);
     }
 
@@ -2267,10 +2681,7 @@ TEST_CASE("EBPF_OPERATION_LOAD_NATIVE_MODULE short header", "[execution_context]
             completion) == EBPF_ARITHMETIC_OVERFLOW);
 }
 
-#define EBPF_PROGRAM_TYPE_TEST_GUID                                                    \
-    {                                                                                  \
-        0x8ee1b757, 0xc0b2, 0x4c84, { 0xac, 0x07, 0x0c, 0x76, 0x29, 0x8f, 0x1d, 0xc9 } \
-    }
+#define EBPF_PROGRAM_TYPE_TEST_GUID {0x8ee1b757, 0xc0b2, 0x4c84, {0xac, 0x07, 0x0c, 0x76, 0x29, 0x8f, 0x1d, 0xc9}}
 
 void
 test_register_provider(

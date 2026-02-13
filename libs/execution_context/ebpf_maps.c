@@ -27,6 +27,7 @@ typedef struct _ebpf_core_map
     cxplat_utf8_string_t name;
     ebpf_map_definition_in_memory_t ebpf_map_definition;
     uint32_t original_value_size;
+    uint32_t map_flags;
     uint8_t* data;
 } ebpf_core_map_t;
 
@@ -3239,6 +3240,7 @@ ebpf_map_create(
     _In_ const cxplat_utf8_string_t* map_name,
     _In_ const ebpf_map_definition_in_memory_t* ebpf_map_definition,
     ebpf_handle_t inner_map_handle,
+    uint32_t map_flags,
     _Outptr_ ebpf_map_t** ebpf_map)
 {
     EBPF_LOG_ENTRY();
@@ -3274,6 +3276,32 @@ ebpf_map_create(
         goto Exit;
     }
 
+    // Validate map_flags.
+    {
+        const uint32_t supported_flags = BPF_F_RDONLY | BPF_F_WRONLY | BPF_F_RDONLY_PROG | BPF_F_WRONLY_PROG;
+        if (map_flags & ~supported_flags) {
+            EBPF_LOG_MESSAGE_UINT64(
+                EBPF_TRACELOG_LEVEL_ERROR, EBPF_TRACELOG_KEYWORD_MAP, "Unsupported map flags", map_flags);
+            result = EBPF_INVALID_ARGUMENT;
+            goto Exit;
+        }
+        if ((map_flags & BPF_F_RDONLY) && (map_flags & BPF_F_WRONLY)) {
+            EBPF_LOG_MESSAGE_UINT64(
+                EBPF_TRACELOG_LEVEL_ERROR, EBPF_TRACELOG_KEYWORD_MAP, "Conflicting map flags RDONLY|WRONLY", map_flags);
+            result = EBPF_INVALID_ARGUMENT;
+            goto Exit;
+        }
+        if ((map_flags & BPF_F_RDONLY_PROG) && (map_flags & BPF_F_WRONLY_PROG)) {
+            EBPF_LOG_MESSAGE_UINT64(
+                EBPF_TRACELOG_LEVEL_ERROR,
+                EBPF_TRACELOG_KEYWORD_MAP,
+                "Conflicting map flags RDONLY_PROG|WRONLY_PROG",
+                map_flags);
+            result = EBPF_INVALID_ARGUMENT;
+            goto Exit;
+        }
+    }
+
     if (type == BPF_MAP_TYPE_ARRAY_OF_MAPS || type == BPF_MAP_TYPE_HASH_OF_MAPS || type == BPF_MAP_TYPE_PROG_ARRAY) {
         zero_user_function = _ebpf_map_object_map_zero_user_reference;
     }
@@ -3302,6 +3330,7 @@ ebpf_map_create(
     ebpf_assert(type == local_map->ebpf_map_definition.type);
 
     local_map->original_value_size = ebpf_map_definition->value_size;
+    local_map->map_flags = map_flags;
 
     result = ebpf_duplicate_utf8_string(&local_map->name, map_name);
     if (result != EBPF_SUCCESS) {
@@ -3326,6 +3355,43 @@ Exit:
     EBPF_RETURN_RESULT(result);
 }
 
+/**
+ * @brief Check whether a map operation is permitted based on the map's access flags.
+ *
+ * @param[in] map Map to check.
+ * @param[in] flags Runtime flags (EBPF_MAP_FLAG_HELPER if called from eBPF program).
+ * @param[in] is_write True if the operation writes/modifies the map.
+ * @retval EBPF_SUCCESS Access is permitted.
+ * @retval EBPF_ACCESS_DENIED Access is denied by map flags.
+ */
+static ebpf_result_t
+_ebpf_map_check_access(_In_ const ebpf_map_t* map, int flags, bool is_write)
+{
+    uint32_t map_create_flags = map->map_flags;
+    if (map_create_flags == 0) {
+        return EBPF_SUCCESS;
+    }
+
+    bool is_helper = (flags & EBPF_MAP_FLAG_HELPER) != 0;
+
+    if (is_helper) {
+        if (is_write && (map_create_flags & BPF_F_RDONLY_PROG)) {
+            return EBPF_ACCESS_DENIED;
+        }
+        if (!is_write && (map_create_flags & BPF_F_WRONLY_PROG)) {
+            return EBPF_ACCESS_DENIED;
+        }
+    } else {
+        if (is_write && (map_create_flags & BPF_F_RDONLY)) {
+            return EBPF_ACCESS_DENIED;
+        }
+        if (!is_write && (map_create_flags & BPF_F_WRONLY)) {
+            return EBPF_ACCESS_DENIED;
+        }
+    }
+    return EBPF_SUCCESS;
+}
+
 _Must_inspect_result_ ebpf_result_t
 ebpf_map_find_entry(
     _Inout_ ebpf_map_t* map,
@@ -3337,6 +3403,13 @@ ebpf_map_find_entry(
 {
     // High volume call - Skip entry/exit logging.
     uint8_t* return_value = NULL;
+
+    // find_and_delete is a write operation (modifies map).
+    bool is_write = (flags & EBPF_MAP_FIND_FLAG_DELETE) != 0;
+    ebpf_result_t access_result = _ebpf_map_check_access(map, flags, is_write);
+    if (access_result != EBPF_SUCCESS) {
+        return access_result;
+    }
 
     if (!(flags & EBPF_MAP_FLAG_HELPER) && (key_size != map->ebpf_map_definition.key_size)) {
         EBPF_LOG_MESSAGE_UINT64_UINT64(
@@ -3453,6 +3526,11 @@ ebpf_map_update_entry(
     // High volume call - Skip entry/exit logging.
     ebpf_result_t result;
 
+    result = _ebpf_map_check_access(map, flags, true);
+    if (result != EBPF_SUCCESS) {
+        return result;
+    }
+
     const ebpf_map_metadata_table_t* table = ebpf_map_get_table(map->ebpf_map_definition.type);
 
     if (table->zero_length_key) {
@@ -3515,6 +3593,13 @@ ebpf_map_update_entry_with_handle(
     ebpf_map_option_t option)
 {
     // High volume call - Skip entry/exit logging.
+
+    // update_entry_with_handle is always called from user-mode (no EBPF_MAP_FLAG_HELPER).
+    ebpf_result_t access_result = _ebpf_map_check_access(map, 0, true);
+    if (access_result != EBPF_SUCCESS) {
+        return access_result;
+    }
+
     if (key_size != map->ebpf_map_definition.key_size) {
         EBPF_LOG_MESSAGE_UINT64_UINT64(
             EBPF_TRACELOG_LEVEL_ERROR,
@@ -3542,6 +3627,11 @@ _Must_inspect_result_ ebpf_result_t
 ebpf_map_delete_entry(_In_ ebpf_map_t* map, size_t key_size, _In_reads_(key_size) const uint8_t* key, int flags)
 {
     // High volume call - Skip entry/exit logging.
+    ebpf_result_t access_result = _ebpf_map_check_access(map, flags, true);
+    if (access_result != EBPF_SUCCESS) {
+        return access_result;
+    }
+
     if (!(flags & EBPF_MAP_FLAG_HELPER) && (key_size != map->ebpf_map_definition.key_size)) {
         EBPF_LOG_MESSAGE_UINT64_UINT64(
             EBPF_TRACELOG_LEVEL_ERROR,
@@ -3627,7 +3717,7 @@ ebpf_map_get_info(
     info->key_size = map->ebpf_map_definition.key_size;
     info->value_size = map->original_value_size;
     info->max_entries = map->ebpf_map_definition.max_entries;
-    info->map_flags = 0;
+    info->map_flags = map->map_flags;
     if (info->type == BPF_MAP_TYPE_ARRAY_OF_MAPS || info->type == BPF_MAP_TYPE_HASH_OF_MAPS) {
         ebpf_core_object_map_t* object_map = EBPF_FROM_FIELD(ebpf_core_object_map_t, core_map, map);
         info->inner_map_id = object_map->core_map.ebpf_map_definition.inner_map_id
@@ -3654,6 +3744,11 @@ ebpf_map_get_info(
 _Must_inspect_result_ ebpf_result_t
 ebpf_map_push_entry(_Inout_ ebpf_map_t* map, size_t value_size, _In_reads_(value_size) const uint8_t* value, int flags)
 {
+    ebpf_result_t access_result = _ebpf_map_check_access(map, flags, true);
+    if (access_result != EBPF_SUCCESS) {
+        return access_result;
+    }
+
     if (!(flags & EBPF_MAP_FLAG_HELPER) && (value_size != map->ebpf_map_definition.value_size)) {
         return EBPF_INVALID_ARGUMENT;
     }
@@ -3676,6 +3771,13 @@ _Must_inspect_result_ ebpf_result_t
 ebpf_map_pop_entry(_Inout_ ebpf_map_t* map, size_t value_size, _Out_writes_(value_size) uint8_t* value, int flags)
 {
     uint8_t* return_value;
+
+    // Pop mutates the map so it is a write operation.
+    ebpf_result_t access_result = _ebpf_map_check_access(map, flags, true);
+    if (access_result != EBPF_SUCCESS) {
+        return access_result;
+    }
+
     if (!(flags & EBPF_MAP_FLAG_HELPER) && (value_size != map->ebpf_map_definition.value_size)) {
         return EBPF_INVALID_ARGUMENT;
     }
@@ -3704,6 +3806,12 @@ _Must_inspect_result_ ebpf_result_t
 ebpf_map_peek_entry(_Inout_ ebpf_map_t* map, size_t value_size, _Out_writes_(value_size) uint8_t* value, int flags)
 {
     uint8_t* return_value;
+
+    ebpf_result_t access_result = _ebpf_map_check_access(map, flags, false);
+    if (access_result != EBPF_SUCCESS) {
+        return access_result;
+    }
+
     if (!(flags & EBPF_MAP_FLAG_HELPER) && (value_size != map->ebpf_map_definition.value_size)) {
         return EBPF_INVALID_ARGUMENT;
     }

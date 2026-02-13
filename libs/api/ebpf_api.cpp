@@ -257,6 +257,7 @@ _create_map(
     _In_opt_z_ const char* name,
     _In_ const ebpf_map_definition_in_memory_t* map_definition,
     ebpf_handle_t inner_map_handle,
+    uint32_t map_flags,
     _Out_ ebpf_handle_t* map_handle) NO_EXCEPT_TRY
 {
     EBPF_LOG_ENTRY();
@@ -286,6 +287,7 @@ _create_map(
     request->header.length = static_cast<uint16_t>(request_buffer.size());
     request->ebpf_map_definition = *map_definition;
     request->inner_map_handle = (uint64_t)inner_map_handle;
+    request->map_flags = map_flags;
     std::copy(
         map_name.begin(), map_name.end(), request_buffer.begin() + offsetof(ebpf_operation_create_map_request_t, data));
 
@@ -320,7 +322,9 @@ ebpf_map_create(
 
     ebpf_assert(map_fd);
 
-    if (opts && (opts->map_flags != 0 || opts->numa_node != 0 || opts->map_ifindex != 0)) {
+    uint32_t map_flags = opts ? opts->map_flags : 0;
+    const uint32_t supported_flags = BPF_F_RDONLY | BPF_F_WRONLY | BPF_F_RDONLY_PROG | BPF_F_WRONLY_PROG;
+    if (opts && ((opts->map_flags & ~supported_flags) != 0 || opts->numa_node != 0 || opts->map_ifindex != 0)) {
         result = EBPF_INVALID_ARGUMENT;
         goto Exit;
     }
@@ -337,7 +341,7 @@ ebpf_map_create(
         inner_map_handle = (opts && opts->inner_map_fd != 0) ? _get_handle_from_file_descriptor(opts->inner_map_fd)
                                                              : ebpf_handle_invalid;
 
-        result = _create_map(map_name, &map_definition, inner_map_handle, &map_handle);
+        result = _create_map(map_name, &map_definition, inner_map_handle, map_flags, &map_handle);
         if (result != EBPF_SUCCESS) {
             goto Exit;
         }
@@ -3218,7 +3222,7 @@ _Requires_lock_not_held_(_ebpf_state_mutex) static ebpf_result_t
         }
 
         ebpf_handle_t inner_map_handle = (map->inner_map) ? map->inner_map->map_handle : ebpf_handle_invalid;
-        result = _create_map(map->name, &map->map_definition, inner_map_handle, &map->map_handle);
+        result = _create_map(map->name, &map->map_definition, inner_map_handle, map->map_flags, &map->map_handle);
         if (result != EBPF_SUCCESS) {
             break;
         }

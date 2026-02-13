@@ -885,6 +885,141 @@ TEST_CASE("libbpf create ringbuf", "[libbpf]")
     Platform::_close(map_fd);
 }
 
+TEST_CASE("libbpf map_flags create", "[libbpf]")
+{
+    _test_helper_libbpf test_helper;
+    test_helper.initialize();
+
+    // Create with BPF_F_RDONLY.
+    bpf_map_create_opts opts = {sizeof(opts)};
+    opts.map_flags = BPF_F_RDONLY;
+    int map_fd = bpf_map_create(BPF_MAP_TYPE_HASH, "rdonly_map", sizeof(uint32_t), sizeof(uint32_t), 10, &opts);
+    REQUIRE(map_fd > 0);
+
+    // Verify flags reported in info.
+    bpf_map_info info = {};
+    uint32_t info_size = sizeof(info);
+    REQUIRE(bpf_obj_get_info_by_fd(map_fd, &info, &info_size) == 0);
+    REQUIRE(info.map_flags == BPF_F_RDONLY);
+    Platform::_close(map_fd);
+
+    // Create with BPF_F_WRONLY.
+    opts.map_flags = BPF_F_WRONLY;
+    map_fd = bpf_map_create(BPF_MAP_TYPE_HASH, "wronly_map", sizeof(uint32_t), sizeof(uint32_t), 10, &opts);
+    REQUIRE(map_fd > 0);
+    info_size = sizeof(info);
+    REQUIRE(bpf_obj_get_info_by_fd(map_fd, &info, &info_size) == 0);
+    REQUIRE(info.map_flags == BPF_F_WRONLY);
+    Platform::_close(map_fd);
+
+    // Create with BPF_F_RDONLY_PROG.
+    opts.map_flags = BPF_F_RDONLY_PROG;
+    map_fd = bpf_map_create(BPF_MAP_TYPE_HASH, "rdonly_prog", sizeof(uint32_t), sizeof(uint32_t), 10, &opts);
+    REQUIRE(map_fd > 0);
+    info_size = sizeof(info);
+    REQUIRE(bpf_obj_get_info_by_fd(map_fd, &info, &info_size) == 0);
+    REQUIRE(info.map_flags == BPF_F_RDONLY_PROG);
+    Platform::_close(map_fd);
+
+    // Create with BPF_F_WRONLY_PROG.
+    opts.map_flags = BPF_F_WRONLY_PROG;
+    map_fd = bpf_map_create(BPF_MAP_TYPE_HASH, "wronly_prog", sizeof(uint32_t), sizeof(uint32_t), 10, &opts);
+    REQUIRE(map_fd > 0);
+    info_size = sizeof(info);
+    REQUIRE(bpf_obj_get_info_by_fd(map_fd, &info, &info_size) == 0);
+    REQUIRE(info.map_flags == BPF_F_WRONLY_PROG);
+    Platform::_close(map_fd);
+
+    // Create with combined flags (different sides).
+    opts.map_flags = BPF_F_RDONLY | BPF_F_WRONLY_PROG;
+    map_fd = bpf_map_create(BPF_MAP_TYPE_HASH, "combined", sizeof(uint32_t), sizeof(uint32_t), 10, &opts);
+    REQUIRE(map_fd > 0);
+    info_size = sizeof(info);
+    REQUIRE(bpf_obj_get_info_by_fd(map_fd, &info, &info_size) == 0);
+    REQUIRE(info.map_flags == (BPF_F_RDONLY | BPF_F_WRONLY_PROG));
+    Platform::_close(map_fd);
+}
+
+TEST_CASE("libbpf map_flags create invalid", "[libbpf][negative]")
+{
+    _test_helper_libbpf test_helper;
+    test_helper.initialize();
+
+    bpf_map_create_opts opts = {sizeof(opts)};
+
+    // Conflicting user-mode flags.
+    opts.map_flags = BPF_F_RDONLY | BPF_F_WRONLY;
+    int map_fd = bpf_map_create(BPF_MAP_TYPE_HASH, "bad_flags", sizeof(uint32_t), sizeof(uint32_t), 10, &opts);
+    REQUIRE(map_fd < 0);
+    REQUIRE(errno == EINVAL);
+
+    // Conflicting program-side flags.
+    opts.map_flags = BPF_F_RDONLY_PROG | BPF_F_WRONLY_PROG;
+    map_fd = bpf_map_create(BPF_MAP_TYPE_HASH, "bad_flags", sizeof(uint32_t), sizeof(uint32_t), 10, &opts);
+    REQUIRE(map_fd < 0);
+    REQUIRE(errno == EINVAL);
+}
+
+TEST_CASE("libbpf map_flags rdonly access", "[libbpf]")
+{
+    _test_helper_libbpf test_helper;
+    test_helper.initialize();
+
+    // Create a read-only (from user-mode) map.
+    bpf_map_create_opts opts = {sizeof(opts)};
+    opts.map_flags = BPF_F_RDONLY;
+    int map_fd = bpf_map_create(BPF_MAP_TYPE_HASH, "rdonly_map", sizeof(uint32_t), sizeof(uint32_t), 10, &opts);
+    REQUIRE(map_fd > 0);
+
+    // User-mode update should fail with EPERM.
+    uint32_t key = 1;
+    uint32_t value = 42;
+    REQUIRE(bpf_map_update_elem(map_fd, &key, &value, 0) == -EPERM);
+
+    // User-mode delete should fail with EPERM.
+    REQUIRE(bpf_map_delete_elem(map_fd, &key) == -EPERM);
+
+    // User-mode lookup on empty map returns ENOENT (not EPERM — read is allowed).
+    uint32_t found_value = 0;
+    REQUIRE(bpf_map_lookup_elem(map_fd, &key, &found_value) == -ENOENT);
+
+    // User-mode lookup_and_delete should also fail with EPERM (it's a write).
+    REQUIRE(bpf_map_lookup_and_delete_elem(map_fd, &key, &found_value) == -EPERM);
+
+    Platform::_close(map_fd);
+}
+
+TEST_CASE("libbpf map_flags wronly access", "[libbpf]")
+{
+    _test_helper_libbpf test_helper;
+    test_helper.initialize();
+
+    // Create a write-only (from user-mode) map.
+    bpf_map_create_opts opts = {sizeof(opts)};
+    opts.map_flags = BPF_F_WRONLY;
+    int map_fd = bpf_map_create(BPF_MAP_TYPE_HASH, "wronly_map", sizeof(uint32_t), sizeof(uint32_t), 10, &opts);
+    REQUIRE(map_fd > 0);
+
+    // User-mode update should succeed.
+    uint32_t key = 1;
+    uint32_t value = 42;
+    REQUIRE(bpf_map_update_elem(map_fd, &key, &value, 0) == 0);
+
+    // User-mode lookup should fail with EPERM.
+    uint32_t found_value = 0;
+    REQUIRE(bpf_map_lookup_elem(map_fd, &key, &found_value) == -EPERM);
+
+    // next_key should succeed regardless of flags (key exists).
+    uint32_t next_key = 0;
+    REQUIRE(bpf_map_get_next_key(map_fd, NULL, &next_key) == 0);
+    REQUIRE(next_key == 1);
+
+    // User-mode delete should succeed (write operation).
+    REQUIRE(bpf_map_delete_elem(map_fd, &key) == 0);
+
+    Platform::_close(map_fd);
+}
+
 // Test helper for ring buffer callback.
 struct ring_buffer_test_callback_context
 {
