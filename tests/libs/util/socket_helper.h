@@ -169,6 +169,7 @@ typedef class _client_socket : public _base_socket
   protected:
     WSAOVERLAPPED overlapped;
     bool receive_posted;
+    bool send_posted;
 } client_socket_t;
 
 /**
@@ -356,6 +357,8 @@ typedef class _server_socket : public _base_socket
   protected:
     WSAOVERLAPPED overlapped;
     LPFN_WSARECVMSG receive_message;
+    bool receive_posted = false;
+    bool send_posted = false;
 } receiver_socket_t;
 
 /**

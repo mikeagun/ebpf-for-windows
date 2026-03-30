@@ -183,19 +183,23 @@ _client_socket::_client_socket(
     _In_ const sockaddr_storage& _source_address,
     int expected_bind_error)
     : _base_socket{_sock_type, _protocol, _port, _family, _source_address, expected_bind_error}, overlapped{},
-      receive_posted(false)
+      receive_posted(false), send_posted(false)
 {
 }
 
 _client_socket::~_client_socket()
 {
-    // Cancel any pending overlapped receive by closing the socket (forces I/O to complete),
-    // then wait for the event to ensure the kernel is done with the overlapped structure.
-    if (receive_posted) {
-        closesocket(socket);
-        socket = INVALID_SOCKET;
+    // Cancel any pending overlapped I/O (receive or send) by closing the socket
+    // (forces I/O to complete), then wait for the event to ensure the kernel is
+    // done with the overlapped structure.
+    if (receive_posted || send_posted) {
+        if (socket != INVALID_SOCKET) {
+            closesocket(socket);
+            socket = INVALID_SOCKET;
+        }
         WaitForSingleObject(overlapped.hEvent, INFINITE);
         receive_posted = false;
+        send_posted = false;
     }
     if (overlapped.hEvent != nullptr && overlapped.hEvent != INVALID_HANDLE_VALUE) {
         WSACloseEvent(overlapped.hEvent);
@@ -212,6 +216,9 @@ _client_socket::close()
 void
 _client_socket::post_async_receive(bool error_expected)
 {
+    if (socket == INVALID_SOCKET) {
+        FAIL("post_async_receive called on a closed socket (INVALID_SOCKET).");
+    }
     if (receive_posted) {
         return;
     }
@@ -257,7 +264,7 @@ _client_socket::complete_async_receive(int timeout_in_ms, bool timeout_or_error_
     }
 
     // Wait for the receiver socket to receive the message.
-    int error = WSAWaitForMultipleEvents(1, &overlapped.hEvent, TRUE, timeout_in_ms, TRUE);
+    int error = WSAWaitForMultipleEvents(1, &overlapped.hEvent, TRUE, timeout_in_ms, FALSE);
 
     // Capture error codes and overlapped result before cleanup may change them.
     DWORD last_error = WSAGetLastError();
@@ -298,7 +305,9 @@ _client_socket::complete_async_receive(int timeout_in_ms, bool timeout_or_error_
             FAIL("WSARecvFrom on the receiver socket failed with error: " << overlapped_error);
         }
     } else if (error == WSA_WAIT_TIMEOUT) {
-        if (!timeout_or_error_expected) {
+        if (timeout_or_error_expected) {
+            printf("complete_async_receive: expected timeout after %d ms.\n", timeout_in_ms);
+        } else {
             FAIL("Receiver socket did not receive any message in " << timeout_in_ms << " ms.");
         }
     } else {
@@ -425,8 +434,11 @@ _stream_client_socket::send_message_to_remote_host(
             &overlapped)) {
         int wsaerr = WSAGetLastError();
         if (wsaerr != WSA_IO_PENDING) {
+            WSACloseEvent(overlapped.hEvent);
+            overlapped.hEvent = INVALID_HANDLE_VALUE;
             FAIL("ConnectEx failed with " << wsaerr);
         }
+        send_posted = true;
     } else {
         // The operation completed synchronously. Close overlapped handle.
         WSACloseEvent(overlapped.hEvent);
@@ -439,8 +451,10 @@ void
 _stream_client_socket::cancel_send_message()
 {
     CancelIoEx((HANDLE)socket, &overlapped);
+    WaitForSingleObject(overlapped.hEvent, INFINITE);
     WSACloseEvent(overlapped.hEvent);
     overlapped.hEvent = INVALID_HANDLE_VALUE;
+    send_posted = false;
 }
 
 void
@@ -451,33 +465,56 @@ _stream_client_socket::complete_async_send(int timeout_in_ms, expected_result_t 
         return;
     }
 
-    int error = 0;
-    uint32_t bytes_sent = 0;
-    uint32_t send_flags = 0;
-    // Wait for the receiver socket to receive the message.
-    error = WSAWaitForMultipleEvents(1, &overlapped.hEvent, TRUE, timeout_in_ms, TRUE);
-    if (error == WSA_WAIT_EVENT_0) {
+    int error = WSAWaitForMultipleEvents(1, &overlapped.hEvent, TRUE, timeout_in_ms, FALSE);
+
+    // Capture error codes and overlapped result before cleanup may change them.
+    DWORD last_error = WSAGetLastError();
+    bool completed = (error == WSA_WAIT_EVENT_0);
+    bool overlapped_succeeded = false;
+    DWORD overlapped_error = 0;
+
+    if (completed && expected_result != expected_result_t::TIMEOUT) {
+        uint32_t bytes_sent = 0;
+        uint32_t send_flags = 0;
+        overlapped_succeeded = WSAGetOverlappedResult(
+            socket,
+            &overlapped,
+            reinterpret_cast<unsigned long*>(&bytes_sent),
+            FALSE,
+            reinterpret_cast<unsigned long*>(&send_flags));
+        if (!overlapped_succeeded) {
+            overlapped_error = WSAGetLastError();
+        }
+    }
+
+    // Clean up overlapped state. This must happen before FAIL() since Catch2's FAIL throws.
+    // If I/O is still pending (timeout/error), close the socket to force the pending I/O to complete,
+    // then wait for the event to ensure the I/O system is done with the overlapped structure.
+    if (!completed) {
+        closesocket(socket);
+        socket = INVALID_SOCKET;
+        WaitForSingleObject(overlapped.hEvent, INFINITE);
+    }
+    WSACloseEvent(overlapped.hEvent);
+    overlapped.hEvent = INVALID_HANDLE_VALUE;
+    send_posted = false;
+
+    // Handle errors after cleanup so FAIL() (which throws) doesn't skip it.
+    if (completed) {
         if (expected_result == expected_result_t::TIMEOUT) {
             FAIL("Send on socket succeeded when timeout was expected.");
         }
-        if (!WSAGetOverlappedResult(
-                socket,
-                &overlapped,
-                reinterpret_cast<unsigned long*>(&bytes_sent),
-                FALSE,
-                reinterpret_cast<unsigned long*>(&send_flags))) {
-            if (expected_result != expected_result_t::FAILURE) {
-                FAIL("WSASend on the socket failed with error: " << WSAGetLastError());
-            }
+        if (!overlapped_succeeded && expected_result != expected_result_t::FAILURE) {
+            FAIL("WSASend on the socket failed with error: " << overlapped_error);
         }
-        WSACloseEvent(overlapped.hEvent);
-        overlapped.hEvent = INVALID_HANDLE_VALUE;
     } else if (error == WSA_WAIT_TIMEOUT) {
-        if (expected_result != expected_result_t::TIMEOUT) {
-            FAIL("Async send timed out");
+        if (expected_result == expected_result_t::TIMEOUT) {
+            printf("complete_async_send: expected timeout after %d ms.\n", timeout_in_ms);
+        } else {
+            FAIL("Async send timed out after " << timeout_in_ms << " ms.");
         }
     } else {
-        FAIL("Async send complete failed with " << error);
+        FAIL("Async send complete failed with " << last_error);
     }
 }
 
@@ -508,8 +545,19 @@ _server_socket::_server_socket(
 
 _server_socket::~_server_socket()
 {
+    // Cancel any pending overlapped I/O by closing the socket, then wait for the event.
+    if (receive_posted || send_posted) {
+        if (socket != INVALID_SOCKET) {
+            closesocket(socket);
+            socket = INVALID_SOCKET;
+        }
+        WaitForSingleObject(overlapped.hEvent, INFINITE);
+        receive_posted = false;
+        send_posted = false;
+    }
     if (overlapped.hEvent != INVALID_HANDLE_VALUE) {
         WSACloseEvent(overlapped.hEvent);
+        overlapped.hEvent = INVALID_HANDLE_VALUE;
     }
 }
 
@@ -517,7 +565,7 @@ void
 _server_socket::complete_async_receive(int timeout_in_ms, receiver_mode mode)
 {
     // Wait for the receiver socket to receive the message.
-    int error = WSAWaitForMultipleEvents(1, &overlapped.hEvent, TRUE, timeout_in_ms, TRUE);
+    int error = WSAWaitForMultipleEvents(1, &overlapped.hEvent, TRUE, timeout_in_ms, FALSE);
 
     // Capture error codes and overlapped result before cleanup may change them.
     DWORD last_error = WSAGetLastError();
@@ -547,6 +595,7 @@ _server_socket::complete_async_receive(int timeout_in_ms, receiver_mode mode)
     }
     WSACloseEvent(overlapped.hEvent);
     overlapped.hEvent = INVALID_HANDLE_VALUE;
+    receive_posted = false;
 
     // Handle errors after cleanup so FAIL() (which throws) doesn't skip it.
     if (received) {
@@ -557,7 +606,9 @@ _server_socket::complete_async_receive(int timeout_in_ms, receiver_mode mode)
             FAIL("WSARecvFrom on the receiver socket failed with error: " << overlapped_error);
         }
     } else if (error == WSA_WAIT_TIMEOUT) {
-        if (mode == MODE_NO_TIMEOUT) {
+        if (mode == MODE_TIMEOUT) {
+            printf("complete_async_receive: expected timeout after %d ms.\n", timeout_in_ms);
+        } else if (mode == MODE_NO_TIMEOUT) {
             FAIL("Receiver socket did not receive any message in " << timeout_in_ms << " ms.");
         }
     } else {
@@ -648,9 +699,12 @@ _datagram_server_socket::post_async_receive()
     if (error != 0) {
         int wsaerr = WSAGetLastError();
         if (wsaerr != WSA_IO_PENDING) {
+            WSACloseEvent(overlapped.hEvent);
+            overlapped.hEvent = INVALID_HANDLE_VALUE;
             FAIL("WSARecvMsg failed with " << wsaerr);
         }
     }
+    receive_posted = true;
 }
 
 void
@@ -834,9 +888,12 @@ _stream_server_socket::post_async_receive()
             &overlapped)) {
         int wsaerr = WSAGetLastError();
         if (wsaerr != WSA_IO_PENDING) {
+            WSACloseEvent(overlapped.hEvent);
+            overlapped.hEvent = INVALID_HANDLE_VALUE;
             FAIL("AcceptEx failed with " << wsaerr);
         }
     }
+    receive_posted = true;
 }
 
 void
@@ -851,31 +908,59 @@ _stream_server_socket::send_async_response(_In_z_ const char* message)
         accept_socket, &wsa_send_buffer, 1, reinterpret_cast<unsigned long*>(&bytes_sent), 0, &overlapped, NULL);
     if (error != 0) {
         int wsaerr = WSAGetLastError();
+        WSACloseEvent(overlapped.hEvent);
+        overlapped.hEvent = INVALID_HANDLE_VALUE;
         FAIL("send_async_response failed with " << wsaerr);
     }
+    send_posted = true;
 }
 
 void
 _stream_server_socket::complete_async_send(int timeout_in_ms)
 {
-    int error = 0;
-    uint32_t bytes_sent = 0;
-    uint32_t send_flags = 0;
-    // Wait for the receiver socket to receive the message.
-    error = WSAWaitForMultipleEvents(1, &overlapped.hEvent, TRUE, timeout_in_ms, TRUE);
-    if (error == WSA_WAIT_EVENT_0) {
+    int error = WSAWaitForMultipleEvents(1, &overlapped.hEvent, TRUE, timeout_in_ms, FALSE);
 
-        if (!WSAGetOverlappedResult(
-                socket,
-                &overlapped,
-                reinterpret_cast<unsigned long*>(&bytes_sent),
-                FALSE,
-                reinterpret_cast<unsigned long*>(&send_flags)))
-            FAIL("WSASend on the receiver socket failed with error: " << WSAGetLastError());
-        WSACloseEvent(overlapped.hEvent);
-        overlapped.hEvent = INVALID_HANDLE_VALUE;
+    // Capture error codes and overlapped result before cleanup may change them.
+    DWORD last_error = WSAGetLastError();
+    bool completed = (error == WSA_WAIT_EVENT_0);
+    bool overlapped_succeeded = false;
+    DWORD overlapped_error = 0;
+
+    if (completed) {
+        uint32_t bytes_sent = 0;
+        uint32_t send_flags = 0;
+        overlapped_succeeded = WSAGetOverlappedResult(
+            accept_socket,
+            &overlapped,
+            reinterpret_cast<unsigned long*>(&bytes_sent),
+            FALSE,
+            reinterpret_cast<unsigned long*>(&send_flags));
+        if (!overlapped_succeeded) {
+            overlapped_error = WSAGetLastError();
+        }
+    }
+
+    // Clean up overlapped state. This must happen before FAIL() since Catch2's FAIL throws.
+    // If I/O is still pending (timeout/error), close the socket to force the pending I/O to complete,
+    // then wait for the event to ensure the I/O system is done with the overlapped structure.
+    if (!completed) {
+        closesocket(accept_socket);
+        accept_socket = INVALID_SOCKET;
+        WaitForSingleObject(overlapped.hEvent, INFINITE);
+    }
+    WSACloseEvent(overlapped.hEvent);
+    overlapped.hEvent = INVALID_HANDLE_VALUE;
+    send_posted = false;
+
+    // Handle errors after cleanup so FAIL() (which throws) doesn't skip it.
+    if (completed) {
+        if (!overlapped_succeeded) {
+            FAIL("WSASend on the receiver socket failed with error: " << overlapped_error);
+        }
+    } else if (error == WSA_WAIT_TIMEOUT) {
+        FAIL("Async send on receiver socket timed out after " << timeout_in_ms << " ms.");
     } else {
-        FAIL("Waiting on receiver socket failed with " << WSAGetLastError());
+        FAIL("Waiting on receiver socket failed with " << last_error);
     }
 }
 
