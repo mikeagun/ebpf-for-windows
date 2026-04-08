@@ -699,8 +699,10 @@ _datagram_server_socket::post_async_receive()
     if (error != 0) {
         int wsaerr = WSAGetLastError();
         if (wsaerr != WSA_IO_PENDING) {
-            WSACloseEvent(overlapped.hEvent);
-            overlapped.hEvent = INVALID_HANDLE_VALUE;
+            if (overlapped.hEvent != NULL) {
+                WSACloseEvent(overlapped.hEvent);
+                overlapped.hEvent = INVALID_HANDLE_VALUE;
+            }
             FAIL("WSARecvMsg failed with " << wsaerr);
         }
     }
@@ -888,8 +890,10 @@ _stream_server_socket::post_async_receive()
             &overlapped)) {
         int wsaerr = WSAGetLastError();
         if (wsaerr != WSA_IO_PENDING) {
-            WSACloseEvent(overlapped.hEvent);
-            overlapped.hEvent = INVALID_HANDLE_VALUE;
+            if (overlapped.hEvent != NULL) {
+                WSACloseEvent(overlapped.hEvent);
+                overlapped.hEvent = INVALID_HANDLE_VALUE;
+            }
             FAIL("AcceptEx failed with " << wsaerr);
         }
     }
@@ -908,8 +912,10 @@ _stream_server_socket::send_async_response(_In_z_ const char* message)
         accept_socket, &wsa_send_buffer, 1, reinterpret_cast<unsigned long*>(&bytes_sent), 0, &overlapped, NULL);
     if (error != 0) {
         int wsaerr = WSAGetLastError();
-        WSACloseEvent(overlapped.hEvent);
-        overlapped.hEvent = INVALID_HANDLE_VALUE;
+        if (overlapped.hEvent != NULL) {
+            WSACloseEvent(overlapped.hEvent);
+            overlapped.hEvent = INVALID_HANDLE_VALUE;
+        }
         FAIL("send_async_response failed with " << wsaerr);
     }
     send_posted = true;
