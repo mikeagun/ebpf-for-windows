@@ -5,6 +5,7 @@
 /// Sets up the eBPF platform and starts the MCP server loop.
 
 #ifdef _WIN32
+#define NOMINMAX
 #include <Windows.h>
 #include <eh.h>
 #include <fcntl.h>
@@ -110,23 +111,23 @@ main()
     try {
         // Use the Windows eBPF platform (same as bpf2c via ebpfapi).
         const prevail::ebpf_platform_t* platform = &g_ebpf_platform_windows;
-        prevail_mcp::WindowsPlatformOps ops(platform);
+        prevail::WindowsPlatformOps ops(platform);
 
-        prevail_mcp::AnalysisEngine engine(&ops);
-        prevail_mcp::McpServer server("ebpf-verifier");
-        prevail_mcp::register_all_tools(server, engine);
+        prevail::AnalysisEngine engine(&ops);
+        prevail::McpServer server("ebpf-verifier");
+        prevail::register_all_tools(server, engine);
 
-        std::cerr << "prevail_mcp: server started" << std::endl;
+        std::cerr << "prevail: server started" << std::endl;
 
-        prevail_mcp::McpTransport transport(mcp_out);
+        prevail::McpTransport transport(mcp_out);
         transport.run([&server](const std::string& method, const nlohmann::json& params) {
             return server.dispatch(method, params);
         });
 
-        std::cerr << "prevail_mcp: server stopped" << std::endl;
+        std::cerr << "prevail: server stopped" << std::endl;
         return 0;
     } catch (const std::exception& e) {
-        std::cerr << "prevail_mcp: fatal error: " << e.what() << std::endl;
+        std::cerr << "prevail: fatal error: " << e.what() << std::endl;
         return 1;
     }
 }

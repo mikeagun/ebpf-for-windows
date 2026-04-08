@@ -157,7 +157,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\ebpfapi\rpc_client.cpp" />
-    <ClCompile Include="..\..\external\ebpf-verifier\src\mcp\analysis_engine.cpp" />
+    <ClCompile Include="..\..\external\ebpf-verifier\src\analysis_engine.cpp" />
     <ClCompile Include="..\..\external\ebpf-verifier\src\mcp\json_serializers.cpp" />
     <ClCompile Include="..\..\external\ebpf-verifier\src\mcp\mcp_server.cpp" />
     <ClCompile Include="..\..\external\ebpf-verifier\src\mcp\mcp_transport.cpp" />
@@ -167,12 +167,12 @@
     <ClCompile Include="src\windows\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\external\ebpf-verifier\src\mcp\analysis_engine.hpp" />
+    <ClInclude Include="..\..\external\ebpf-verifier\src\analysis_engine.hpp" />
     <ClInclude Include="..\..\external\ebpf-verifier\src\mcp\json_serializers.hpp" />
     <ClInclude Include="..\..\external\ebpf-verifier\src\mcp\mcp_server.hpp" />
     <ClInclude Include="..\..\external\ebpf-verifier\src\mcp\mcp_transport.hpp" />
-    <ClInclude Include="..\..\external\ebpf-verifier\src\mcp\platform_ops.hpp" />
-    <ClInclude Include="..\..\external\ebpf-verifier\src\mcp\platform_ops_prevail.hpp" />
+    <ClInclude Include="..\..\external\ebpf-verifier\src\platform_ops.hpp" />
+    <ClInclude Include="..\..\external\ebpf-verifier\src\platform_ops_prevail.hpp" />
     <ClInclude Include="..\..\external\ebpf-verifier\src\mcp\prevail_headers.hpp" />
     <ClInclude Include="..\..\external\ebpf-verifier\src\mcp\tools.hpp" />
     <ClInclude Include="src\windows\platform_ops_windows.hpp" />

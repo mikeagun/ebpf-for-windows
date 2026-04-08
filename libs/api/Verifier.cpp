@@ -676,7 +676,13 @@ ebpf_api_elf_enumerate_programs(
                     return 1;
                 }
                 auto& instruction_sequence = std::get<prevail::InstructionSeq>(instruction_sequence_or_error);
-                _ebpf_add_stat(info, "Instructions", static_cast<int>(instruction_sequence.size()));
+                auto program =
+                    prevail::Program::from_sequence(instruction_sequence, raw_program.info, verifier_options);
+                std::map<std::string, int> stats = collect_stats(program);
+                for (auto it = stats.rbegin(); it != stats.rend(); ++it) {
+                    _ebpf_add_stat(info, it->first, it->second);
+                }
+                _ebpf_add_stat(info, "Instructions", static_cast<int>(raw_program.prog.size()));
             }
 
             info->section_name = cxplat_duplicate_string(raw_program.section_name.c_str());

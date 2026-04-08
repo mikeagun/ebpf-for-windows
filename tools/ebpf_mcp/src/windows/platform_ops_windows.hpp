@@ -15,7 +15,7 @@
 #include <ElfWrapper.h>
 #endif
 
-namespace prevail_mcp {
+namespace prevail {
 
 /// PlatformOps implementation using ebpf-for-windows APIs.
 /// Matches bpf2c's behavior for ELF validation, program enumeration,
@@ -25,13 +25,13 @@ class WindowsPlatformOps : public PlatformOps
   public:
     explicit WindowsPlatformOps(const prevail::ebpf_platform_t* platform) : platform_(platform) {}
 
-    const prevail::ebpf_platform_t*
+    [[nodiscard]] const prevail::ebpf_platform_t*
     platform() const override
     {
         return platform_;
     }
 
-    std::vector<ProgramEntry>
+    [[nodiscard]] std::vector<ProgramEntry>
     list_programs(const std::string& elf_path) override
     {
         ebpf_api_program_info_t* infos = nullptr;
@@ -83,7 +83,7 @@ class WindowsPlatformOps : public PlatformOps
         }
     }
 
-    prevail::ebpf_verifier_options_t
+    [[nodiscard]] prevail::ebpf_verifier_options_t
     default_options() override
     {
         return ebpf_get_default_verifier_options();
@@ -133,4 +133,4 @@ class WindowsPlatformOps : public PlatformOps
     const prevail::ebpf_platform_t* platform_;
 };
 
-} // namespace prevail_mcp
+} // namespace prevail
