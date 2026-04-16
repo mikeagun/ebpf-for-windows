@@ -513,12 +513,14 @@ ebpf_ring_buffer_set_wait_handle(
     PKEVENT old_wait_event = kernel_page->wait_event;
 
     PKEVENT wait_event = NULL;
-    NTSTATUS status = ObReferenceObjectByHandle(
-        (HANDLE)wait_handle, EVENT_MODIFY_STATE, *ExEventObjectType, UserMode, (PVOID*)&wait_event, NULL);
+    if (wait_handle != ebpf_handle_invalid) {
+        NTSTATUS status = ObReferenceObjectByHandle(
+            (HANDLE)wait_handle, EVENT_MODIFY_STATE, *ExEventObjectType, UserMode, (PVOID*)&wait_event, NULL);
 
-    if (!NT_SUCCESS(status)) {
-        EBPF_LOG_NTSTATUS_API_FAILURE(EBPF_TRACELOG_KEYWORD_ERROR, ObReferenceObjectByHandle, status);
-        return EBPF_INVALID_ARGUMENT;
+        if (!NT_SUCCESS(status)) {
+            EBPF_LOG_NTSTATUS_API_FAILURE(EBPF_TRACELOG_KEYWORD_ERROR, ObReferenceObjectByHandle, status);
+            return EBPF_INVALID_ARGUMENT;
+        }
     }
 
     kernel_page->wait_event = wait_event;

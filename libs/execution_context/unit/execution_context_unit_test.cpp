@@ -1270,6 +1270,29 @@ TEST_CASE("ring_buffer_sync_query", "[execution_context][ring_buffer]")
             map.get(), 0, (const void*)consumer, (const void*)producer, (const void*)data) == EBPF_SUCCESS);
 }
 
+TEST_CASE("ring_buffer_wait_handle_clear_and_reset", "[execution_context][ring_buffer]")
+{
+    _ebpf_core_initializer core;
+    core.initialize();
+    ebpf_map_definition_in_memory_t map_definition{BPF_MAP_TYPE_RINGBUF, 0, 0, 64 * 1024};
+    map_ptr map;
+    {
+        ebpf_map_t* local_map;
+        cxplat_utf8_string_t map_name = {0};
+        REQUIRE(
+            ebpf_map_create(&map_name, &map_definition, (uintptr_t)ebpf_handle_invalid, &local_map) == EBPF_SUCCESS);
+        map.reset(local_map);
+    }
+
+    _wait_event first_event;
+    _wait_event second_event;
+
+    REQUIRE(ebpf_map_set_wait_handle_internal(map.get(), 0, first_event.handle(), 0) == EBPF_SUCCESS);
+    REQUIRE(ebpf_map_set_wait_handle_internal(map.get(), 0, ebpf_handle_invalid, 0) == EBPF_SUCCESS);
+    REQUIRE(ebpf_map_set_wait_handle_internal(map.get(), 0, second_event.handle(), 0) == EBPF_SUCCESS);
+    REQUIRE(ebpf_map_set_wait_handle_internal(map.get(), 0, ebpf_handle_invalid, 0) == EBPF_SUCCESS);
+}
+
 TEST_CASE("perf_event_array_unsupported_ops", "[execution_context][perf_event_array][negative]")
 {
     _ebpf_core_initializer core;
