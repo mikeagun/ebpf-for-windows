@@ -246,13 +246,18 @@ _client_socket::post_async_receive(bool error_expected)
 
     if (error != 0) {
         wsaerr = WSAGetLastError();
-        if (!error_expected && wsaerr != WSA_IO_PENDING) {
-            FAIL("_client_socket::post_async_receive: WSARecv failed with " << wsaerr);
+        if (wsaerr != WSA_IO_PENDING) {
+            // WSARecv failed immediately — no I/O was posted. Clean up the event handle
+            // to prevent complete_async_receive from waiting on an unsignaled event.
+            WSACloseEvent(overlapped.hEvent);
+            overlapped.hEvent = INVALID_HANDLE_VALUE;
+            if (!error_expected) {
+                FAIL("_client_socket::post_async_receive: WSARecv failed with " << wsaerr);
+            }
+            return;
         }
     }
-    if (error == 0 || wsaerr == WSA_IO_PENDING) {
-        receive_posted = true;
-    }
+    receive_posted = true;
 }
 
 void
