@@ -220,7 +220,7 @@ _client_socket::post_async_receive(bool error_expected)
         FAIL("post_async_receive called on a closed socket (INVALID_SOCKET).");
     }
     if (receive_posted) {
-        return;
+        FAIL("post_async_receive called while a receive is already pending.");
     }
 
     int error = 0;
@@ -426,6 +426,9 @@ void
 _stream_client_socket::send_message_to_remote_host(
     _In_z_ const char* message, _Inout_ sockaddr_storage& remote_address, uint16_t remote_port)
 {
+    if (send_posted) {
+        FAIL("send_message_to_remote_host called while a send is already pending.");
+    }
     // Send a message to the remote host using the sender socket.
     ((PSOCKADDR_IN6)&remote_address)->sin6_port = htons(remote_port);
     std::vector<char> send_buffer(message, message + strlen(message));
@@ -680,6 +683,9 @@ _datagram_server_socket::_datagram_server_socket(
 void
 _datagram_server_socket::post_async_receive()
 {
+    if (receive_posted) {
+        FAIL("post_async_receive called while a receive is already pending.");
+    }
     int error = 0;
 
     WSABUF wsa_recv_buffer{static_cast<unsigned long>(recv_buffer.size()), reinterpret_cast<char*>(recv_buffer.data())};
@@ -875,6 +881,9 @@ _stream_server_socket::~_stream_server_socket() { clean_up_socket(accept_socket)
 void
 _stream_server_socket::post_async_receive()
 {
+    if (receive_posted) {
+        FAIL("post_async_receive called while a receive is already pending.");
+    }
     initialize_accept_socket();
 
     WSABUF wsa_recv_buffer{static_cast<unsigned long>(recv_buffer.size()), reinterpret_cast<char*>(recv_buffer.data())};
@@ -910,6 +919,9 @@ _stream_server_socket::post_async_receive()
 void
 _stream_server_socket::send_async_response(_In_z_ const char* message)
 {
+    if (send_posted) {
+        FAIL("send_async_response called while a send is already pending.");
+    }
     // Send a message to the remote host using the sender socket.
     std::vector<char> send_buffer(message, message + strlen(message));
     WSABUF wsa_send_buffer{static_cast<unsigned long>(send_buffer.size()), reinterpret_cast<char*>(send_buffer.data())};
