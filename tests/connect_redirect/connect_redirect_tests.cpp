@@ -372,12 +372,14 @@ typedef class _policy_map_guard
     {
     }
 
-    ~_policy_map_guard()
+    ~_policy_map_guard() noexcept
     {
-        // Note: _update_policy_map uses SAFE_REQUIRE which can throw. If this destructor runs during
-        // stack unwinding and the delete fails, std::terminate will be called. This is acceptable
-        // because a failed policy map cleanup means the test environment is already broken.
-        _update_policy_map(_destination, _proxy, _destination_port, _proxy_port, _connection_type, _dual_stack, false);
+        try {
+            _update_policy_map(
+                _destination, _proxy, _destination_port, _proxy_port, _connection_type, _dual_stack, false);
+        } catch (...) {
+            printf("WARNING: policy map cleanup failed during stack unwinding.\n");
+        }
     }
 
     _policy_map_guard(const _policy_map_guard&) = delete;
@@ -550,7 +552,12 @@ authorize_test_wrapper(bool dual_stack, _Inout_ sockaddr_storage& destination)
     // then a fresh one is created). Release ownership so authorize_test can manage the pointer,
     // then reclaim ownership of whatever it returns.
     raw_socket = sender_socket.release();
-    authorize_test(&raw_socket, destination, dual_stack);
+    try {
+        authorize_test(&raw_socket, destination, dual_stack);
+    } catch (...) {
+        sender_socket.reset(raw_socket);
+        throw;
+    }
     sender_socket.reset(raw_socket);
 }
 
