@@ -422,7 +422,7 @@ update_policy_map_and_test_connection(
     CAPTURE(source_address_str, destination_address_str, proxy_address_str, proxy_port);
 
     bool add_policy = true;
-    uint32_t bytes_received = 0;
+    DWORD bytes_received = 0;
     char* received_message = nullptr;
     uint64_t authentication_id;
     bool redirected = (destination_port != proxy_port || !INETADDR_ISEQUAL((SOCKADDR*)&destination, (SOCKADDR*)&proxy));

@@ -169,7 +169,7 @@ _base_socket::get_local_address(_Out_ PSOCKADDR& address, _Out_ int& address_len
 }
 
 void
-_base_socket::get_received_message(_Out_ uint32_t& message_size, _Outref_result_buffer_(message_size) char*& message)
+_base_socket::get_received_message(_Out_ DWORD& message_size, _Outref_result_buffer_(message_size) char*& message)
 {
     message_size = bytes_received;
     message = recv_buffer.data();
@@ -238,14 +238,7 @@ _client_socket::post_async_receive(bool error_expected)
     }
 
     // Post an asynchronous receive on the socket.
-    error = WSARecv(
-        socket,
-        &wsa_recv_buffer,
-        1,
-        reinterpret_cast<unsigned long*>(&bytes_received),
-        reinterpret_cast<unsigned long*>(&recv_flags),
-        &overlapped,
-        nullptr);
+    error = WSARecv(socket, &wsa_recv_buffer, 1, &bytes_received, &recv_flags, &overlapped, nullptr);
 
     if (error != 0) {
         wsaerr = WSAGetLastError();
@@ -283,12 +276,7 @@ _client_socket::complete_async_receive(int timeout_in_ms, bool timeout_or_error_
     DWORD overlapped_error = 0;
 
     if (received && !timeout_or_error_expected) {
-        overlapped_succeeded = WSAGetOverlappedResult(
-            socket,
-            &overlapped,
-            reinterpret_cast<unsigned long*>(&bytes_received),
-            FALSE,
-            reinterpret_cast<unsigned long*>(&recv_flags));
+        overlapped_succeeded = WSAGetOverlappedResult(socket, &overlapped, &bytes_received, FALSE, &recv_flags);
         if (!overlapped_succeeded) {
             overlapped_error = WSAGetLastError();
         }
@@ -570,12 +558,7 @@ _server_socket::complete_async_receive(int timeout_in_ms, receiver_mode mode)
     DWORD overlapped_error = 0;
 
     if (received && mode != MODE_TIMEOUT) {
-        overlapped_succeeded = WSAGetOverlappedResult(
-            socket,
-            &overlapped,
-            reinterpret_cast<unsigned long*>(&bytes_received),
-            FALSE,
-            reinterpret_cast<unsigned long*>(&recv_flags));
+        overlapped_succeeded = WSAGetOverlappedResult(socket, &overlapped, &bytes_received, FALSE, &recv_flags);
         if (!overlapped_succeeded) {
             overlapped_error = WSAGetLastError();
         }
@@ -888,7 +871,7 @@ _stream_server_socket::post_async_receive()
             static_cast<unsigned long>(message_length),
             static_cast<unsigned long>(sizeof(sockaddr_storage)) + 16,
             static_cast<unsigned long>(sizeof(sockaddr_storage)) + 16,
-            reinterpret_cast<unsigned long*>(&bytes_received),
+            &bytes_received,
             &overlapped)) {
         int wsaerr = WSAGetLastError();
         if (wsaerr != WSA_IO_PENDING) {

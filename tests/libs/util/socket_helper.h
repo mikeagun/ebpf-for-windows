@@ -91,7 +91,7 @@ typedef class _base_socket
      * @param[out] message Pointer to the received message buffer.
      */
     void
-    get_received_message(_Out_ uint32_t& message_size, _Outref_result_buffer_(message_size) char*& message);
+    get_received_message(_Out_ DWORD& message_size, _Outref_result_buffer_(message_size) char*& message);
 
     /**
      * @brief Get the actual error code from the bind operation.
@@ -120,8 +120,8 @@ typedef class _base_socket
     int protocol;
     uint16_t port;
     std::vector<char> recv_buffer;
-    uint32_t recv_flags;
-    uint32_t bytes_received = 0;
+    DWORD recv_flags;
+    DWORD bytes_received = 0;
     sockaddr_storage local_address;
     mutable int local_address_size;
     int _actual_bind_error{0};
