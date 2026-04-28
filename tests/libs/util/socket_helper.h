@@ -161,8 +161,8 @@ typedef class _client_socket : public _base_socket
     post_async_receive(bool error_expected = false);
     virtual void
     complete_async_receive(int timeout_in_ms, bool timeout_or_error_expected);
-    virtual void
-    cancel_send_message() = 0;
+    void
+    cancel_pending_io();
     void
     close();
 
@@ -201,8 +201,6 @@ typedef class _datagram_client_socket : public _client_socket
     send_message_to_remote_host(
         _In_z_ const char* message, _Inout_ sockaddr_storage& remote_address, uint16_t remote_port);
     void
-    cancel_send_message();
-    void
     complete_async_send(int timeout_in_ms, expected_result_t expected_result = expected_result_t::SUCCESS);
 
   private:
@@ -239,8 +237,6 @@ typedef class _stream_client_socket : public _client_socket
     void
     send_message_to_remote_host(
         _In_z_ const char* message, _Inout_ sockaddr_storage& remote_address, uint16_t remote_port);
-    void
-    cancel_send_message();
     void
     complete_async_send(int timeout_in_ms, expected_result_t expected_result = expected_result_t::SUCCESS);
 
@@ -355,6 +351,8 @@ typedef class _server_socket : public _base_socket
     query_redirect_context(_Inout_ void* buffer, uint32_t buffer_size) = 0;
 
   protected:
+    void
+    cancel_pending_io();
     WSAOVERLAPPED overlapped;
     LPFN_WSARECVMSG receive_message;
     bool receive_posted = false;

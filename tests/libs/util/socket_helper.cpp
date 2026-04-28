@@ -187,7 +187,10 @@ _client_socket::_client_socket(
 {
 }
 
-_client_socket::~_client_socket()
+_client_socket::~_client_socket() { cancel_pending_io(); }
+
+void
+_client_socket::cancel_pending_io()
 {
     // Cancel any pending overlapped I/O (receive or send) by closing the socket
     // (forces I/O to complete), then wait for the event to ensure the kernel is
@@ -380,11 +383,6 @@ _datagram_client_socket::send_message_to_remote_host(
 }
 
 void
-_datagram_client_socket::cancel_send_message()
-{
-}
-
-void
 _datagram_client_socket::complete_async_send(int timeout_in_ms, expected_result_t expected_result)
 {
     UNREFERENCED_PARAMETER(timeout_in_ms);
@@ -455,16 +453,6 @@ _stream_client_socket::send_message_to_remote_host(
         overlapped.hEvent = NULL;
         printf("send_message_to_remote_host: send already completed. Closing overlapped handle\n");
     }
-}
-
-void
-_stream_client_socket::cancel_send_message()
-{
-    CancelIoEx((HANDLE)socket, &overlapped);
-    WaitForSingleObject(overlapped.hEvent, INFINITE);
-    WSACloseEvent(overlapped.hEvent);
-    overlapped.hEvent = NULL;
-    send_posted = false;
 }
 
 void
@@ -548,7 +536,10 @@ _server_socket::_server_socket(
     }
 }
 
-_server_socket::~_server_socket()
+_server_socket::~_server_socket() { cancel_pending_io(); }
+
+void
+_server_socket::cancel_pending_io()
 {
     // Cancel any pending overlapped I/O by closing the socket, then wait for the event.
     if (receive_posted || send_posted) {
