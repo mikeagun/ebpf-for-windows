@@ -432,7 +432,7 @@ execute_connection_test(_In_ const connection_test_case& test_case)
         // Connection test (sock_addr).
         execute_connection_attempt(client, server, test_case.address_family, test.expected_result, SOCKET_TEST_PORT);
 
-        // Reset sockets after each sub-test. For TCP, a cancelled ConnectEx leaves the socket
+        // Reset sockets after each sub-test. For TCP, a canceled ConnectEx leaves the socket
         // in an indeterminate state (e.g., SYN_SENT if the SYN was transmitted before the WFP
         // block). CancelIoEx does not wait for completion, so reusing the socket/OVERLAPPED for
         // a subsequent ConnectEx is unreliable.
