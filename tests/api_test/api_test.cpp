@@ -659,10 +659,23 @@ TEST_CASE("ring_buffer_mmap_consumer", "[ring_buffer]")
     REQUIRE(received_data[0] == test_data);
     REQUIRE(received_data[1] == test_data2);
 
+    HANDLE second_wait_handle = CreateEvent(nullptr, false, false, nullptr);
+    REQUIRE(second_wait_handle != NULL);
+
+    result = ebpf_map_set_wait_handle(map_fd, 0, ebpf_handle_invalid);
+    REQUIRE(result == EBPF_SUCCESS);
+
+    result = ebpf_map_set_wait_handle(map_fd, 0, (ebpf_handle_t)second_wait_handle);
+    REQUIRE(result == EBPF_SUCCESS);
+
+    result = ebpf_map_set_wait_handle(map_fd, 0, ebpf_handle_invalid);
+    REQUIRE(result == EBPF_SUCCESS);
+
     // Clean up.
     REQUIRE(
         ebpf_ring_buffer_map_unmap_buffer(map_fd, (void*)consumer_ptr, (void*)producer_ptr, (void*)data) ==
         EBPF_SUCCESS);
+    CloseHandle(second_wait_handle);
     CloseHandle(wait_handle);
     _close(map_fd);
 }
