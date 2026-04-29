@@ -187,7 +187,7 @@ _client_socket::_client_socket(
 {
 }
 
-_client_socket::~_client_socket() { cancel_pending_io(); }
+_client_socket::~_client_socket() noexcept { cancel_pending_io(); }
 
 void
 _client_socket::cancel_pending_io()
@@ -524,7 +524,7 @@ _server_socket::_server_socket(
     }
 }
 
-_server_socket::~_server_socket() { cancel_pending_io(); }
+_server_socket::~_server_socket() noexcept { cancel_pending_io(); }
 
 void
 _server_socket::cancel_pending_io()
