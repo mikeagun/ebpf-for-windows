@@ -336,27 +336,27 @@ _ring_record_at_offset(_In_ const ebpf_ring_buffer_t* ring, size_t offset)
 inline static void
 _ring_buffer_notify_consumer(_In_ uint8_t* buffer, uint64_t flags)
 {
-    ebpf_ring_buffer_producer_page_t* producer_page = _ring_buffer_producer_page(buffer);
     ebpf_ring_buffer_kernel_page_t* kernel_page = _ring_buffer_kernel_page(buffer);
-    PKEVENT wait_event = NULL;
-    if (flags & EBPF_RINGBUF_FLAG_FORCE_WAKEUP) {
-        wait_event = kernel_page->wait_event;
-    } else if (!(flags & EBPF_RINGBUF_FLAG_NO_WAKEUP)) {
-        // Notify only if ring might not be empty.
-        if (kernel_page->wait_event != NULL) {
-            ebpf_ring_buffer_consumer_page_t* consumer_page = _ring_buffer_consumer_page(buffer);
-            // Notify the producer that a record is available.
-            size_t consumer_offset = ReadULong64Acquire(&consumer_page->consumer_offset);
-            size_t producer_offset = ReadULong64Acquire(&producer_page->producer_offset);
-            if (producer_offset != consumer_offset) {
-                wait_event = kernel_page->wait_event;
-            }
-        }
+
+    // Capture the wait event pointer exactly once via volatile read. The writer
+    // (ebpf_ring_buffer_set_wait_handle) uses InterlockedExchangePointer and defers
+    // ObDereferenceObject until epoch end, so this pointer remains valid for the
+    // duration of this BPF helper call (which runs within an epoch).
+    PKEVENT wait_event = *(PKEVENT volatile*)&kernel_page->wait_event;
+    if (wait_event == NULL) {
+        return;
     }
 
-    if (wait_event != NULL) {
-        // Signal the event to notify the consumer that new data is available.
+    if (flags & EBPF_RINGBUF_FLAG_FORCE_WAKEUP) {
         KeSetEvent(wait_event, 0, FALSE);
+    } else if (!(flags & EBPF_RINGBUF_FLAG_NO_WAKEUP)) {
+        ebpf_ring_buffer_producer_page_t* producer_page = _ring_buffer_producer_page(buffer);
+        ebpf_ring_buffer_consumer_page_t* consumer_page = _ring_buffer_consumer_page(buffer);
+        size_t consumer_offset = ReadULong64Acquire(&consumer_page->consumer_offset);
+        size_t producer_offset = ReadULong64Acquire(&producer_page->producer_offset);
+        if (producer_offset != consumer_offset) {
+            KeSetEvent(wait_event, 0, FALSE);
+        }
     }
 }
 
@@ -424,18 +424,6 @@ ebpf_ring_buffer_allocate_ring(_Out_writes_bytes_(sizeof(ebpf_ring_buffer_t)) eb
     return EBPF_SUCCESS;
 }
 
-void
-ebpf_ring_buffer_free_ring_memory(_Inout_ ebpf_ring_buffer_t* ring)
-{
-    ebpf_ring_buffer_kernel_page_t* kernel_page = ring->kernel_page;
-    if (kernel_page->wait_event != NULL) {
-        ObDereferenceObject(kernel_page->wait_event);
-        kernel_page->wait_event = NULL;
-    }
-    ebpf_free_ring_buffer_memory(ring->ring_descriptor);
-    ring->ring_descriptor = NULL;
-}
-
 _Must_inspect_result_ ebpf_result_t
 ebpf_ring_buffer_create(_Outptr_ ebpf_ring_buffer_t** ring, size_t capacity)
 {
@@ -475,10 +463,14 @@ ebpf_ring_buffer_destroy(_Frees_ptr_opt_ ebpf_ring_buffer_t* ring)
         // C6001 false positive: the analyzer can't see through the allocator's zero-init.
 #pragma warning(push)
 #pragma warning(disable : 6001)
-        // Release the event object reference if one was set via ebpf_ring_buffer_set_wait_handle.
-        if (ring->kernel_page && ring->kernel_page->wait_event != NULL) {
-            ObDereferenceObject(ring->kernel_page->wait_event);
-            ring->kernel_page->wait_event = NULL;
+        // Atomically clear the event and release the reference. Destroy runs only when the
+        // map's last reference drops, so no BPF programs can be concurrently in-flight.
+        if (ring->kernel_page) {
+            PKEVENT old_wait_event =
+                (PKEVENT)InterlockedExchangePointer((PVOID volatile*)&ring->kernel_page->wait_event, NULL);
+            if (old_wait_event != NULL) {
+                ObDereferenceObject(old_wait_event);
+            }
         }
 #pragma warning(pop)
 
@@ -501,6 +493,13 @@ ebpf_perf_event_array_get_producer_page(_Inout_ ebpf_ring_buffer_t* ring_buffer)
     return (ebpf_perf_event_array_producer_page_t*)ring_buffer->producer_page;
 }
 
+// Epoch callback to dereference a wait event object after all in-flight BPF helpers have completed.
+static void
+_ring_buffer_deref_event_callback(_Inout_ void* context)
+{
+    ObDereferenceObject(context);
+}
+
 _Must_inspect_result_ ebpf_result_t
 ebpf_ring_buffer_set_wait_handle(
     _Inout_ ebpf_ring_buffer_t* ring_buffer, _In_ ebpf_handle_t wait_handle, uint64_t flags)
@@ -510,8 +509,9 @@ ebpf_ring_buffer_set_wait_handle(
     }
 
     ebpf_ring_buffer_kernel_page_t* kernel_page = ring_buffer->kernel_page;
-    PKEVENT old_wait_event = kernel_page->wait_event;
 
+    // Reference the new event object, if a valid handle was provided.
+    // When wait_handle is ebpf_handle_invalid, the caller is clearing the wait event.
     PKEVENT wait_event = NULL;
     if (wait_handle != ebpf_handle_invalid) {
         NTSTATUS status = ObReferenceObjectByHandle(
@@ -523,11 +523,24 @@ ebpf_ring_buffer_set_wait_handle(
         }
     }
 
-    kernel_page->wait_event = wait_event;
+    // Atomically swap in the new event pointer. This ensures concurrent readers in
+    // _ring_buffer_notify_consumer see either the old or new pointer, never a torn value.
+    PKEVENT old_wait_event =
+        (PKEVENT)InterlockedExchangePointer((PVOID volatile*)&kernel_page->wait_event, (PVOID)wait_event);
 
-    // Dereference the old event if it exists.
+    // Dereference the old event if it exists. The old event must remain valid until all
+    // in-flight BPF helpers that captured the pointer have completed. BPF helpers run within
+    // an epoch, so deferring the dereference until epoch end guarantees safety.
     if (old_wait_event != NULL) {
-        ObDereferenceObject(old_wait_event);
+        ebpf_epoch_work_item_t* work_item =
+            ebpf_epoch_allocate_work_item(old_wait_event, _ring_buffer_deref_event_callback);
+        if (work_item != NULL) {
+            ebpf_epoch_schedule_work_item(work_item);
+        } else {
+            // Fallback: wait for the current epoch to end, then dereference synchronously.
+            ebpf_epoch_synchronize();
+            ObDereferenceObject(old_wait_event);
+        }
     }
 
     return EBPF_SUCCESS;
