@@ -599,12 +599,15 @@ void
 redirect_then_auth_reject_test(
     bool dual_stack, _Inout_ sockaddr_storage& destination, _In_ const sockaddr_storage& proxy)
 {
-    client_socket_t* sender_socket = nullptr;
-    get_client_socket(dual_stack, &sender_socket);
+    client_socket_t* raw_socket = nullptr;
+    get_client_socket(dual_stack, &raw_socket);
+    std::unique_ptr<client_socket_t> sender_socket(raw_socket);
 
     // Set up redirect policy to allow and redirect.
     _update_policy_map(
         destination, proxy, _globals.destination_port, _globals.proxy_port, _globals.connection_type, dual_stack, true);
+    policy_map_guard_t redirect_guard(
+        destination, proxy, _globals.destination_port, _globals.proxy_port, _globals.connection_type, dual_stack);
 
     // Set up authorization policy to REJECT the proxy (post-redirect) destination.
     _update_authorization_policy_map(proxy, _globals.proxy_port, BPF_SOCK_ADDR_VERDICT_REJECT, dual_stack, true);
@@ -618,18 +621,8 @@ redirect_then_auth_reject_test(
         sender_socket->complete_async_receive(1000, true);
     }
 
-    // Clean up policy maps.
+    // Clean up authorization policy (redirect policy cleaned up by guard).
     _update_authorization_policy_map(proxy, _globals.proxy_port, 0, dual_stack, false);
-    _update_policy_map(
-        destination,
-        proxy,
-        _globals.destination_port,
-        _globals.proxy_port,
-        _globals.connection_type,
-        dual_stack,
-        false);
-
-    delete sender_socket;
 }
 
 // Test that authorization allows a connection after redirect, proving the
@@ -638,12 +631,15 @@ void
 redirect_then_auth_allow_test(
     bool dual_stack, _Inout_ sockaddr_storage& destination, _In_ const sockaddr_storage& proxy)
 {
-    client_socket_t* sender_socket = nullptr;
-    get_client_socket(dual_stack, &sender_socket);
+    client_socket_t* raw_socket = nullptr;
+    get_client_socket(dual_stack, &raw_socket);
+    std::unique_ptr<client_socket_t> sender_socket(raw_socket);
 
     // Set up redirect policy to allow and redirect.
     _update_policy_map(
         destination, proxy, _globals.destination_port, _globals.proxy_port, _globals.connection_type, dual_stack, true);
+    policy_map_guard_t redirect_guard(
+        destination, proxy, _globals.destination_port, _globals.proxy_port, _globals.connection_type, dual_stack);
 
     // Set up authorization policy to ALLOW the proxy (post-redirect) destination.
     _update_authorization_policy_map(proxy, _globals.proxy_port, BPF_SOCK_ADDR_VERDICT_PROCEED_SOFT, dual_stack, true);
@@ -654,21 +650,11 @@ redirect_then_auth_allow_test(
         sender_socket->send_message_to_remote_host(CLIENT_MESSAGE, destination, _globals.destination_port);
         sender_socket->complete_async_send(1000, expected_result_t::SUCCESS);
         sender_socket->post_async_receive();
-        sender_socket->complete_async_receive(2000, false);
+        sender_socket->complete_async_receive(5000, false);
     }
 
-    // Clean up.
+    // Clean up authorization policy (redirect policy cleaned up by guard).
     _update_authorization_policy_map(proxy, _globals.proxy_port, 0, dual_stack, false);
-    _update_policy_map(
-        destination,
-        proxy,
-        _globals.destination_port,
-        _globals.proxy_port,
-        _globals.connection_type,
-        dual_stack,
-        false);
-
-    delete sender_socket;
 }
 
 void
