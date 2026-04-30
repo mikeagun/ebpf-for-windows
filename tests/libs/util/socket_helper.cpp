@@ -500,8 +500,13 @@ _stream_client_socket::complete_async_send(int timeout_in_ms, expected_result_t 
 }
 
 _server_socket::_server_socket(
-    int _sock_type, int _protocol, uint16_t _port, _In_ const sockaddr_storage& local_address, int expected_bind_error)
-    : _base_socket{_sock_type, _protocol, _port, Dual, local_address, expected_bind_error}, overlapped{}
+    int _sock_type,
+    int _protocol,
+    uint16_t _port,
+    _In_ const sockaddr_storage& local_address,
+    int expected_bind_error,
+    socket_family_t _family)
+    : _base_socket{_sock_type, _protocol, _port, _family, local_address, expected_bind_error}, overlapped{}
 {
     overlapped.hEvent = NULL;
     receive_message = nullptr;
@@ -802,8 +807,9 @@ _stream_server_socket::_stream_server_socket(
     uint16_t _port,
     _In_ const sockaddr_storage& local_address,
     int expected_bind_error,
-    int expected_listen_error)
-    : _server_socket{_sock_type, _protocol, _port, local_address, expected_bind_error}, acceptex(nullptr),
+    int expected_listen_error,
+    socket_family_t _family)
+    : _server_socket{_sock_type, _protocol, _port, local_address, expected_bind_error, _family}, acceptex(nullptr),
       accept_socket(INVALID_SOCKET), message_length(recv_buffer.size() - 2 * (sizeof(sockaddr_storage) + 16))
 {
     if ((sock_type != SOCK_STREAM) || (protocol != IPPROTO_TCP)) {
@@ -863,13 +869,21 @@ _stream_server_socket::initialize_accept_socket()
     // Close a previous accept socket, if present.
     clean_up_socket(accept_socket);
 
-    // Create accept socket.
-    accept_socket = WSASocket(AF_INET6, sock_type, protocol, nullptr, 0, WSA_FLAG_OVERLAPPED);
-    uint32_t ipv6_option = 0;
-    int error = setsockopt(
-        accept_socket, IPPROTO_IPV6, IPV6_V6ONLY, reinterpret_cast<const char*>(&ipv6_option), sizeof(unsigned long));
-    if (error != 0) {
-        FAIL("Could not enable dual family endpoint on accept socket: " << WSAGetLastError());
+    // Create accept socket matching the listen socket's address family.
+    // AcceptEx requires the accept socket to have the same address family as the listen socket.
+    ADDRESS_FAMILY accept_family = (family == IPv4) ? AF_INET : AF_INET6;
+    accept_socket = WSASocket(accept_family, sock_type, protocol, nullptr, 0, WSA_FLAG_OVERLAPPED);
+    if (family == Dual) {
+        uint32_t ipv6_option = 0;
+        int error = setsockopt(
+            accept_socket,
+            IPPROTO_IPV6,
+            IPV6_V6ONLY,
+            reinterpret_cast<const char*>(&ipv6_option),
+            sizeof(unsigned long));
+        if (error != 0) {
+            FAIL("Could not enable dual family endpoint on accept socket: " << WSAGetLastError());
+        }
     }
 }
 

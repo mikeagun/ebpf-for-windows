@@ -207,7 +207,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
     {
         &EBPF_HOOK_ALE_AUTH_LISTEN_V4_CALLOUT,
         &FWPM_LAYER_ALE_AUTH_LISTEN_V4,
-        net_ebpf_extension_sock_ops_listen_classify,
+        net_ebpf_extension_sock_addr_authorize_listen_classify,
         net_ebpf_ext_filter_change_notify,
         NULL, // No flow delete callback for listen.
         L"ALE Auth Listen Callout v4",
@@ -218,7 +218,7 @@ static net_ebpf_ext_wfp_callout_state_t _net_ebpf_ext_wfp_callout_states[] = {
     {
         &EBPF_HOOK_ALE_AUTH_LISTEN_V6_CALLOUT,
         &FWPM_LAYER_ALE_AUTH_LISTEN_V6,
-        net_ebpf_extension_sock_ops_listen_classify,
+        net_ebpf_extension_sock_addr_authorize_listen_classify,
         net_ebpf_ext_filter_change_notify,
         NULL, // No flow delete callback for listen.
         L"ALE Auth Listen Callout v6",
