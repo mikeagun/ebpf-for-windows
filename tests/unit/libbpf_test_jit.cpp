@@ -459,6 +459,9 @@ _test_bpf_object_load_with_o()
     REQUIRE(strcmp(bpf_map__name(map), "ingress_connection_policy_map") == 0);
     REQUIRE(bpf_map__fd(map) == ebpf_fd_invalid);
     map = bpf_object__next_map(object, map);
+    REQUIRE(strcmp(bpf_map__name(map), "listen_connection_policy_map") == 0);
+    REQUIRE(bpf_map__fd(map) == ebpf_fd_invalid);
+    map = bpf_object__next_map(object, map);
     REQUIRE(map == nullptr);
 
     // Trying to attach the program should fail since it's not loaded yet.
@@ -483,6 +486,9 @@ _test_bpf_object_load_with_o()
     REQUIRE(bpf_map__fd(map) != ebpf_fd_invalid);
     map = bpf_object__next_map(object, map);
     REQUIRE(strcmp(bpf_map__name(map), "ingress_connection_policy_map") == 0);
+    REQUIRE(bpf_map__fd(map) != ebpf_fd_invalid);
+    map = bpf_object__next_map(object, map);
+    REQUIRE(strcmp(bpf_map__name(map), "listen_connection_policy_map") == 0);
     REQUIRE(bpf_map__fd(map) != ebpf_fd_invalid);
     map = bpf_object__next_map(object, map);
     REQUIRE(map == nullptr);
@@ -541,6 +547,9 @@ _test_bpf_object_load_with_o_from_memory()
     REQUIRE(strcmp(bpf_map__name(map), "ingress_connection_policy_map") == 0);
     REQUIRE(bpf_map__fd(map) == ebpf_fd_invalid);
     map = bpf_object__next_map(object, map);
+    REQUIRE(strcmp(bpf_map__name(map), "listen_connection_policy_map") == 0);
+    REQUIRE(bpf_map__fd(map) == ebpf_fd_invalid);
+    map = bpf_object__next_map(object, map);
     REQUIRE(map == nullptr);
 
     // Trying to attach the program should fail since it's not loaded yet.
@@ -565,6 +574,9 @@ _test_bpf_object_load_with_o_from_memory()
     REQUIRE(bpf_map__fd(map) != ebpf_fd_invalid);
     map = bpf_object__next_map(object, map);
     REQUIRE(strcmp(bpf_map__name(map), "ingress_connection_policy_map") == 0);
+    REQUIRE(bpf_map__fd(map) != ebpf_fd_invalid);
+    map = bpf_object__next_map(object, map);
+    REQUIRE(strcmp(bpf_map__name(map), "listen_connection_policy_map") == 0);
     REQUIRE(bpf_map__fd(map) != ebpf_fd_invalid);
     map = bpf_object__next_map(object, map);
     REQUIRE(map == nullptr);
