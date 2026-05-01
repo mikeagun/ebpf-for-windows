@@ -388,8 +388,8 @@ typedef class _policy_map_guard
     operator=(const _policy_map_guard&) = delete;
 
   private:
-    const sockaddr_storage& _destination;
-    const sockaddr_storage& _proxy;
+    sockaddr_storage _destination;
+    sockaddr_storage _proxy;
     uint16_t _destination_port;
     uint16_t _proxy_port;
     connection_type_t _connection_type;
