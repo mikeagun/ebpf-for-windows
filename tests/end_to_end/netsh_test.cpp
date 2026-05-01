@@ -390,8 +390,8 @@ TEST_CASE("show sections cgroup_sock_addr.sys", "[netsh][sections]")
     const int old_code_size[] = {961, 1036, 644, 643, 961, 1036, 961, 1036};
     const int code_size[] = {1015, 1150, 644, 643, 1015, 1150, 1015, 1150};
 #elif defined(_M_ARM64) && defined(NDEBUG)
-    const int old_code_size[] = {328, 344, 184, 185, 328, 344, 328, 344};
-    const int code_size[] = {272, 296, 184, 185, 272, 296, 272, 296};
+    const int old_code_size[] = {328, 344, 140, 144, 328, 344, 328, 344};
+    const int code_size[] = {272, 296, 140, 144, 272, 296, 272, 296};
 #elif defined(_M_ARM64) && !defined(NDEBUG)
     const int old_code_size[] = {1132, 1288, 644, 643, 1132, 1288, 1132, 1288};
     const int code_size[] = {1008, 1164, 644, 643, 1008, 1164, 1008, 1164};
