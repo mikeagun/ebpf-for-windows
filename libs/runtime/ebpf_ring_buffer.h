@@ -78,12 +78,13 @@ ebpf_perf_event_array_producer_page_t*
 ebpf_perf_event_array_get_producer_page(_Inout_ ebpf_ring_buffer_t* ring_buffer);
 
 /**
- * @brief Set the wait handle for the ring buffer.
+ * @brief Set or clear the wait handle for the ring buffer.
  *
  * This is used to notify the consumer when a record is available.
+ * Pass ebpf_handle_invalid to clear the current wait handle.
  *
  * @param[in, out] ring_buffer Ring buffer to update.
- * @param[in] wait_handle Handle to notify the consumer.
+ * @param[in] wait_handle Handle to notify the consumer, or ebpf_handle_invalid to clear.
  * @param[in] flags Flags to control the behavior of the function. Must be 0.
  * @retval EBPF_SUCCESS The operation was successful.
  * @retval EBPF_INVALID_ARGUMENT The provided arguments are not valid.
