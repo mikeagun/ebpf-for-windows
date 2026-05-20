@@ -1703,6 +1703,23 @@ TEST_CASE("perf buffer manager APIs", "[libbpf][perf_event_array]")
         perf_buffer__free(pb);
     }
 
+    SECTION("ebpf_map_subscribe with duplicate CPU IDs should fail")
+    {
+        // F-009: Duplicate CPU IDs in the cpu_ids array should be rejected.
+        uint32_t duplicate_cpu_ids[] = {0, 0};
+        ebpf_map_subscription_t* subscription = nullptr;
+        ebpf_result_t result = ebpf_map_subscribe(
+            map_fd,
+            duplicate_cpu_ids,
+            2,
+            &callback_context,
+            (void*)perf_buffer_test_sample_callback,
+            nullptr,
+            &subscription);
+        REQUIRE(result == EBPF_INVALID_ARGUMENT);
+        REQUIRE(subscription == nullptr);
+    }
+
     // No test for null perf buffer (violates SAL).
     Platform::_close(map_fd);
 }
