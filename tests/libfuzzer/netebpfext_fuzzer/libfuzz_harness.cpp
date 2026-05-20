@@ -115,6 +115,9 @@ FUZZ_EXPORT int __cdecl LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     switch (prog_type) {
     case BPF_PROG_TYPE_BIND:
         (void)helper.test_bind_ipv4(&parameters);
+        (void)helper.test_bind_ipv6(&parameters);
+        (void)helper.test_bind_release_ipv4(&parameters);
+        (void)helper.test_bind_release_ipv6(&parameters);
         break;
     case BPF_PROG_TYPE_CGROUP_SOCK_ADDR:
         (void)helper.test_cgroup_inet4_recv_accept(&parameters);

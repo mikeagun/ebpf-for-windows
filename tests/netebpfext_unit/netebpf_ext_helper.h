@@ -52,6 +52,21 @@ typedef class _netebpf_ext_helper
     test_bind_ipv4(_In_ fwp_classify_parameters_t* parameters) { return usersim_fwp_bind_ipv4(parameters); }
 
     FWP_ACTION_TYPE
+    test_bind_ipv6(_In_ fwp_classify_parameters_t* parameters) { return usersim_fwp_bind_ipv6(parameters); }
+
+    FWP_ACTION_TYPE
+    test_bind_release_ipv4(_In_ fwp_classify_parameters_t* parameters)
+    {
+        return usersim_fwp_bind_release_ipv4(parameters);
+    }
+
+    FWP_ACTION_TYPE
+    test_bind_release_ipv6(_In_ fwp_classify_parameters_t* parameters)
+    {
+        return usersim_fwp_bind_release_ipv6(parameters);
+    }
+
+    FWP_ACTION_TYPE
     test_cgroup_inet4_recv_accept(_In_ fwp_classify_parameters_t* parameters)
     {
         return usersim_fwp_cgroup_inet4_recv_accept(parameters);
