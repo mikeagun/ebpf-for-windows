@@ -1705,7 +1705,7 @@ TEST_CASE("perf buffer manager APIs", "[libbpf][perf_event_array]")
 
     SECTION("ebpf_map_subscribe with duplicate CPU IDs should fail")
     {
-        // F-009: Duplicate CPU IDs in the cpu_ids array should be rejected.
+        // Duplicate CPU IDs in the cpu_ids array are rejected.
         uint32_t duplicate_cpu_ids[] = {0, 0};
         ebpf_map_subscription_t* subscription = nullptr;
         ebpf_result_t result = ebpf_map_subscribe(

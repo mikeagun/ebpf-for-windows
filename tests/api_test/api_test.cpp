@@ -2154,9 +2154,7 @@ TEST_CASE("perf_buffer_sync_reopen", "[perf_buffer]")
     }
 }
 
-// F-006: Stress test — rapid subscribe/produce/unsubscribe cycles to exercise
-// the async completion callback vs unsubscribe race path. The atomic
-// async_ioctl_failed flag and lock ordering fix prevent UAF during rapid churn.
+// Stress rapid subscribe/produce/unsubscribe cycles through the callback and unsubscribe race path.
 TEST_CASE("perf_buffer_rapid_reopen_stress", "[perf_buffer][stress]")
 {
     constexpr int iterations = 30;

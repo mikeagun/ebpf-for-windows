@@ -4951,10 +4951,7 @@ typedef struct _ebpf_map_async_query_context
     uint32_t cpu_id;
     size_t lost_count_total;
     async_ioctl_completion_t* async_ioctl_completion;
-    // F-006: Atomic to avoid holding context lock across subscription notification.
-    // The completion callback stores true and then notifies under subscription->lock.
-    // If this were a plain bool protected by context->lock, the unsubscribe thread could
-    // destroy the context (and its mutex) while the callback still holds the lock.
+    // Atomic to avoid holding context->lock across the subscription notification.
     std::atomic<bool> async_ioctl_failed;
     // Set to true when we have posted a final consumer-advance IOCTL after unsubscribe to ensure
     // the kernel's consumer offset is updated before the subscription is torn down.
@@ -4986,8 +4983,7 @@ typedef struct _ebpf_map_subscription
 
     std::mutex lock;
     _Write_guarded_by_(lock) boolean unsubscribed;
-    // R-003: Count of callbacks between async_ioctl_failed store and lock release.
-    // Unsubscribe waits for this to reach zero before deleting the subscription.
+    // Count callbacks that have marked failure but not yet released subscription->lock.
     std::atomic<int> outstanding_callbacks{0};
     ebpf_handle_t map_handle;
     void* callback_context;
@@ -5029,11 +5025,8 @@ _ebpf_map_async_query_completion(_Inout_ void* completion_context) NO_EXCEPT_TRY
         if (result != EBPF_CANCELED) {
             // The async IOCTL was not canceled, but completed with a failure status. Mark the subscription object as
             // such, so that it gets freed when the user eventually unsubscribes.
-            // F-006: Use atomic store instead of scoped_lock on context->lock. Holding context->lock
-            // across the subscription notification creates a race: unsubscribe wakes up, sees all
-            // contexts failed, destroys them — but this callback still holds the destroyed mutex.
-            // R-003: Increment outstanding_callbacks before the store and decrement after releasing
-            // the lock, so unsubscribe cannot free the subscription while we still reference it.
+            // Use an atomic store so this path does not hold context->lock across notification.
+            // Track outstanding callbacks until subscription->lock is released.
             subscription->outstanding_callbacks.fetch_add(1, std::memory_order_release);
             async_query_context->async_ioctl_failed.store(true, std::memory_order_release);
 
@@ -5305,9 +5298,7 @@ ebpf_map_subscribe(
             local_async_query_context->cpu_id = cpu_ids[cpu_index];
             local_async_query_context->subscription = local_subscription.get();
 
-            // F-009: Insert context into the map immediately. This detects duplicate CPU IDs
-            // (insert fails if key exists) and ensures unsubscribe can clean up all contexts
-            // regardless of which subsequent step fails (F-005).
+            // Insert context immediately to reject duplicate CPU IDs and keep cleanup centralized.
             auto [it, inserted] = local_subscription->async_query_contexts.insert(
                 {cpu_ids[cpu_index], std::move(local_async_query_context)});
             if (!inserted) {
@@ -5325,9 +5316,8 @@ ebpf_map_subscribe(
             ebpf_operation_map_query_buffer_reply_t query_buffer_reply{};
             result = win32_error_code_to_ebpf_result(invoke_ioctl(query_buffer_request, query_buffer_reply));
             if (result != EBPF_SUCCESS) {
-                // F-005: break instead of EBPF_RETURN_RESULT — cleanup via ebpf_map_unsubscribe
-                // at the end of the function will handle all inserted contexts.
-                // Mark as failed so unsubscribe doesn't try to cancel a non-existent async IOCTL.
+                // Break so ebpf_map_unsubscribe cleans up inserted contexts.
+                // Mark as failed so unsubscribe does not cancel a non-existent async IOCTL.
                 ctx->async_ioctl_failed.store(true, std::memory_order_relaxed);
                 break;
             }
@@ -5339,8 +5329,8 @@ ebpf_map_subscribe(
                 initialize_async_ioctl_operation(ctx, _ebpf_map_async_query_completion, &ctx->async_ioctl_completion);
 
             if (result != EBPF_SUCCESS) {
-                // F-005: break instead of EBPF_RETURN_RESULT.
-                // Mark as failed so unsubscribe doesn't try to cancel a non-existent async IOCTL.
+                // Break so ebpf_map_unsubscribe cleans up inserted contexts.
+                // Mark as failed so unsubscribe does not cancel a non-existent async IOCTL.
                 ctx->async_ioctl_failed.store(true, std::memory_order_relaxed);
                 break;
             }
@@ -5471,8 +5461,7 @@ ebpf_map_unsubscribe(_In_ _Post_invalid_ ebpf_map_subscription_t* subscription) 
         // A context is "done" when it has been erased (normal/canceled path) or marked as failed.
         // We wait indefinitely here — if a completion never arrives, a deadlock is preferable to
         // use-after-free from freeing OVERLAPPED structures while IOCTLs are still pending.
-        // R-003: Also wait for outstanding_callbacks to drain. A callback may have
-        // stored async_ioctl_failed=true but not yet released subscription->lock.
+        // Also wait for outstanding_callbacks to drain before deleting the subscription.
         auto all_done_or_failed = [subscription] {
             for (const auto& [cpu_id, ctx] : subscription->async_query_contexts) {
                 if (!ctx->async_ioctl_failed.load(std::memory_order_acquire)) {
@@ -6224,8 +6213,7 @@ ebpf_perf_buffer__new(
                 }
                 perf_buffer->sync_maps.clear();
 
-                // F-010: Always clear wait handle for current CPU, regardless of whether mapping
-                // succeeded. The wait handle may have been set before the mapping attempt failed.
+                // Always clear the current CPU's wait handle, even if mapping failed.
                 (void)ebpf_map_set_wait_handle(current_map_info.map_fd, current_map_info.cpu_id, ebpf_handle_invalid);
                 if (current_map_info.consumer_page) {
                     (void)ebpf_ring_buffer_map_unmap_buffer_with_index(
