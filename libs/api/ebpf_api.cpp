@@ -4986,6 +4986,9 @@ typedef struct _ebpf_map_subscription
 
     std::mutex lock;
     _Write_guarded_by_(lock) boolean unsubscribed;
+    // R-003: Count of callbacks between async_ioctl_failed store and lock release.
+    // Unsubscribe waits for this to reach zero before deleting the subscription.
+    std::atomic<int> outstanding_callbacks{0};
     ebpf_handle_t map_handle;
     void* callback_context;
     ring_buffer_sample_fn ring_buffer_sample_callback;
@@ -5029,6 +5032,9 @@ _ebpf_map_async_query_completion(_Inout_ void* completion_context) NO_EXCEPT_TRY
             // F-006: Use atomic store instead of scoped_lock on context->lock. Holding context->lock
             // across the subscription notification creates a race: unsubscribe wakes up, sees all
             // contexts failed, destroys them — but this callback still holds the destroyed mutex.
+            // R-003: Increment outstanding_callbacks before the store and decrement after releasing
+            // the lock, so unsubscribe cannot free the subscription while we still reference it.
+            subscription->outstanding_callbacks.fetch_add(1, std::memory_order_release);
             async_query_context->async_ioctl_failed.store(true, std::memory_order_release);
 
             // Notify unsubscribe that this context has failed and won't post new IOCTLs.
@@ -5036,6 +5042,7 @@ _ebpf_map_async_query_completion(_Inout_ void* completion_context) NO_EXCEPT_TRY
             // to the context owned by the map's unique_ptr, so erasing would be use-after-free.
             {
                 std::scoped_lock subscription_lock{subscription->lock};
+                subscription->outstanding_callbacks.fetch_sub(1, std::memory_order_release);
                 subscription->cleanup_complete_event.notify_all();
             }
             EBPF_RETURN_RESULT(result);
@@ -5464,13 +5471,15 @@ ebpf_map_unsubscribe(_In_ _Post_invalid_ ebpf_map_subscription_t* subscription) 
         // A context is "done" when it has been erased (normal/canceled path) or marked as failed.
         // We wait indefinitely here — if a completion never arrives, a deadlock is preferable to
         // use-after-free from freeing OVERLAPPED structures while IOCTLs are still pending.
+        // R-003: Also wait for outstanding_callbacks to drain. A callback may have
+        // stored async_ioctl_failed=true but not yet released subscription->lock.
         auto all_done_or_failed = [subscription] {
             for (const auto& [cpu_id, ctx] : subscription->async_query_contexts) {
                 if (!ctx->async_ioctl_failed.load(std::memory_order_acquire)) {
                     return false;
                 }
             }
-            return true;
+            return subscription->outstanding_callbacks.load(std::memory_order_acquire) == 0;
         };
         subscription->cleanup_complete_event.wait(lock_wait, all_done_or_failed);
         // Clean up remaining (failed) contexts.
