@@ -2116,7 +2116,7 @@ TEST_CASE("perf_event_array_oob_index", "[execution_context][perf_event_array]")
     uint32_t ring_count = ebpf_get_cpu_count();
     REQUIRE(ring_count > 0);
 
-    // F-004: Verify out-of-range cpu_id is rejected by async_query and return_buffer.
+    // Verify out-of-range cpu_id is rejected.
     uint32_t oob_index = ring_count; // First invalid index.
     uint8_t* buffer = nullptr;
     size_t consumer_offset = 0;
