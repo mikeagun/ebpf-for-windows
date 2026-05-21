@@ -2154,6 +2154,35 @@ TEST_CASE("perf_buffer_sync_reopen", "[perf_buffer]")
     }
 }
 
+// F-006: Stress test — rapid subscribe/produce/unsubscribe cycles to exercise
+// the async completion callback vs unsubscribe race path. The atomic
+// async_ioctl_failed flag and lock ordering fix prevent UAF during rapid churn.
+TEST_CASE("perf_buffer_rapid_reopen_stress", "[perf_buffer][stress]")
+{
+    constexpr int iterations = 30;
+
+    for (int i = 0; i < iterations; i++) {
+        perf_buffer_test_helper helper(true);
+        fd_t map_fd;
+        REQUIRE(helper.initialize_map(map_fd, "test_stress", 64 * 1024) == 0);
+
+        // Create perf buffer in async mode.
+        auto completion_future = helper.enable_async_completion(1);
+        auto* pb = helper.create_perf_buffer(map_fd, EBPF_PERFBUF_FLAG_AUTO_CALLBACK);
+        REQUIRE(pb != nullptr);
+
+        // Write one record to trigger async completion.
+        std::string data = "stress_iter_" + std::to_string(i);
+        REQUIRE(ebpf_perf_event_array_map_write(map_fd, data.c_str(), data.length()) == EBPF_SUCCESS);
+
+        // Wait briefly for completion (may or may not arrive before we free).
+        (void)completion_future.wait_for(100ms);
+
+        // Free immediately — exercises the completion-vs-unsubscribe race.
+        helper.release_perf_buffer();
+    }
+}
+
 // Test: Re-creating a ring buffer on the same map in async mode.
 // Validates that ebpf_map_unsubscribe sends unmap IOCTLs for ring buffer maps,
 // allowing a second ebpf_ring_buffer__new to succeed on the same map within the same process.
