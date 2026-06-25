@@ -27,7 +27,13 @@
 //   - entry_program3 invokes update_map.
 
 #include "bpf_helpers.h"
-#include "ebpf_nethooks.h"
+#include "sample_ext_helpers.h"
+
+// Program return values (this test only checks that the expected value flows
+// back through the call graph; the specific values are otherwise arbitrary).
+#define RESULT_PROCEED 0
+#define RESULT_DENY 1
+#define RESULT_REDIRECT 2
 
 struct
 {
@@ -37,22 +43,22 @@ struct
     __uint(max_entries, 128);
 } bind_count_map SEC(".maps");
 
-bind_action_t
+int
 ScenarioS1(uint64_t* pid);
 
-bind_action_t
+int
 ScenarioS2(uint64_t* pid);
 
-bind_action_t
+int
 ScenarioS3(uint64_t* pid);
 
-bind_action_t
+int
 ScenarioS4(uint64_t* pid);
 
 int
 update_map(uint64_t* pid_ptr);
 
-__attribute__((noinline)) bind_action_t __attribute__((optnone))
+__attribute__((noinline)) int __attribute__((optnone))
 ScenarioS3(uint64_t* pid)
 {
     // S3 helper: get current pid/tgid.
@@ -60,19 +66,19 @@ ScenarioS3(uint64_t* pid)
 
     // Return based on caller-provided state so this function is not a compile-time constant.
     if (*pid != 0) {
-        return BIND_REDIRECT;
+        return RESULT_REDIRECT;
     }
-    return BIND_PERMIT_SOFT;
+    return RESULT_PROCEED;
 }
 
-__attribute__((noinline)) bind_action_t __attribute__((optnone))
+__attribute__((noinline)) int __attribute__((optnone))
 ScenarioS2(uint64_t* pid)
 {
     // S2 intentionally uses no helpers.
     return ScenarioS3(pid);
 }
 
-__attribute__((noinline)) bind_action_t __attribute__((optnone))
+__attribute__((noinline)) int __attribute__((optnone))
 ScenarioS1(uint64_t* pid)
 {
     // S1 helper: get current pid/tgid.
@@ -80,14 +86,14 @@ ScenarioS1(uint64_t* pid)
     return ScenarioS2(pid);
 }
 
-__attribute__((noinline)) bind_action_t __attribute__((optnone))
+__attribute__((noinline)) int __attribute__((optnone))
 ScenarioS4(uint64_t* pid)
 {
     (void)pid;
 
     // S4 helper: monotonic clock.
     (void)bpf_ktime_get_ns();
-    return BIND_PERMIT_SOFT;
+    return RESULT_PROCEED;
 }
 
 // Subprogram that calls a helper function and performs map operations.
@@ -117,13 +123,13 @@ update_map(uint64_t* pid_ptr)
     }
 }
 
-SEC("bind/1")
-bind_action_t
-entry_program1(bind_md_t* ctx)
+SEC("sample_ext/1")
+int
+entry_program1(sample_program_context_t* ctx)
 {
-    uint64_t pid = ctx->process_id;
-    bind_action_t from_s1;
-    bind_action_t from_s4;
+    uint64_t pid = ctx->uint32_data;
+    int from_s1;
+    int from_s4;
 
     // entry_program1 directly calls two helpers.
     (void)bpf_get_current_pid_tgid();
@@ -132,42 +138,42 @@ entry_program1(bind_md_t* ctx)
     from_s1 = ScenarioS1(&pid);
     from_s4 = ScenarioS4(&pid);
 
-    if (from_s1 == BIND_REDIRECT && from_s4 == BIND_PERMIT_SOFT) {
-        return BIND_REDIRECT;
+    if (from_s1 == RESULT_REDIRECT && from_s4 == RESULT_PROCEED) {
+        return RESULT_REDIRECT;
     }
-    return BIND_DENY;
+    return RESULT_DENY;
 }
 
-SEC("bind/2")
-bind_action_t
-entry_program2(bind_md_t* ctx)
+SEC("sample_ext/2")
+int
+entry_program2(sample_program_context_t* ctx)
 {
-    uint64_t pid = ctx->process_id;
-    bind_action_t from_s2;
+    uint64_t pid = ctx->uint32_data;
+    int from_s2;
 
     // entry_program2 directly calls one helper.
     (void)bpf_get_current_pid_tgid();
 
     from_s2 = ScenarioS2(&pid);
 
-    if (from_s2 == BIND_REDIRECT) {
-        return BIND_PERMIT_SOFT;
+    if (from_s2 == RESULT_REDIRECT) {
+        return RESULT_PROCEED;
     }
-    return BIND_DENY;
+    return RESULT_DENY;
 }
 
-SEC("bind/3")
-bind_action_t
-entry_program3(bind_md_t* ctx)
+SEC("sample_ext/3")
+int
+entry_program3(sample_program_context_t* ctx)
 {
-    uint64_t pid = ctx->process_id;
+    uint64_t pid = ctx->uint32_data;
 
     // Call subprogram that invokes a helper function and performs map operations.
     int result = update_map(&pid);
 
     if (result != 0) {
-        return BIND_DENY;
+        return RESULT_DENY;
     }
 
-    return BIND_PERMIT_SOFT;
+    return RESULT_PROCEED;
 }

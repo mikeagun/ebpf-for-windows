@@ -418,6 +418,18 @@ set_bind_limit(fd_t map_fd, uint32_t limit)
     REQUIRE(bpf_map_update_elem(map_fd, &limit_key, &limit, EBPF_ANY) == EBPF_SUCCESS);
 }
 
+// Invoke a sample extension program, passing a 32-bit value through the sample
+// context's uint32_data field, and return the program's result.
+static uint32_t
+emulate_sample_program(std::function<ebpf_result_t(void*, uint32_t*)>& invoke, uint32_t value)
+{
+    uint32_t result;
+    INITIALIZE_SAMPLE_CONTEXT
+    ctx->uint32_data = value;
+    REQUIRE(invoke(reinterpret_cast<void*>(ctx), &result) == EBPF_SUCCESS);
+    return result;
+}
+
 static uint64_t
 _get_current_pid_tgid()
 {
@@ -551,11 +563,11 @@ _callgraph_bpf2bpf_test(ebpf_execution_type_t execution_type)
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
-    single_instance_hook_t hook(EBPF_PROGRAM_TYPE_BIND, EBPF_ATTACH_TYPE_BIND);
+    single_instance_hook_t hook(EBPF_PROGRAM_TYPE_SAMPLE, EBPF_ATTACH_TYPE_SAMPLE);
     REQUIRE(hook.initialize() == EBPF_SUCCESS);
 
-    program_info_provider_t bind_program_info;
-    REQUIRE(bind_program_info.initialize(EBPF_PROGRAM_TYPE_BIND) == EBPF_SUCCESS);
+    program_info_provider_t sample_program_info;
+    REQUIRE(sample_program_info.initialize(EBPF_PROGRAM_TYPE_SAMPLE) == EBPF_SUCCESS);
 
     const char* file_name =
         (execution_type == EBPF_EXECUTION_NATIVE ? "callgraph_bpf2bpf_um.dll" : "callgraph_bpf2bpf.o");
@@ -566,19 +578,19 @@ _callgraph_bpf2bpf_test(ebpf_execution_type_t execution_type)
     // Test entry_program1: calls S1 and S4 (helper call graph scenario).
     {
         program_load_attach_helper_t program_helper;
-        program_helper.initialize(file_name, BPF_PROG_TYPE_BIND, "entry_program1", execution_type, nullptr, 0, hook);
+        program_helper.initialize(file_name, BPF_PROG_TYPE_SAMPLE, "entry_program1", execution_type, nullptr, 0, hook);
 
-        // entry_program1 calls S1 and S4. Expected result is BIND_REDIRECT.
-        REQUIRE(emulate_bind(invoke, 1001, "callgraph_e1") == BIND_REDIRECT);
+        // entry_program1 calls S1 and S4. Expected result is RESULT_REDIRECT (2).
+        REQUIRE(emulate_sample_program(invoke, 1001) == 2);
     }
 
     // Test entry_program2: calls S2 (which calls S3) (helper call chain scenario).
     {
         program_load_attach_helper_t program_helper;
-        program_helper.initialize(file_name, BPF_PROG_TYPE_BIND, "entry_program2", execution_type, nullptr, 0, hook);
+        program_helper.initialize(file_name, BPF_PROG_TYPE_SAMPLE, "entry_program2", execution_type, nullptr, 0, hook);
 
-        // entry_program2 calls S2 (which calls S3). Expected result is BIND_PERMIT_SOFT.
-        REQUIRE(emulate_bind(invoke, 2002, "callgraph_e2") == BIND_PERMIT_SOFT);
+        // entry_program2 calls S2 (which calls S3). Expected result is RESULT_PROCEED (0).
+        REQUIRE(emulate_sample_program(invoke, 2002) == 0);
     }
 
     // Test entry_program3: calls update_map subprogram (map operations scenario).
@@ -612,22 +624,22 @@ _callgraph_bpf2bpf_test(ebpf_execution_type_t execution_type)
 
         uint64_t fake_pid = 12345;
 
-        // First bind - should succeed and update map count to 1.
-        REQUIRE(emulate_bind(invoke, fake_pid, "fake_app_1") == BIND_PERMIT_SOFT);
+        // First invocation - should succeed and update map count to 1.
+        REQUIRE(emulate_sample_program(invoke, (uint32_t)fake_pid) == 0);
 
         // Verify map was updated by the subprogram.
         uint64_t count = 0;
         REQUIRE(bpf_map_lookup_elem(bind_count_map_fd, &fake_pid, &count) == 0);
         REQUIRE(count == 1);
 
-        // Second bind - should succeed and update map count to 2.
-        REQUIRE(emulate_bind(invoke, fake_pid, "fake_app_2") == BIND_PERMIT_SOFT);
+        // Second invocation - should succeed and update map count to 2.
+        REQUIRE(emulate_sample_program(invoke, (uint32_t)fake_pid) == 0);
         REQUIRE(bpf_map_lookup_elem(bind_count_map_fd, &fake_pid, &count) == 0);
         REQUIRE(count == 2);
 
-        // Bind with a different PID - should create a new entry.
+        // Invoke with a different PID - should create a new entry.
         uint64_t fake_pid2 = 67890;
-        REQUIRE(emulate_bind(invoke, fake_pid2, "fake_app_3") == BIND_PERMIT_SOFT);
+        REQUIRE(emulate_sample_program(invoke, (uint32_t)fake_pid2) == 0);
         REQUIRE(bpf_map_lookup_elem(bind_count_map_fd, &fake_pid2, &count) == 0);
         REQUIRE(count == 1);
 
@@ -1128,10 +1140,10 @@ _callgraph_bpf2bpf_extension_reload_test(ebpf_execution_type_t execution_type)
 
     // Load the program with the extension loaded.
     {
-        single_instance_hook_t hook(EBPF_PROGRAM_TYPE_BIND, EBPF_ATTACH_TYPE_BIND);
+        single_instance_hook_t hook(EBPF_PROGRAM_TYPE_SAMPLE, EBPF_ATTACH_TYPE_SAMPLE);
         REQUIRE(hook.initialize() == EBPF_SUCCESS);
-        program_info_provider_t bind_program_info;
-        REQUIRE(bind_program_info.initialize(EBPF_PROGRAM_TYPE_BIND) == EBPF_SUCCESS);
+        program_info_provider_t sample_program_info;
+        REQUIRE(sample_program_info.initialize(EBPF_PROGRAM_TYPE_SAMPLE) == EBPF_SUCCESS);
 
         result = ebpf_program_load(
             file_name, BPF_PROG_TYPE_UNSPEC, execution_type, &unique_object, &program_fd, &error_message);
@@ -1157,26 +1169,26 @@ _callgraph_bpf2bpf_extension_reload_test(ebpf_execution_type_t execution_type)
             [&hook](_Inout_ void* context, _Out_ uint32_t* result) -> ebpf_result_t {
             return hook.fire(context, result);
         };
-        REQUIRE(emulate_bind(invoke, 2002, "callgraph_e2") == BIND_PERMIT_SOFT);
+        REQUIRE(emulate_sample_program(invoke, 2002) == 0);
 
-        // Unload the extension (bind_program_info and hook will be destroyed).
+        // Unload the extension (sample_program_info and hook will be destroyed).
     }
 
     // Reload the extension provider — this triggers _ebpf_native_helper_address_changed
     // for every loaded program. With sentinel helpers, the callback must correctly
     // map the (smaller) address array back to the right helper_data[] slots.
     {
-        single_instance_hook_t hook(EBPF_PROGRAM_TYPE_BIND, EBPF_ATTACH_TYPE_BIND);
+        single_instance_hook_t hook(EBPF_PROGRAM_TYPE_SAMPLE, EBPF_ATTACH_TYPE_SAMPLE);
         REQUIRE(hook.initialize() == EBPF_SUCCESS);
-        program_info_provider_t bind_program_info;
-        REQUIRE(bind_program_info.initialize(EBPF_PROGRAM_TYPE_BIND) == EBPF_SUCCESS);
+        program_info_provider_t sample_program_info;
+        REQUIRE(sample_program_info.initialize(EBPF_PROGRAM_TYPE_SAMPLE) == EBPF_SUCCESS);
 
         // Re-attach and verify the program still works after the callback.
         std::function<ebpf_result_t(void*, uint32_t*)> invoke =
             [&hook](_Inout_ void* context, _Out_ uint32_t* result) -> ebpf_result_t {
             return hook.fire(context, result);
         };
-        REQUIRE(emulate_bind(invoke, 2002, "callgraph_e2") == BIND_PERMIT_SOFT);
+        REQUIRE(emulate_sample_program(invoke, 2002) == 0);
     }
 }
 DECLARE_NATIVE_TEST("callgraph-bpf2bpf-extension-reload", "[end_to_end]", _callgraph_bpf2bpf_extension_reload_test);
