@@ -1272,12 +1272,12 @@ TEST_CASE("nomap_load_test", "[native_tests]")
 {
     // This test case tests loading of native ebpf programs that do not contain/refer-to any map.
     // This test should succeed as this is a valid use case.
-    hook_helper_t hook(EBPF_ATTACH_TYPE_BIND);
+    hook_helper_t hook(EBPF_ATTACH_TYPE_SAMPLE);
     program_load_attach_helper_t _helper;
     native_module_helper_t _native_helper;
     _native_helper.initialize("printk", EBPF_EXECUTION_NATIVE);
     _helper.initialize(
-        _native_helper.get_file_name().c_str(), BPF_PROG_TYPE_BIND, "func", EBPF_EXECUTION_NATIVE, nullptr, 0, hook);
+        _native_helper.get_file_name().c_str(), BPF_PROG_TYPE_SAMPLE, "func", EBPF_EXECUTION_NATIVE, nullptr, 0, hook);
     auto object = _helper.get_object();
     REQUIRE(object != nullptr);
 }

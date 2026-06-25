@@ -1879,23 +1879,20 @@ TEST_CASE("printk", "[end_to_end]")
 {
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
-    single_instance_hook_t hook(EBPF_PROGRAM_TYPE_BIND, EBPF_ATTACH_TYPE_BIND);
+    single_instance_hook_t hook(EBPF_PROGRAM_TYPE_SAMPLE, EBPF_ATTACH_TYPE_SAMPLE);
     REQUIRE(hook.initialize() == EBPF_SUCCESS);
-    program_info_provider_t bind_program_info;
-    REQUIRE(bind_program_info.initialize(EBPF_PROGRAM_TYPE_BIND) == EBPF_SUCCESS);
+    program_info_provider_t sample_program_info;
+    REQUIRE(sample_program_info.initialize(EBPF_PROGRAM_TYPE_SAMPLE) == EBPF_SUCCESS);
     uint32_t ifindex = 0;
     program_load_attach_helper_t program_helper;
     program_helper.initialize(
-        SAMPLE_PATH "printk.o", BPF_PROG_TYPE_BIND, "func", EBPF_EXECUTION_INTERPRET, &ifindex, sizeof(ifindex), hook);
+        SAMPLE_PATH "printk.o", BPF_PROG_TYPE_SAMPLE, "func", EBPF_EXECUTION_INTERPRET, &ifindex, sizeof(ifindex), hook);
 
-    // The current bind hook only works with IPv4, so compose a sample IPv4 context.
-    SOCKADDR_IN addr = {AF_INET};
-    addr.sin_port = htons(80);
-    INITIALIZE_BIND_CONTEXT
-    ctx->process_id = GetCurrentProcessId();
-    ctx->protocol = 2;
-    ctx->socket_address_length = sizeof(addr);
-    memcpy(&ctx->socket_address, &addr, ctx->socket_address_length);
+    // Populate the sample context fields consumed by the program's format strings.
+    INITIALIZE_SAMPLE_CONTEXT
+    ctx->uint32_data = GetCurrentProcessId();
+    ctx->uint16_data = 2;
+    ctx->helper_data_1 = 16;
 
     capture_helper_t capture;
     std::vector<std::string> output;
@@ -1910,14 +1907,18 @@ TEST_CASE("printk", "[end_to_end]")
         output = capture.buffer_to_printk_vector(capture.get_stdout_contents());
         REQUIRE(hook_fire_result == EBPF_SUCCESS);
     }
+    // The three "using" lines print bpf_get_current_pid_tgid() >> 32. The sample extension's
+    // bpf_get_current_pid_tgid returns a fixed sentinel (SAMPLE_EXT_PID_TGID), whose upper
+    // 32 bits are 0. The two "PROTO" lines print ctx->uint32_data (the injected PID).
+    std::string using_pid = std::to_string((uint64_t)SAMPLE_EXT_PID_TGID >> 32);
     std::vector<std::string> expected_output = {
         "Hello, world",
         "Hello, world",
-        "PID: " + std::to_string(ctx->process_id) + " using %u",
-        "PID: " + std::to_string(ctx->process_id) + " using %lu",
-        "PID: " + std::to_string(ctx->process_id) + " using %llu",
-        "PID: " + std::to_string(ctx->process_id) + " PROTO: 2",
-        "PID: " + std::to_string(ctx->process_id) + " PROTO: 2 ADDRLEN: 16",
+        "PID: " + using_pid + " using %u",
+        "PID: " + using_pid + " using %lu",
+        "PID: " + using_pid + " using %llu",
+        "PID: " + std::to_string(ctx->uint32_data) + " PROTO: 2",
+        "PID: " + std::to_string(ctx->uint32_data) + " PROTO: 2 ADDRLEN: 16",
         "100% done"};
     REQUIRE(output.size() == expected_output.size());
     size_t output_length = 0;
