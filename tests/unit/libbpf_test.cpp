@@ -3955,20 +3955,15 @@ TEST_CASE("sequential_tail_call", "[libbpf]")
     REQUIRE(opts.retval == -EBPF_NO_MORE_TAIL_CALLS);
 }
 
-bind_action_t
-emulate_bind_tail_call(std::function<ebpf_result_t(void*, uint32_t*)>& invoke, uint64_t pid, const char* appid)
+uint32_t
+emulate_bind_tail_call(std::function<ebpf_result_t(void*, uint32_t*)>& invoke)
 {
     uint32_t result;
-    std::string app_id = appid;
-    INITIALIZE_BIND_CONTEXT
-    ctx->app_id_start = (uint8_t*)app_id.c_str();
-    ctx->app_id_end = (uint8_t*)(app_id.c_str()) + app_id.size();
-    ctx->process_id = pid;
-    ctx->operation = BIND_OPERATION_BIND;
+    INITIALIZE_SAMPLE_CONTEXT
 
     REQUIRE(invoke(reinterpret_cast<void*>(ctx), &result) == EBPF_SUCCESS);
 
-    return static_cast<bind_action_t>(result);
+    return result;
 }
 
 TEST_CASE("bind_tail_call_max_exceed", "[libbpf]")
@@ -3978,8 +3973,8 @@ TEST_CASE("bind_tail_call_max_exceed", "[libbpf]")
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
-    program_info_provider_t bind_program_info;
-    REQUIRE(bind_program_info.initialize(EBPF_PROGRAM_TYPE_BIND) == EBPF_SUCCESS);
+    program_info_provider_t sample_program_info;
+    REQUIRE(sample_program_info.initialize(EBPF_PROGRAM_TYPE_SAMPLE) == EBPF_SUCCESS);
 
     struct bpf_object* object = bpf_object__open("tail_call_max_exceed_um.dll");
     REQUIRE(object != nullptr);
@@ -4015,21 +4010,21 @@ TEST_CASE("bind_tail_call_max_exceed", "[libbpf]")
     REQUIRE(bpf_map_get_next_key(map_fd, &key, &key) < 0);
     REQUIRE(errno == ENOENT);
 
-    // Create a hook for the bind program.
-    single_instance_hook_t hook(EBPF_PROGRAM_TYPE_BIND, EBPF_ATTACH_TYPE_BIND);
+    // Create a hook for the sample program.
+    single_instance_hook_t hook(EBPF_PROGRAM_TYPE_SAMPLE, EBPF_ATTACH_TYPE_SAMPLE);
     REQUIRE(hook.initialize() == EBPF_SUCCESS);
 
     // Attach the hook.
     bpf_link_ptr link;
     uint32_t ifindex = 0;
-    uint64_t fake_pid = 123456;
     REQUIRE(hook.attach_link(first_program_fd, &ifindex, sizeof(ifindex), &link) == EBPF_SUCCESS);
 
     std::function<ebpf_result_t(void*, uint32_t*)> invoke =
         [&hook](_Inout_ void* context, _Out_ uint32_t* result) -> ebpf_result_t { return hook.fire(context, result); };
 
-    // Binding to the port should be denied because the number of tail call programs exceeds MAX_TAIL_CALL_COUNT.
-    REQUIRE(emulate_bind_tail_call(invoke, fake_pid, "fake_app_1") == BIND_DENY);
+    // The program should return a non-zero (deny) result because the number of tail call programs
+    // exceeds MAX_TAIL_CALL_COUNT.
+    REQUIRE(emulate_bind_tail_call(invoke) == 1);
 
     hook.detach_and_close_link(&link);
 }
