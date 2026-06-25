@@ -4389,10 +4389,10 @@ _utility_test(ebpf_execution_type_t execution_type)
     const char dll_name[] = "utility_um.dll";
     const char obj_name[] = "utility.o";
     test_helper.initialize();
-    single_instance_hook_t hook(EBPF_PROGRAM_TYPE_BIND, EBPF_ATTACH_TYPE_BIND);
+    single_instance_hook_t hook(EBPF_PROGRAM_TYPE_SAMPLE, EBPF_ATTACH_TYPE_SAMPLE);
     REQUIRE(hook.initialize() == EBPF_SUCCESS);
     program_info_provider_t sample_program_info;
-    REQUIRE(sample_program_info.initialize(EBPF_PROGRAM_TYPE_BIND) == EBPF_SUCCESS);
+    REQUIRE(sample_program_info.initialize(EBPF_PROGRAM_TYPE_SAMPLE) == EBPF_SUCCESS);
 
     const char* file_name = (execution_type == EBPF_EXECUTION_NATIVE ? dll_name : obj_name);
     struct bpf_object* process_object = bpf_object__open(file_name);
@@ -4408,8 +4408,7 @@ _utility_test(ebpf_execution_type_t execution_type)
     REQUIRE(link != nullptr);
 
     // Now run the ebpf program.
-    INITIALIZE_BIND_CONTEXT
-    ctx->operation = BIND_OPERATION_BIND;
+    INITIALIZE_SAMPLE_CONTEXT
 
     uint32_t result;
     REQUIRE(hook.fire(ctx, &result) == EBPF_SUCCESS);
@@ -4472,10 +4471,10 @@ _program_flags_test(ebpf_execution_type_t execution_type)
     const char dll_name[] = "utility_um.dll";
     const char obj_name[] = "utility.o";
     test_helper.initialize();
-    single_instance_hook_t hook(EBPF_PROGRAM_TYPE_BIND, EBPF_ATTACH_TYPE_BIND);
+    single_instance_hook_t hook(EBPF_PROGRAM_TYPE_SAMPLE, EBPF_ATTACH_TYPE_SAMPLE);
     REQUIRE(hook.initialize() == EBPF_SUCCESS);
     program_info_provider_t sample_program_info;
-    REQUIRE(sample_program_info.initialize(EBPF_PROGRAM_TYPE_BIND) == EBPF_SUCCESS);
+    REQUIRE(sample_program_info.initialize(EBPF_PROGRAM_TYPE_SAMPLE) == EBPF_SUCCESS);
 
     const char* file_name = (execution_type == EBPF_EXECUTION_NATIVE ? dll_name : obj_name);
     struct bpf_object* process_object = bpf_object__open(file_name);
@@ -4514,8 +4513,7 @@ _program_flags_test(ebpf_execution_type_t execution_type)
     REQUIRE(client_data->prog_attach_flags == 0xCCCCCCCC);
 
     // Now run the ebpf program.
-    INITIALIZE_BIND_CONTEXT
-    ctx->operation = BIND_OPERATION_BIND;
+    INITIALIZE_SAMPLE_CONTEXT
 
     uint32_t result;
     REQUIRE(hook.fire(ctx, &result) == EBPF_SUCCESS);
