@@ -1151,53 +1151,6 @@ TEST_CASE("bind_tailcall_max_native_test", "[native_tests]")
     }
 }
 
-TEST_CASE("bpf_get_current_pid_tgid", "[helpers]")
-{
-    // Load and attach ebpf program.
-    hook_helper_t hook(EBPF_ATTACH_TYPE_BIND);
-    uint32_t ifindex = 0;
-    const char* program_name = "func";
-    program_load_attach_helper_t _helper;
-    native_module_helper_t _native_helper;
-    _native_helper.initialize("pidtgid", EBPF_EXECUTION_NATIVE);
-    _helper.initialize(
-        _native_helper.get_file_name().c_str(),
-        BPF_PROG_TYPE_BIND,
-        program_name,
-        EBPF_EXECUTION_NATIVE,
-        &ifindex,
-        sizeof(ifindex),
-        hook);
-    struct bpf_object* object = _helper.get_object();
-
-    // Bind a socket.
-    WSAData data;
-    REQUIRE(WSAStartup(2, &data) == 0);
-    datagram_server_socket_t datagram_server_socket(SOCK_DGRAM, IPPROTO_UDP, SOCKET_TEST_PORT);
-
-    // Read from map.
-    struct bpf_map* map = bpf_object__find_map_by_name(object, "pidtgid_map");
-    REQUIRE(map != nullptr);
-    uint32_t key = 0;
-    struct value
-    {
-        uint32_t context_pid;
-        uint32_t current_pid;
-        uint32_t current_tid;
-    } value;
-    REQUIRE(bpf_map_lookup_elem(bpf_map__fd(map), &key, &value) == 0);
-
-    // Verify PID/TID values.
-    unsigned long pid = GetCurrentProcessId();
-    unsigned long tid = GetCurrentThreadId();
-    REQUIRE(pid == value.context_pid);
-    REQUIRE(pid == value.current_pid);
-    REQUIRE(tid == value.current_tid);
-
-    // Clean up.
-    WSACleanup();
-}
-
 TEST_CASE("bpf_get_process_start_key_udp_ipv4", "[helpers]") { run_process_start_key_test(IPPROTO_UDP, false); }
 
 TEST_CASE("bpf_get_process_start_key_udp_ipv6", "[helpers]") { run_process_start_key_test(IPPROTO_UDP, true); }

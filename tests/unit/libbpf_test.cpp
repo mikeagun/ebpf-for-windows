@@ -16,6 +16,7 @@
 #include "libbpf_test_jit.h"
 #include "platform.h"
 #include "program_helper.h"
+#include "sample_test_common.h"
 #include "spec/vm_isa.hpp"
 #include "test_helper.hpp"
 
@@ -4463,6 +4464,70 @@ _strings_test(ebpf_execution_type_t execution_type)
     bpf_object__close(process_object);
 }
 DECLARE_ALL_TEST_CASES("strings_test", "[libbpf]", _strings_test);
+
+static void
+_pidtgid_test(ebpf_execution_type_t execution_type)
+{
+    _test_helper_end_to_end test_helper;
+    const char dll_name[] = "pidtgid_um.dll";
+    const char obj_name[] = "pidtgid.o";
+    test_helper.initialize();
+    single_instance_hook_t hook(EBPF_PROGRAM_TYPE_SAMPLE, EBPF_ATTACH_TYPE_SAMPLE);
+    REQUIRE(hook.initialize() == EBPF_SUCCESS);
+    program_info_provider_t sample_program_info;
+    REQUIRE(sample_program_info.initialize(EBPF_PROGRAM_TYPE_SAMPLE) == EBPF_SUCCESS);
+
+    const char* file_name = (execution_type == EBPF_EXECUTION_NATIVE ? dll_name : obj_name);
+    struct bpf_object* object = bpf_object__open(file_name);
+    REQUIRE(object != nullptr);
+
+    REQUIRE(bpf_object__load(object) == 0);
+
+    struct bpf_program* program = bpf_object__find_program_by_name(object, "func");
+    REQUIRE(program != nullptr);
+
+    bpf_link_ptr link(bpf_program__attach(program));
+    REQUIRE(link != nullptr);
+
+    // Run the program. It records the current pid/tgid (sampled inside the program via
+    // bpf_get_current_pid_tgid) into pidtgid_map. hook.fire invokes the program
+    // synchronously on this thread.
+    //
+    // Note: the sample extension's bpf_get_current_pid_tgid returns a fixed sentinel
+    // (SAMPLE_EXT_PID_TGID), not the caller's real pid/tgid. This test therefore exercises
+    // the program logic (helper call, pid/tgid bit-split, map store) and the native load
+    // path; verification that bpf_get_current_pid_tgid returns the real caller pid/tgid is
+    // covered on the modern sock_addr bind hook by socket_tests.cpp
+    // (bind_helper_functions_validation_tcp_v4/v6).
+    INITIALIZE_SAMPLE_CONTEXT
+    ctx->uint32_data = GetCurrentProcessId();
+
+    uint32_t result;
+    REQUIRE(hook.fire(ctx, &result) == EBPF_SUCCESS);
+
+    struct bpf_map* map = bpf_object__find_map_by_name(object, "pidtgid_map");
+    REQUIRE(map != nullptr);
+    uint32_t key = 0;
+    struct value
+    {
+        uint32_t context_pid;
+        uint32_t current_pid;
+        uint32_t current_tid;
+    } value;
+    REQUIRE(bpf_map_lookup_elem(bpf_map__fd(map), &key, &value) == 0);
+
+    // Verify PID/TID values.
+    // context_pid is the value the test injected via ctx->uint32_data.
+    REQUIRE(value.context_pid == GetCurrentProcessId());
+    // The sample extension's bpf_get_current_pid_tgid returns a fixed sentinel (SAMPLE_EXT_PID_TGID),
+    // so current_pid is the upper 32 bits (0) and current_tid is the lower 32 bits (9999).
+    REQUIRE(value.current_pid == (uint32_t)((uint64_t)SAMPLE_EXT_PID_TGID >> 32));
+    REQUIRE(value.current_tid == (uint32_t)(SAMPLE_EXT_PID_TGID & 0xFFFFFFFF));
+
+    REQUIRE(bpf_link__destroy(link.release()) == 0);
+    bpf_object__close(object);
+}
+DECLARE_ALL_TEST_CASES("pidtgid_test", "[libbpf]", _pidtgid_test);
 
 static void
 _program_flags_test(ebpf_execution_type_t execution_type)

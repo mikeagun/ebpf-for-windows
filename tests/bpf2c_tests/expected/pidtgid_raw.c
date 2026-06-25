@@ -47,7 +47,7 @@ static map_entry_t _maps[] = {
          1,                  // Maximum number of entries allowed in the map.
          0,                  // Inner map index.
          LIBBPF_PIN_NONE,    // Pinning type for the map.
-         31,                 // Identifier for a map template.
+         28,                 // Identifier for a map template.
          0,                  // The id of the inner map template.
      },
      "pidtgid.bss"},
@@ -96,124 +96,100 @@ static helper_function_entry_t func_helpers[] = {
     },
 };
 
-static GUID func_program_type_guid = {0x608c517c, 0x6c52, 0x4a26, {0xb6, 0x77, 0xbb, 0x1c, 0x34, 0x42, 0x5a, 0xdf}};
-static GUID func_attach_type_guid = {0xb9707e04, 0x8127, 0x4c72, {0x83, 0x3e, 0x05, 0xb1, 0xfb, 0x43, 0x94, 0x96}};
+static GUID func_program_type_guid = {0xf788ef4a, 0x207d, 0x4dc3, {0x85, 0xcf, 0x0f, 0x2e, 0xa1, 0x07, 0x21, 0x3c}};
+static GUID func_attach_type_guid = {0xf788ef4b, 0x207d, 0x4dc3, {0x85, 0xcf, 0x0f, 0x2e, 0xa1, 0x07, 0x21, 0x3c}};
 static uint16_t func_maps[] = {
     0,
 };
 
-#pragma code_seg(push, "bind")
+#pragma code_seg(push, "sample~1")
 static uint64_t
 func(void* context, const program_runtime_context_t* runtime_context)
-#line 46 "sample/pidtgid.c"
+#line 34 "sample/undocked/pidtgid.c"
 {
-#line 46 "sample/pidtgid.c"
+#line 34 "sample/undocked/pidtgid.c"
     // Prologue.
-#line 46 "sample/pidtgid.c"
+#line 34 "sample/undocked/pidtgid.c"
     uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
-#line 46 "sample/pidtgid.c"
+#line 34 "sample/undocked/pidtgid.c"
     register uint64_t r0 = 0;
-#line 46 "sample/pidtgid.c"
+#line 34 "sample/undocked/pidtgid.c"
     register uint64_t r1 = 0;
-#line 46 "sample/pidtgid.c"
+#line 34 "sample/undocked/pidtgid.c"
     register uint64_t r2 = 0;
-#line 46 "sample/pidtgid.c"
+#line 34 "sample/undocked/pidtgid.c"
     register uint64_t r3 = 0;
-#line 46 "sample/pidtgid.c"
+#line 34 "sample/undocked/pidtgid.c"
     register uint64_t r4 = 0;
-#line 46 "sample/pidtgid.c"
+#line 34 "sample/undocked/pidtgid.c"
     register uint64_t r5 = 0;
-#line 46 "sample/pidtgid.c"
+#line 34 "sample/undocked/pidtgid.c"
     register uint64_t r6 = 0;
-#line 46 "sample/pidtgid.c"
+#line 34 "sample/undocked/pidtgid.c"
     register uint64_t r10 = 0;
 
-#line 46 "sample/pidtgid.c"
+#line 34 "sample/undocked/pidtgid.c"
     r1 = (uintptr_t)context;
-#line 46 "sample/pidtgid.c"
+#line 34 "sample/undocked/pidtgid.c"
     r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
 
-    // EBPF_OP_LDXB pc=0 dst=r2 src=r1 offset=40 imm=0
-#line 46 "sample/pidtgid.c"
-    READ_ONCE_8(r2, r1, OFFSET(40));
-    // EBPF_OP_MOV64_IMM pc=1 dst=r3 src=r0 offset=0 imm=16
-#line 46 "sample/pidtgid.c"
-    r3 = IMMEDIATE(16);
-    // EBPF_OP_JGT_REG pc=2 dst=r3 src=r2 offset=19 imm=0
-#line 46 "sample/pidtgid.c"
-    if (r3 > r2) {
-#line 46 "sample/pidtgid.c"
-        goto label_1;
-#line 46 "sample/pidtgid.c"
-    }
-    // EBPF_OP_LDXH pc=3 dst=r2 src=r1 offset=26 imm=0
-#line 46 "sample/pidtgid.c"
-    READ_ONCE_16(r2, r1, OFFSET(26));
-    // EBPF_OP_JNE_IMM pc=4 dst=r2 src=r0 offset=17 imm=15295
-#line 46 "sample/pidtgid.c"
-    if (r2 != IMMEDIATE(15295)) {
-#line 46 "sample/pidtgid.c"
-        goto label_1;
-#line 46 "sample/pidtgid.c"
-    }
-    // EBPF_OP_MOV64_REG pc=5 dst=r6 src=r1 offset=0 imm=0
-#line 46 "sample/pidtgid.c"
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 34 "sample/undocked/pidtgid.c"
     r6 = r1;
-    // EBPF_OP_CALL pc=6 dst=r0 src=r0 offset=0 imm=19
-#line 47 "sample/pidtgid.c"
+    // EBPF_OP_CALL pc=1 dst=r0 src=r0 offset=0 imm=19
+#line 36 "sample/undocked/pidtgid.c"
     r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
-#line 47 "sample/pidtgid.c"
+#line 36 "sample/undocked/pidtgid.c"
     PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
-    // EBPF_OP_LDXDW pc=7 dst=r1 src=r6 offset=16 imm=0
-#line 49 "sample/pidtgid.c"
-    READ_ONCE_64(r1, r6, OFFSET(16));
-    // EBPF_OP_STXW pc=8 dst=r10 src=r0 offset=-4 imm=0
-#line 48 "sample/pidtgid.c"
+    // EBPF_OP_LDXW pc=2 dst=r1 src=r6 offset=16 imm=0
+#line 38 "sample/undocked/pidtgid.c"
+    READ_ONCE_32(r1, r6, OFFSET(16));
+    // EBPF_OP_STXW pc=3 dst=r10 src=r0 offset=-4 imm=0
+#line 37 "sample/undocked/pidtgid.c"
     WRITE_ONCE_32(r10, (uint32_t)r0, OFFSET(-4));
-    // EBPF_OP_RSH64_IMM pc=9 dst=r0 src=r0 offset=0 imm=32
-#line 49 "sample/pidtgid.c"
+    // EBPF_OP_RSH64_IMM pc=4 dst=r0 src=r0 offset=0 imm=32
+#line 38 "sample/undocked/pidtgid.c"
     r0 >>= (IMMEDIATE(32) & 63);
-    // EBPF_OP_STXW pc=10 dst=r10 src=r0 offset=-8 imm=0
-#line 48 "sample/pidtgid.c"
+    // EBPF_OP_STXW pc=5 dst=r10 src=r0 offset=-8 imm=0
+#line 37 "sample/undocked/pidtgid.c"
     WRITE_ONCE_32(r10, (uint32_t)r0, OFFSET(-8));
-    // EBPF_OP_STXW pc=11 dst=r10 src=r1 offset=-12 imm=0
-#line 48 "sample/pidtgid.c"
+    // EBPF_OP_STXW pc=6 dst=r10 src=r1 offset=-12 imm=0
+#line 37 "sample/undocked/pidtgid.c"
     WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-12));
-    // EBPF_OP_MOV64_IMM pc=12 dst=r1 src=r0 offset=0 imm=0
-#line 48 "sample/pidtgid.c"
+    // EBPF_OP_MOV64_IMM pc=7 dst=r1 src=r0 offset=0 imm=0
+#line 37 "sample/undocked/pidtgid.c"
     r1 = IMMEDIATE(0);
-    // EBPF_OP_STXW pc=13 dst=r10 src=r1 offset=-16 imm=0
-#line 50 "sample/pidtgid.c"
+    // EBPF_OP_STXW pc=8 dst=r10 src=r1 offset=-16 imm=0
+#line 39 "sample/undocked/pidtgid.c"
     WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
-    // EBPF_OP_MOV64_REG pc=14 dst=r2 src=r10 offset=0 imm=0
-#line 50 "sample/pidtgid.c"
+    // EBPF_OP_MOV64_REG pc=9 dst=r2 src=r10 offset=0 imm=0
+#line 39 "sample/undocked/pidtgid.c"
     r2 = r10;
-    // EBPF_OP_ADD64_IMM pc=15 dst=r2 src=r0 offset=0 imm=-16
-#line 47 "sample/pidtgid.c"
+    // EBPF_OP_ADD64_IMM pc=10 dst=r2 src=r0 offset=0 imm=-16
+#line 39 "sample/undocked/pidtgid.c"
     r2 += IMMEDIATE(-16);
-    // EBPF_OP_MOV64_REG pc=16 dst=r3 src=r10 offset=0 imm=0
-#line 47 "sample/pidtgid.c"
+    // EBPF_OP_MOV64_REG pc=11 dst=r3 src=r10 offset=0 imm=0
+#line 39 "sample/undocked/pidtgid.c"
     r3 = r10;
-    // EBPF_OP_ADD64_IMM pc=17 dst=r3 src=r0 offset=0 imm=-12
-#line 47 "sample/pidtgid.c"
+    // EBPF_OP_ADD64_IMM pc=12 dst=r3 src=r0 offset=0 imm=-12
+#line 39 "sample/undocked/pidtgid.c"
     r3 += IMMEDIATE(-12);
-    // EBPF_OP_LDDW pc=18 dst=r1 src=r1 offset=0 imm=1
-#line 51 "sample/pidtgid.c"
+    // EBPF_OP_LDDW pc=13 dst=r1 src=r1 offset=0 imm=1
+#line 40 "sample/undocked/pidtgid.c"
     r1 = POINTER(runtime_context->map_data[0].address);
-    // EBPF_OP_MOV64_IMM pc=20 dst=r4 src=r0 offset=0 imm=0
-#line 51 "sample/pidtgid.c"
+    // EBPF_OP_MOV64_IMM pc=15 dst=r4 src=r0 offset=0 imm=0
+#line 40 "sample/undocked/pidtgid.c"
     r4 = IMMEDIATE(0);
-    // EBPF_OP_CALL pc=21 dst=r0 src=r0 offset=0 imm=2
-#line 51 "sample/pidtgid.c"
+    // EBPF_OP_CALL pc=16 dst=r0 src=r0 offset=0 imm=2
+#line 40 "sample/undocked/pidtgid.c"
     r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
-label_1:
-    // EBPF_OP_MOV64_IMM pc=22 dst=r0 src=r0 offset=0 imm=0
-#line 54 "sample/pidtgid.c"
+    // EBPF_OP_MOV64_IMM pc=17 dst=r0 src=r0 offset=0 imm=0
+#line 42 "sample/undocked/pidtgid.c"
     r0 = IMMEDIATE(0);
-    // EBPF_OP_EXIT pc=23 dst=r0 src=r0 offset=0 imm=0
-#line 54 "sample/pidtgid.c"
+    // EBPF_OP_EXIT pc=18 dst=r0 src=r0 offset=0 imm=0
+#line 42 "sample/undocked/pidtgid.c"
     return r0;
-#line 46 "sample/pidtgid.c"
+#line 34 "sample/undocked/pidtgid.c"
 }
 #pragma code_seg(pop)
 #line __LINE__ __FILE__
@@ -224,14 +200,14 @@ static program_entry_t _programs[] = {
         0,
         {1, 144, 144}, // Version header.
         func,
-        "bind",
-        "bind",
+        "sample~1",
+        "sample_ext",
         "func",
         func_maps,
         1,
         func_helpers,
         2,
-        24,
+        19,
         &func_program_type_guid,
         &func_attach_type_guid,
     },
