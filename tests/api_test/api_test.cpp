@@ -3045,7 +3045,7 @@ TEST_CASE("load_all_sample_programs", "[native_tests]")
 {
     struct _ebpf_program_load_test_parameters test_parameters[] = {
         {"bindmonitor.sys", BPF_PROG_TYPE_UNSPEC},
-        {"bindmonitor_bpf2bpf.sys", BPF_PROG_TYPE_UNSPEC},
+        {"sample_bpf2bpf.sys", BPF_PROG_TYPE_UNSPEC},
         {"bindmonitor_mt_tailcall.sys", BPF_PROG_TYPE_UNSPEC},
         {"bindmonitor_perf_event_array.sys", BPF_PROG_TYPE_UNSPEC},
         {"bindmonitor_ringbuf.sys", BPF_PROG_TYPE_UNSPEC},

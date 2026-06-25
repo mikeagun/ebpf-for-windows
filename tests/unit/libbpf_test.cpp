@@ -240,7 +240,7 @@ _test_libbpf_subprogram(ebpf_execution_type_t execution_type)
     test_helper.initialize();
 
     const char* file_name =
-        (execution_type == EBPF_EXECUTION_NATIVE ? "bindmonitor_bpf2bpf_um.dll" : "bindmonitor_bpf2bpf.o");
+        (execution_type == EBPF_EXECUTION_NATIVE ? "sample_bpf2bpf_um.dll" : "sample_bpf2bpf.o");
     struct bpf_object* object = bpf_object__open(file_name);
     REQUIRE(object != nullptr);
 

@@ -1,9 +1,9 @@
 // Copyright (c) eBPF for Windows contributors
 // SPDX-License-Identifier: MIT
 
-// clang -O2 -Werror -c bindmonitor_bpf2bpf.c -o bindmonitor_bpf2bpf.o
+// clang -O2 -Werror -c sample_bpf2bpf.c -o sample_bpf2bpf.o
 //
-// For bpf code: clang -target bpf -O2 -Werror -c bindmonitor_bpf2bpf.c -o bindmonitor_bpf2bpf.o
+// For bpf code: clang -target bpf -O2 -Werror -c sample_bpf2bpf.c -o sample_bpf2bpf.o
 // this passes the checker
 
 // Whenever this sample program changes, bpf2c_tests will fail unless the
@@ -17,41 +17,47 @@
 // .\scripts\generate_expected_bpf2c_output.ps1 .\x64\Debug\
 
 #include "bpf_helpers.h"
-#include "ebpf_nethooks.h"
+#include "sample_ext_helpers.h"
 
-bind_action_t
+// Program return values (this test only checks that the expected value flows
+// back through the bpf2bpf call chain; the specific values are otherwise arbitrary).
+#define RESULT_PROCEED 0
+#define RESULT_DENY 1
+#define RESULT_REDIRECT 2
+
+int
 BindMonitor_Callee7(uint64_t* pid);
 
-bind_action_t
+int
 BindMonitor_Callee6(uint64_t* pid);
 
-bind_action_t
+int
 BindMonitor_Callee5(uint64_t* pid);
 
-bind_action_t
+int
 BindMonitor_Callee4(uint64_t* pid);
 
-bind_action_t
+int
 BindMonitor_Callee3(uint64_t* pid);
 
-bind_action_t
+int
 BindMonitor_Callee2(uint64_t* pid);
 
-bind_action_t
+int
 BindMonitor_Callee1(uint64_t* pid);
 
-SEC("bind")
-__attribute__((optnone)) bind_action_t
-BindMonitor_Caller(bind_md_t* ctx)
+SEC("sample_ext")
+__attribute__((optnone)) int
+BindMonitor_Caller(sample_program_context_t* ctx)
 {
     // Use some stack space.
     volatile uint8_t outer_cookie[2];
     outer_cookie[0] = 0xcc;
     outer_cookie[1] = 0xcc;
 
-    uint64_t pid = ctx->process_id;
-    if (BindMonitor_Callee1(&ctx->process_id) == BIND_DENY) {
-        return BIND_DENY;
+    uint64_t pid = ctx->uint32_data;
+    if (BindMonitor_Callee1(&pid) == RESULT_DENY) {
+        return RESULT_DENY;
     }
 
     // Verify that the caller's stack space is preserved.
@@ -61,12 +67,12 @@ BindMonitor_Caller(bind_md_t* ctx)
 
     if (pid == 1) {
         // The variable should have been preserved across the call.
-        return BIND_REDIRECT;
+        return RESULT_REDIRECT;
     }
-    return BIND_PERMIT_SOFT;
+    return RESULT_PROCEED;
 }
 
-__attribute__((noinline)) bind_action_t __attribute__((optnone))
+__attribute__((noinline)) int __attribute__((optnone))
 BindMonitor_Callee1(uint64_t* pid)
 {
     // Use some stack space.
@@ -77,7 +83,7 @@ BindMonitor_Callee1(uint64_t* pid)
     return BindMonitor_Callee2(pid);
 }
 
-__attribute__((noinline)) bind_action_t __attribute__((optnone))
+__attribute__((noinline)) int __attribute__((optnone))
 BindMonitor_Callee2(uint64_t* pid)
 {
     // Use some stack space.
@@ -88,7 +94,7 @@ BindMonitor_Callee2(uint64_t* pid)
     return BindMonitor_Callee3(pid);
 }
 
-__attribute__((noinline)) bind_action_t __attribute__((optnone))
+__attribute__((noinline)) int __attribute__((optnone))
 BindMonitor_Callee3(uint64_t* pid)
 {
     // Use some stack space.
@@ -99,7 +105,7 @@ BindMonitor_Callee3(uint64_t* pid)
     return BindMonitor_Callee4(pid);
 }
 
-__attribute__((noinline)) bind_action_t __attribute__((optnone))
+__attribute__((noinline)) int __attribute__((optnone))
 BindMonitor_Callee4(uint64_t* pid)
 {
     // Use some stack space.
@@ -110,7 +116,7 @@ BindMonitor_Callee4(uint64_t* pid)
     return BindMonitor_Callee5(pid);
 }
 
-__attribute__((noinline)) bind_action_t __attribute__((optnone))
+__attribute__((noinline)) int __attribute__((optnone))
 BindMonitor_Callee5(uint64_t* pid)
 {
     // Use some stack space.
@@ -121,7 +127,7 @@ BindMonitor_Callee5(uint64_t* pid)
     return BindMonitor_Callee6(pid);
 }
 
-__attribute__((noinline)) bind_action_t __attribute__((optnone))
+__attribute__((noinline)) int __attribute__((optnone))
 BindMonitor_Callee6(uint64_t* pid)
 {
     // Use some stack space.
@@ -132,7 +138,7 @@ BindMonitor_Callee6(uint64_t* pid)
     return BindMonitor_Callee7(pid);
 }
 
-__attribute__((noinline)) bind_action_t __attribute__((optnone))
+__attribute__((noinline)) int __attribute__((optnone))
 BindMonitor_Callee7(uint64_t* pid)
 {
     // Use some stack space.
@@ -140,5 +146,5 @@ BindMonitor_Callee7(uint64_t* pid)
     inner_cookie2[0] = 0x77;
     inner_cookie2[1] = 0x77;
 
-    return (*pid == 0) ? BIND_DENY : BIND_PERMIT_SOFT;
+    return (*pid == 0) ? RESULT_DENY : RESULT_PROCEED;
 }

@@ -477,14 +477,14 @@ TEST_CASE("show verification bpf.o", "[netsh][verification]")
                   "Program terminates within 0 loop iterations\n");
 }
 
-TEST_CASE("show verification bindmonitor_bpf2bpf.o", "[netsh][verification]")
+TEST_CASE("show verification sample_bpf2bpf.o", "[netsh][verification]")
 {
     _test_helper_netsh test_helper;
     test_helper.initialize();
 
     int result;
     std::string output =
-        _run_netsh_command(handle_ebpf_show_verification, L"bindmonitor_bpf2bpf.o", nullptr, nullptr, &result);
+        _run_netsh_command(handle_ebpf_show_verification, L"sample_bpf2bpf.o", nullptr, nullptr, &result);
     REQUIRE(result == NO_ERROR);
     REQUIRE(
         output == "Verification succeeded\n"

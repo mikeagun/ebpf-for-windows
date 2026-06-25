@@ -533,28 +533,28 @@ bindmonitor_test(ebpf_execution_type_t execution_type)
 }
 
 static void
-_bindmonitor_bpf2bpf_test(ebpf_execution_type_t execution_type)
+_sample_bpf2bpf_test(ebpf_execution_type_t execution_type)
 {
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
 
-    single_instance_hook_t hook(EBPF_PROGRAM_TYPE_BIND, EBPF_ATTACH_TYPE_BIND);
+    single_instance_hook_t hook(EBPF_PROGRAM_TYPE_SAMPLE, EBPF_ATTACH_TYPE_SAMPLE);
     REQUIRE(hook.initialize() == EBPF_SUCCESS);
 
-    program_info_provider_t bind_program_info;
-    REQUIRE(bind_program_info.initialize(EBPF_PROGRAM_TYPE_BIND) == EBPF_SUCCESS);
+    program_info_provider_t sample_program_info;
+    REQUIRE(sample_program_info.initialize(EBPF_PROGRAM_TYPE_SAMPLE) == EBPF_SUCCESS);
 
     const char* file_name =
-        (execution_type == EBPF_EXECUTION_NATIVE ? "bindmonitor_bpf2bpf_um.dll" : "bindmonitor_bpf2bpf.o");
+        (execution_type == EBPF_EXECUTION_NATIVE ? "sample_bpf2bpf_um.dll" : "sample_bpf2bpf.o");
     program_load_attach_helper_t program_helper;
-    program_helper.initialize(file_name, BPF_PROG_TYPE_BIND, "BindMonitor_Caller", execution_type, nullptr, 0, hook);
+    program_helper.initialize(file_name, BPF_PROG_TYPE_SAMPLE, "BindMonitor_Caller", execution_type, nullptr, 0, hook);
 
     std::function<ebpf_result_t(void*, uint32_t*)> invoke =
         [&hook](_Inout_ void* context, _Out_ uint32_t* result) -> ebpf_result_t { return hook.fire(context, result); };
 
-    REQUIRE(emulate_bind(invoke, 0, "fake_app_0") == BIND_DENY);
-    REQUIRE(emulate_bind(invoke, 1, "fake_app_1") == BIND_REDIRECT);
-    REQUIRE(emulate_bind(invoke, 2, "fake_app_2") == BIND_PERMIT_SOFT);
+    REQUIRE(emulate_sample_program(invoke, 0) == 1);
+    REQUIRE(emulate_sample_program(invoke, 1) == 2);
+    REQUIRE(emulate_sample_program(invoke, 2) == 0);
 }
 
 static void
@@ -1111,7 +1111,7 @@ global_variable_and_map_test(ebpf_execution_type_t execution_type)
 DECLARE_ALL_TEST_CASES("droppacket", "[end_to_end]", droppacket_test);
 DECLARE_ALL_TEST_CASES("divide_by_zero", "[end_to_end]", divide_by_zero_test_um);
 DECLARE_ALL_TEST_CASES("bindmonitor", "[end_to_end]", bindmonitor_test);
-DECLARE_ALL_TEST_CASES("bindmonitor-bpf2bpf", "[end_to_end]", _bindmonitor_bpf2bpf_test);
+DECLARE_ALL_TEST_CASES("sample-bpf2bpf", "[end_to_end]", _sample_bpf2bpf_test);
 DECLARE_NATIVE_TEST("callgraph-bpf2bpf", "[end_to_end]", _callgraph_bpf2bpf_test);
 
 // Regression test: Verify that reloading a helper provider (triggering the
