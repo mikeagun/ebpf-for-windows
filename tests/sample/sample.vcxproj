@@ -353,7 +353,7 @@
     <CustomBuild Include="unsafe\*.c">
       <FileType>CppCode</FileType>
       <Command>
-        $(ClangExec) $(ClangFlags) -I../xdp -I../socket -I./ext/inc -I../include -c unsafe\%(Filename).c -o $(OutputPath)%(Filename).o
+        $(ClangExec) $(ClangFlags) -I../xdp -I../socket -I./ext/inc -I../include -I. -I../../undocked/tests/sample/ext/inc -c unsafe\%(Filename).c -o $(OutputPath)%(Filename).o
       </Command>
       <Outputs>$(OutputPath)%(Filename).o</Outputs>
       <AdditionalInputs>$(BpfHeaderDeps)</AdditionalInputs>
@@ -363,7 +363,7 @@
     <CustomBuild Include="unsafe\*.c">
       <FileType>CppCode</FileType>
       <Command>
-        $(ClangExec) $(ClangFlags) -I../xdp -I../socket -I./ext/inc -I../include -c unsafe\%(Filename).c -o $(OutputPath)%(Filename).o
+        $(ClangExec) $(ClangFlags) -I../xdp -I../socket -I./ext/inc -I../include -I. -I../../undocked/tests/sample/ext/inc -c unsafe\%(Filename).c -o $(OutputPath)%(Filename).o
       </Command>
       <Outputs>$(OutputPath)%(Filename).o</Outputs>
       <AdditionalInputs>$(BpfHeaderDeps)</AdditionalInputs>
@@ -373,7 +373,7 @@
     <CustomBuild Include="unsafe\*.c">
       <FileType>CppCode</FileType>
       <Command>
-        $(ClangExec) $(ClangFlags) -I../xdp -I../socket -I./ext/inc -I../include -c unsafe\%(Filename).c -o $(OutputPath)%(Filename).o
+        $(ClangExec) $(ClangFlags) -I../xdp -I../socket -I./ext/inc -I../include -I. -I../../undocked/tests/sample/ext/inc -c unsafe\%(Filename).c -o $(OutputPath)%(Filename).o
       </Command>
       <Outputs>$(OutputPath)%(Filename).o</Outputs>
       <AdditionalInputs>$(BpfHeaderDeps)</AdditionalInputs>
@@ -383,7 +383,7 @@
     <CustomBuild Include="unsafe\*.c">
       <FileType>CppCode</FileType>
       <Command>
-        $(ClangExec) $(ClangFlags) -I../xdp -I../socket -I./ext/inc -I../include -c unsafe\%(Filename).c -o $(OutputPath)%(Filename).o
+        $(ClangExec) $(ClangFlags) -I../xdp -I../socket -I./ext/inc -I../include -I. -I../../undocked/tests/sample/ext/inc -c unsafe\%(Filename).c -o $(OutputPath)%(Filename).o
       </Command>
       <Outputs>$(OutputPath)%(Filename).o</Outputs>
       <AdditionalInputs>$(BpfHeaderDeps)</AdditionalInputs>
@@ -394,7 +394,7 @@
     <CustomBuild Include="unsafe\*.c">
       <FileType>CppCode</FileType>
       <Command>
-        $(ClangExec) $(ClangFlags) -I../xdp -I../socket -I./ext/inc -I../include -c unsafe\%(Filename).c -o $(OutputPath)%(Filename).o
+        $(ClangExec) $(ClangFlags) -I../xdp -I../socket -I./ext/inc -I../include -I. -I../../undocked/tests/sample/ext/inc -c unsafe\%(Filename).c -o $(OutputPath)%(Filename).o
       </Command>
       <Outputs>$(OutputPath)%(Filename).o</Outputs>
       <AdditionalInputs>$(BpfHeaderDeps)</AdditionalInputs>

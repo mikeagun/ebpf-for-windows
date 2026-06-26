@@ -12,10 +12,11 @@
 // .\scripts\generate_expected_bpf2c_output.ps1 .\x64\Debug\
 
 #include "bpf_helpers.h"
+#include "sample_ext_helpers.h"
 
-SEC("bind")
+SEC("sample_ext")
 int
-func(bind_md_t* ctx)
+func(sample_program_context_t* ctx)
 {
     // One should not be able to pass a pointer to be displayed,
     // so this program should fail verification.

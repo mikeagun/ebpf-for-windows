@@ -498,14 +498,14 @@ TEST_CASE("show verification printk_unsafe.o", "[netsh][verification]")
 
     int result;
     std::string output =
-        _run_netsh_command(handle_ebpf_show_verification, L"printk_unsafe.o", L"bind", nullptr, &result);
+        _run_netsh_command(handle_ebpf_show_verification, L"printk_unsafe.o", L"sample_ext", nullptr, &result);
     REQUIRE(result == ERROR_SUPPRESS_OUTPUT);
     output = strip_paths(output);
     std::string expected_output = "Verification failed\n"
                                   "\n"
                                   "Verification report:\n"
                                   "\n"
-                                  "; ./tests/sample/unsafe/printk_unsafe.c:22\n"
+                                  "; ./tests/sample/unsafe/printk_unsafe.c:23\n"
                                   ";     bpf_printk(\"ctx: %u\", (uint64_t)ctx);\n"
                                   "\n"
                                   "7: Invalid type (r3.type == number)\n"
