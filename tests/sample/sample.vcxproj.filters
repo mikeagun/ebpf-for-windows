@@ -27,9 +27,6 @@
     <CustomBuild Include="bindmonitor.c">
       <Filter>Source Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="bindmonitor_bpf2bpf.c">
-      <Filter>Source Files</Filter>
-    </CustomBuild>
     <CustomBuild Include="bindmonitor_ringbuf.c">
       <Filter>Source Files</Filter>
     </CustomBuild>
@@ -81,9 +78,6 @@
     <CustomBuild Include="map_in_map_v2.c">
       <Filter>Source Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="printk.c">
-      <Filter>Source Files</Filter>
-    </CustomBuild>
     <CustomBuild Include="printk_unsafe.c">
       <Filter>Source Files</Filter>
     </CustomBuild>
@@ -99,9 +93,6 @@
     <CustomBuild Include="cgroup_connect_authorization_readonly.c">
       <Filter>Source Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="printk_legacy.c">
-      <Filter>Source Files</Filter>
-    </CustomBuild>
     <CustomBuild Include="sockops.c">
       <Filter>Source Files</Filter>
     </CustomBuild>
@@ -115,9 +106,6 @@
       <Filter>Source Files</Filter>
     </CustomBuild>
     <CustomBuild Include="cgroup_sendto_count3.c">
-      <Filter>Source Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="multiple_programs.c">
       <Filter>Source Files</Filter>
     </CustomBuild>
     <CustomBuild Include="custom_map_basic.c">
