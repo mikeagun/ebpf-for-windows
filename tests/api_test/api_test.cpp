@@ -17,6 +17,7 @@
 #include "native_helper.hpp"
 #include "program_helper.h"
 #include "sample_ext_helpers.h"
+#include "sample_ext_run_helper.h"
 #include "service_helper.h"
 #include "socket_helper.h"
 #include "watchdog.h"
@@ -297,12 +298,11 @@ TEST_CASE("test_ebpf_map_next_previous_native", "[test_ebpf_map_next_previous]")
 TEMPLATE_TEST_CASE("ring_buffer_sync_api", "[ring_buffer]", ENABLED_EXECUTION_TYPES)
 {
     ebpf_execution_type_t execution_type = TestType::value;
-    std::string file_name = _get_program_file_name("bindmonitor_ringbuf", execution_type);
-    const uint16_t base_test_port = 12300;
+    std::string file_name = _get_program_file_name("sample_ringbuf", execution_type);
     struct bpf_object* object = nullptr;
-    hook_helper_t hook(EBPF_ATTACH_TYPE_BIND);
+    hook_helper_t hook(EBPF_ATTACH_TYPE_SAMPLE);
     program_load_attach_helper_t _helper;
-    _helper.initialize(file_name.c_str(), BPF_PROG_TYPE_BIND, "bind_monitor", execution_type, nullptr, 0, hook);
+    _helper.initialize(file_name.c_str(), BPF_PROG_TYPE_SAMPLE, "ringbuf_monitor", execution_type, nullptr, 0, hook);
     object = _helper.get_object();
 
     fd_t process_map_fd = bpf_object__find_map_fd_by_name(object, "process_map");
@@ -329,8 +329,15 @@ TEMPLATE_TEST_CASE("ring_buffer_sync_api", "[ring_buffer]", ENABLED_EXECUTION_TY
     ebpf_handle_t wait_handle = ebpf_ring_buffer_get_wait_handle(ring);
     REQUIRE(wait_handle != ebpf_handle_invalid);
 
-    // Generate event to consume by triggering socket bind.
-    perform_socket_bind(base_test_port, true);
+    // Generate an event to consume by invoking the sample program through the sample extension hook.
+    _sample_extension_helper extension;
+    std::string app_id = "api_test.exe";
+    std::vector<char> event_input(app_id.begin(), app_id.end());
+    auto generate_event = [&]() {
+        std::vector<char> output_buffer(event_input.size());
+        extension.invoke(event_input, output_buffer);
+    };
+    generate_event();
 
     // Test 1: Use WaitForSingleObject and consume to verify we can consume after notify.
     DWORD wait_result = WaitForSingleObject(reinterpret_cast<HANDLE>(wait_handle), 5000); // 5 second timeout.
@@ -341,8 +348,8 @@ TEMPLATE_TEST_CASE("ring_buffer_sync_api", "[ring_buffer]", ENABLED_EXECUTION_TY
     REQUIRE(event_count > 0);
 
     // Generate some additional events.
-    for (uint16_t i = 1; i < expected_events; i++) {
-        perform_socket_bind(base_test_port + i, true);
+    for (uint32_t i = 1; i < expected_events; i++) {
+        generate_event();
     }
 
     // Test 2: Use poll API in a loop until we get all expected events.
@@ -1340,14 +1347,14 @@ TEST_CASE("close_unload_test", "[native_tests][native_close_cleanup_tests]")
 
 TEST_CASE("ioctl_stress", "[stress]")
 {
-    // Load bindmonitor_ringbuf.sys
+    // Load sample_ringbuf.sys
 
     struct bpf_object* object = nullptr;
     fd_t program_fd;
 
     REQUIRE(
         program_load_helper(
-            "bindmonitor_ringbuf.sys", BPF_PROG_TYPE_BIND, EBPF_EXECUTION_NATIVE, &object, &program_fd) == 0);
+            "sample_ringbuf.sys", BPF_PROG_TYPE_SAMPLE, EBPF_EXECUTION_NATIVE, &object, &program_fd) == 0);
 
     // Create a test array map to provide target for the ioctl stress test.
     fd_t test_map_fd = bpf_map_create(BPF_MAP_TYPE_ARRAY, "test_map", sizeof(uint32_t), sizeof(uint32_t), 1, nullptr);
@@ -1378,9 +1385,9 @@ TEST_CASE("ioctl_stress", "[stress]")
                     struct
                     {
                         EBPF_CONTEXT_HEADER;
-                        bind_md_t context;
+                        sample_program_context_t context;
                     } ctx_header = {0};
-                    bind_md_t* ctx = &ctx_header.context;
+                    sample_program_context_t* ctx = &ctx_header.context;
                     int result;
                     switch (test_case) {
                     case 0:
@@ -1475,7 +1482,7 @@ trigger_ring_buffer_events(fd_t program_fd, uint32_t expected_event_count, _Inou
     for (DWORD i = 0; i < sysinfo.dwNumberOfProcessors; i++) {
         for (uint32_t j = 0; j < thread_count; j++) {
             threads.emplace_back([&, i]() {
-                bind_md_t ctx = {};
+                sample_program_context_t ctx = {};
                 bpf_test_run_opts opts = {};
                 opts.ctx_in = &ctx;
                 opts.ctx_size_in = sizeof(ctx);
@@ -1509,7 +1516,7 @@ trigger_ring_buffer_events(fd_t program_fd, uint32_t expected_event_count, _Inou
 
 TEST_CASE("test_ringbuffer_concurrent_wraparound", "[stress][ring_buffer]")
 {
-    // Load bindmonitor_ringbuf.sys.
+    // Load sample_ringbuf.sys.
     struct bpf_object* object = nullptr;
     fd_t program_fd = ebpf_fd_invalid;
     ring_buffer_test_context_t context;
@@ -1517,7 +1524,7 @@ TEST_CASE("test_ringbuffer_concurrent_wraparound", "[stress][ring_buffer]")
 
     REQUIRE(
         program_load_helper(
-            "bindmonitor_ringbuf.sys", BPF_PROG_TYPE_BIND, EBPF_EXECUTION_NATIVE, &object, &program_fd) == 0);
+            "sample_ringbuf.sys", BPF_PROG_TYPE_SAMPLE, EBPF_EXECUTION_NATIVE, &object, &program_fd) == 0);
 
     // Get fd of process_map map.
     fd_t process_map_fd = bpf_object__find_map_fd_by_name(object, "process_map");

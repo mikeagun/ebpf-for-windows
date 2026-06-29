@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 // Do not alter this generated file.
-// This file was generated from bindmonitor_ringbuf.o
+// This file was generated from sample_ringbuf.o
 
 #define NO_CRT
 #include "bpf2c.h"
@@ -15,7 +15,7 @@ DRIVER_INITIALIZE DriverEntry;
 DRIVER_UNLOAD DriverUnload;
 RTL_QUERY_REGISTRY_ROUTINE static _bpf2c_query_registry_routine;
 
-#define metadata_table bindmonitor_ringbuf##_metadata_table
+#define metadata_table sample_ringbuf##_metadata_table
 
 static GUID _bpf2c_npi_id = {/* c847aac8-a6f2-4b53-aea3-f4a94b9a80cb */
                              0xc847aac8,
@@ -207,7 +207,7 @@ _get_global_variable_sections(
     *count = 0;
 }
 
-static helper_function_entry_t bind_monitor_helpers[] = {
+static helper_function_entry_t ringbuf_monitor_helpers[] = {
     {
      {1, 40, 40}, // Version header.
      11,
@@ -215,86 +215,76 @@ static helper_function_entry_t bind_monitor_helpers[] = {
     },
 };
 
-static GUID bind_monitor_program_type_guid = {
-    0x608c517c, 0x6c52, 0x4a26, {0xb6, 0x77, 0xbb, 0x1c, 0x34, 0x42, 0x5a, 0xdf}};
-static GUID bind_monitor_attach_type_guid = {
-    0xb9707e04, 0x8127, 0x4c72, {0x83, 0x3e, 0x05, 0xb1, 0xfb, 0x43, 0x94, 0x96}};
-static uint16_t bind_monitor_maps[] = {
+static GUID ringbuf_monitor_program_type_guid = {
+    0xf788ef4a, 0x207d, 0x4dc3, {0x85, 0xcf, 0x0f, 0x2e, 0xa1, 0x07, 0x21, 0x3c}};
+static GUID ringbuf_monitor_attach_type_guid = {
+    0xf788ef4b, 0x207d, 0x4dc3, {0x85, 0xcf, 0x0f, 0x2e, 0xa1, 0x07, 0x21, 0x3c}};
+static uint16_t ringbuf_monitor_maps[] = {
     0,
 };
 
-#pragma code_seg(push, "bind")
+#pragma code_seg(push, "sample~1")
 static uint64_t
-bind_monitor(void* context, const program_runtime_context_t* runtime_context)
-#line 26 "sample/bindmonitor_ringbuf.c"
+ringbuf_monitor(void* context, const program_runtime_context_t* runtime_context)
+#line 27 "sample/undocked/sample_ringbuf.c"
 {
-#line 26 "sample/bindmonitor_ringbuf.c"
+#line 27 "sample/undocked/sample_ringbuf.c"
     // Prologue.
-#line 26 "sample/bindmonitor_ringbuf.c"
+#line 27 "sample/undocked/sample_ringbuf.c"
     uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
-#line 26 "sample/bindmonitor_ringbuf.c"
+#line 27 "sample/undocked/sample_ringbuf.c"
     register uint64_t r0 = 0;
-#line 26 "sample/bindmonitor_ringbuf.c"
+#line 27 "sample/undocked/sample_ringbuf.c"
     register uint64_t r1 = 0;
-#line 26 "sample/bindmonitor_ringbuf.c"
+#line 27 "sample/undocked/sample_ringbuf.c"
     register uint64_t r2 = 0;
-#line 26 "sample/bindmonitor_ringbuf.c"
+#line 27 "sample/undocked/sample_ringbuf.c"
     register uint64_t r3 = 0;
-#line 26 "sample/bindmonitor_ringbuf.c"
+#line 27 "sample/undocked/sample_ringbuf.c"
     register uint64_t r4 = 0;
-#line 26 "sample/bindmonitor_ringbuf.c"
+#line 27 "sample/undocked/sample_ringbuf.c"
     register uint64_t r5 = 0;
-#line 26 "sample/bindmonitor_ringbuf.c"
+#line 27 "sample/undocked/sample_ringbuf.c"
     register uint64_t r10 = 0;
 
-#line 26 "sample/bindmonitor_ringbuf.c"
+#line 27 "sample/undocked/sample_ringbuf.c"
     r1 = (uintptr_t)context;
-#line 26 "sample/bindmonitor_ringbuf.c"
+#line 27 "sample/undocked/sample_ringbuf.c"
     r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
 
-    // EBPF_OP_LDXW pc=0 dst=r2 src=r1 offset=44 imm=0
-#line 26 "sample/bindmonitor_ringbuf.c"
-    READ_ONCE_32(r2, r1, OFFSET(44));
-    // EBPF_OP_JNE_IMM pc=1 dst=r2 src=r0 offset=8 imm=0
-#line 26 "sample/bindmonitor_ringbuf.c"
-    if (r2 != IMMEDIATE(0)) {
-#line 26 "sample/bindmonitor_ringbuf.c"
-        goto label_1;
-#line 26 "sample/bindmonitor_ringbuf.c"
-    }
-    // EBPF_OP_LDXDW pc=2 dst=r2 src=r1 offset=0 imm=0
-#line 28 "sample/bindmonitor_ringbuf.c"
+    // EBPF_OP_LDXDW pc=0 dst=r2 src=r1 offset=0 imm=0
+#line 27 "sample/undocked/sample_ringbuf.c"
     READ_ONCE_64(r2, r1, OFFSET(0));
-    // EBPF_OP_LDXDW pc=3 dst=r3 src=r1 offset=8 imm=0
-#line 28 "sample/bindmonitor_ringbuf.c"
+    // EBPF_OP_LDXDW pc=1 dst=r3 src=r1 offset=8 imm=0
+#line 27 "sample/undocked/sample_ringbuf.c"
     READ_ONCE_64(r3, r1, OFFSET(8));
-    // EBPF_OP_JGE_REG pc=4 dst=r2 src=r3 offset=5 imm=0
-#line 28 "sample/bindmonitor_ringbuf.c"
+    // EBPF_OP_JGE_REG pc=2 dst=r2 src=r3 offset=5 imm=0
+#line 27 "sample/undocked/sample_ringbuf.c"
     if (r2 >= r3) {
-#line 28 "sample/bindmonitor_ringbuf.c"
+#line 27 "sample/undocked/sample_ringbuf.c"
         goto label_1;
-#line 28 "sample/bindmonitor_ringbuf.c"
+#line 27 "sample/undocked/sample_ringbuf.c"
     }
-    // EBPF_OP_SUB64_REG pc=5 dst=r3 src=r2 offset=0 imm=0
-#line 29 "sample/bindmonitor_ringbuf.c"
+    // EBPF_OP_SUB64_REG pc=3 dst=r3 src=r2 offset=0 imm=0
+#line 28 "sample/undocked/sample_ringbuf.c"
     r3 -= r2;
-    // EBPF_OP_LDDW pc=6 dst=r1 src=r1 offset=0 imm=1
-#line 29 "sample/bindmonitor_ringbuf.c"
+    // EBPF_OP_LDDW pc=4 dst=r1 src=r1 offset=0 imm=1
+#line 28 "sample/undocked/sample_ringbuf.c"
     r1 = POINTER(runtime_context->map_data[0].address);
-    // EBPF_OP_MOV64_IMM pc=8 dst=r4 src=r0 offset=0 imm=0
-#line 29 "sample/bindmonitor_ringbuf.c"
+    // EBPF_OP_MOV64_IMM pc=6 dst=r4 src=r0 offset=0 imm=0
+#line 28 "sample/undocked/sample_ringbuf.c"
     r4 = IMMEDIATE(0);
-    // EBPF_OP_CALL pc=9 dst=r0 src=r0 offset=0 imm=11
-#line 29 "sample/bindmonitor_ringbuf.c"
+    // EBPF_OP_CALL pc=7 dst=r0 src=r0 offset=0 imm=11
+#line 28 "sample/undocked/sample_ringbuf.c"
     r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
 label_1:
-    // EBPF_OP_MOV64_IMM pc=10 dst=r0 src=r0 offset=0 imm=0
-#line 36 "sample/bindmonitor_ringbuf.c"
+    // EBPF_OP_MOV64_IMM pc=8 dst=r0 src=r0 offset=0 imm=0
+#line 31 "sample/undocked/sample_ringbuf.c"
     r0 = IMMEDIATE(0);
-    // EBPF_OP_EXIT pc=11 dst=r0 src=r0 offset=0 imm=0
-#line 36 "sample/bindmonitor_ringbuf.c"
+    // EBPF_OP_EXIT pc=9 dst=r0 src=r0 offset=0 imm=0
+#line 31 "sample/undocked/sample_ringbuf.c"
     return r0;
-#line 26 "sample/bindmonitor_ringbuf.c"
+#line 27 "sample/undocked/sample_ringbuf.c"
 }
 #pragma code_seg(pop)
 #line __LINE__ __FILE__
@@ -304,17 +294,17 @@ static program_entry_t _programs[] = {
     {
         0,
         {1, 144, 144}, // Version header.
-        bind_monitor,
-        "bind",
-        "bind",
-        "bind_monitor",
-        bind_monitor_maps,
+        ringbuf_monitor,
+        "sample~1",
+        "sample_ext",
+        "ringbuf_monitor",
+        ringbuf_monitor_maps,
         1,
-        bind_monitor_helpers,
+        ringbuf_monitor_helpers,
         1,
-        12,
-        &bind_monitor_program_type_guid,
-        &bind_monitor_attach_type_guid,
+        10,
+        &ringbuf_monitor_program_type_guid,
+        &ringbuf_monitor_attach_type_guid,
     },
 };
 #pragma data_seg(pop)
@@ -341,7 +331,7 @@ _get_map_initial_values(_Outptr_result_buffer_(*count) map_initial_values_t** ma
     *count = 0;
 }
 
-metadata_table_t bindmonitor_ringbuf_metadata_table = {
+metadata_table_t sample_ringbuf_metadata_table = {
     sizeof(metadata_table_t),
     _get_programs,
     _get_maps,

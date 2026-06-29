@@ -815,7 +815,7 @@ negative_ring_buffer_test(ebpf_execution_type_t execution_type)
 }
 
 void
-bindmonitor_ring_buffer_test(ebpf_execution_type_t execution_type)
+sample_ring_buffer_test(ebpf_execution_type_t execution_type)
 {
     _test_helper_end_to_end test_helper;
     test_helper.initialize();
@@ -826,13 +826,12 @@ bindmonitor_ring_buffer_test(ebpf_execution_type_t execution_type)
     bpf_link_ptr link;
     fd_t program_fd;
 
-    program_info_provider_t bind_program_info;
-    REQUIRE(bind_program_info.initialize(EBPF_PROGRAM_TYPE_BIND) == EBPF_SUCCESS);
+    program_info_provider_t sample_program_info;
+    REQUIRE(sample_program_info.initialize(EBPF_PROGRAM_TYPE_SAMPLE) == EBPF_SUCCESS);
 
-    const char* file_name =
-        (execution_type == EBPF_EXECUTION_NATIVE ? "bindmonitor_ringbuf_um.dll" : "bindmonitor_ringbuf.o");
+    const char* file_name = (execution_type == EBPF_EXECUTION_NATIVE ? "sample_ringbuf_um.dll" : "sample_ringbuf.o");
 
-    // Load and attach a bind eBPF program that uses a ring buffer map to notify about bind operations.
+    // Load and attach a sample eBPF program that uses a ring buffer map to notify about events.
     result =
         ebpf_program_load(file_name, BPF_PROG_TYPE_UNSPEC, execution_type, &unique_object, &program_fd, &error_message);
 
@@ -845,11 +844,11 @@ bindmonitor_ring_buffer_test(ebpf_execution_type_t execution_type)
     fd_t process_map_fd = bpf_object__find_map_fd_by_name(unique_object.get(), "process_map");
     REQUIRE(process_map_fd > 0);
 
-    single_instance_hook_t hook(EBPF_PROGRAM_TYPE_BIND, EBPF_ATTACH_TYPE_BIND);
+    single_instance_hook_t hook(EBPF_PROGRAM_TYPE_SAMPLE, EBPF_ATTACH_TYPE_SAMPLE);
     REQUIRE(hook.initialize() == EBPF_SUCCESS);
     REQUIRE(hook.attach_link(program_fd, nullptr, 0, &link) == EBPF_SUCCESS);
 
-    // Create a list of fake app IDs and set it to event context.
+    // Create a list of fake app IDs, used both as the event payload and as the expected records.
     std::string fake_app_ids_prefix = "fake_app";
     std::vector<std::vector<char>> fake_app_ids;
     for (int i = 0; i < RING_BUFFER_TEST_EVENT_COUNT; i++) {
@@ -858,7 +857,7 @@ bindmonitor_ring_buffer_test(ebpf_execution_type_t execution_type)
         fake_app_ids.push_back(fake_app_id);
     }
 
-    uint64_t fake_pid = 12345;
+    INITIALIZE_SAMPLE_CONTEXT
     std::function<ebpf_result_t(void*, uint32_t*)> invoke =
         [&hook](_Inout_ void* context, _Out_ uint32_t* result) -> ebpf_result_t { return hook.fire(context, result); };
 
@@ -867,10 +866,13 @@ bindmonitor_ring_buffer_test(ebpf_execution_type_t execution_type)
     for (int i = 0; i < 3; i++) {
 
         ring_buffer_api_test_helper(process_map_fd, fake_app_ids, [&](int i) {
-            // Emulate bind operation.
+            // Generate an event by invoking the sample program through the sample hook.
             std::vector<char> fake_app_id = fake_app_ids[i];
-            fake_app_id.push_back('\0');
-            REQUIRE(emulate_bind(invoke, fake_pid + i, fake_app_id.data()) == BIND_PERMIT_SOFT);
+            uint32_t invoke_result = MAXUINT32;
+            ctx->data_start = (uint8_t*)fake_app_id.data();
+            ctx->data_end = (uint8_t*)fake_app_id.data() + fake_app_id.size();
+            REQUIRE(invoke(reinterpret_cast<void*>(ctx), &invoke_result) == EBPF_SUCCESS);
+            REQUIRE(invoke_result == 0);
         });
     }
 
@@ -1194,7 +1196,7 @@ _callgraph_bpf2bpf_extension_reload_test(ebpf_execution_type_t execution_type)
 DECLARE_NATIVE_TEST("callgraph-bpf2bpf-extension-reload", "[end_to_end]", _callgraph_bpf2bpf_extension_reload_test);
 
 DECLARE_ALL_TEST_CASES("bindmonitor-tailcall", "[end_to_end]", bindmonitor_tailcall_test);
-DECLARE_ALL_TEST_CASES("bindmonitor-ringbuf", "[end_to_end]", bindmonitor_ring_buffer_test);
+DECLARE_ALL_TEST_CASES("sample-ringbuf", "[end_to_end]", sample_ring_buffer_test);
 DECLARE_ALL_TEST_CASES("negative_ring_buffer_test", "[end_to_end]", negative_ring_buffer_test);
 DECLARE_ALL_TEST_CASES("utility-helpers", "[end_to_end]", _utility_helper_functions_test);
 DECLARE_ALL_TEST_CASES("map", "[end_to_end]", map_test);

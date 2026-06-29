@@ -27,9 +27,6 @@
     <CustomBuild Include="bindmonitor.c">
       <Filter>Source Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="bindmonitor_ringbuf.c">
-      <Filter>Source Files</Filter>
-    </CustomBuild>
     <CustomBuild Include="bindmonitor_tailcall.c">
       <Filter>Source Files</Filter>
     </CustomBuild>

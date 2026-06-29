@@ -12,6 +12,7 @@
 // .\scripts\generate_expected_bpf2c_output.ps1 .\x64\Debug\
 
 #include "bpf_helpers.h"
+#include "sample_ext_helpers.h"
 
 struct
 {
@@ -19,19 +20,13 @@ struct
     __uint(max_entries, 64 * 1024);
 } process_map SEC(".maps");
 
-SEC("bind")
-bind_action_t
-bind_monitor(bind_md_t* ctx)
+SEC("sample_ext")
+int
+ringbuf_monitor(sample_program_context_t* ctx)
 {
-    switch (ctx->operation) {
-    case BIND_OPERATION_BIND:
-        if (ctx->app_id_end > ctx->app_id_start) {
-            (void)bpf_ringbuf_output(&process_map, ctx->app_id_start, ctx->app_id_end - ctx->app_id_start, 0);
-        }
-        break;
-    default:
-        break;
+    if (ctx->data_end > ctx->data_start) {
+        (void)bpf_ringbuf_output(&process_map, ctx->data_start, ctx->data_end - ctx->data_start, 0);
     }
 
-    return BIND_PERMIT_SOFT;
+    return 0;
 }

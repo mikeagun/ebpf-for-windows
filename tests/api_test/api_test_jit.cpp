@@ -9,6 +9,7 @@
 #include "misc_helper.h"
 #include "native_helper.hpp"
 #include "program_helper.h"
+#include "sample_ext_run_helper.h"
 #include "service_helper.h"
 #include "socket_helper.h"
 
@@ -132,15 +133,15 @@ void
 ring_buffer_api_test(ebpf_execution_type_t execution_type)
 {
     struct bpf_object* object = nullptr;
-    hook_helper_t hook(EBPF_ATTACH_TYPE_BIND);
+    hook_helper_t hook(EBPF_ATTACH_TYPE_SAMPLE);
     program_load_attach_helper_t _helper;
-    _helper.initialize("bindmonitor_ringbuf.o", BPF_PROG_TYPE_BIND, "bind_monitor", execution_type, nullptr, 0, hook);
+    _helper.initialize("sample_ringbuf.o", BPF_PROG_TYPE_SAMPLE, "ringbuf_monitor", execution_type, nullptr, 0, hook);
     object = _helper.get_object();
 
     fd_t process_map_fd = bpf_object__find_map_fd_by_name(object, "process_map");
     REQUIRE(process_map_fd > 0);
 
-    // Create a list of fake app IDs and set it to event context.
+    // Create a list of fake app IDs, used both as the event payload and as the expected records.
     std::wstring app_id = L"api_test.exe";
     std::vector<std::vector<char>> app_ids;
     char* p = reinterpret_cast<char*>(&app_id[0]);
@@ -151,9 +152,13 @@ ring_buffer_api_test(ebpf_execution_type_t execution_type)
         app_ids.push_back(temp);
     }
 
-    ring_buffer_api_test_helper(process_map_fd, app_ids, [](int i) {
-        const uint16_t _test_port = 12345 + static_cast<uint16_t>(i);
-        perform_socket_bind(_test_port);
+    // Generate events by invoking the sample program through the sample extension hook. The output
+    // buffer becomes the program's data_start/data_end, which the program emits to the ring buffer.
+    _sample_extension_helper extension;
+    ring_buffer_api_test_helper(process_map_fd, app_ids, [&](int i) {
+        std::vector<char> input_buffer = app_ids[i];
+        std::vector<char> output_buffer(input_buffer.size());
+        extension.invoke(input_buffer, output_buffer);
     });
 }
 
