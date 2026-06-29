@@ -12,6 +12,7 @@
 // .\scripts\generate_expected_bpf2c_output.ps1 .\x64\Debug\
 
 #include "bpf_helpers.h"
+#include "sample_ext_helpers.h"
 
 struct
 {
@@ -19,22 +20,15 @@ struct
     __uint(max_entries, 64 * 1024);
 } process_map SEC(".maps");
 
-SEC("bind")
-bind_action_t
-bind_monitor(bind_md_t* ctx)
+SEC("sample_ext")
+int
+perf_event_array_monitor(sample_program_context_t* ctx)
 {
-    size_t app_id_size = ctx->app_id_end - ctx->app_id_start;
-    uint64_t flags = EBPF_MAP_FLAG_CURRENT_CPU | (app_id_size << EBPF_MAP_FLAG_CTX_LENGTH_SHIFT);
-    switch (ctx->operation) {
-    case BIND_OPERATION_BIND:
-        if (ctx->app_id_end > ctx->app_id_start) {
-            (void)bpf_perf_event_output(
-                ctx, &process_map, flags, ctx->app_id_start, ctx->app_id_end - ctx->app_id_start);
-        }
-        break;
-    default:
-        break;
+    if (ctx->data_end > ctx->data_start) {
+        size_t data_size = ctx->data_end - ctx->data_start;
+        uint64_t flags = EBPF_MAP_FLAG_CURRENT_CPU | (data_size << EBPF_MAP_FLAG_CTX_LENGTH_SHIFT);
+        (void)bpf_perf_event_output(ctx, &process_map, flags, ctx->data_start, data_size);
     }
 
-    return BIND_PERMIT_SOFT;
+    return 0;
 }

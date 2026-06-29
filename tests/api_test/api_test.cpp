@@ -1889,7 +1889,7 @@ class perf_buffer_test_helper
 // event generation across multiple CPUs without requiring manual polling.
 TEST_CASE("perf_buffer_async_consumer", "[stress][perf_buffer]")
 {
-    // Load bindmonitor_perf_event_array.sys.
+    // Load sample_perf_event_array.sys.
     struct bpf_object* object = nullptr;
     fd_t program_fd = ebpf_fd_invalid;
     std::string app_id = "api_test.exe";
@@ -1897,11 +1897,11 @@ TEST_CASE("perf_buffer_async_consumer", "[stress][perf_buffer]")
     CAPTURE(cpu_count);
 
     native_module_helper_t native_helper;
-    native_helper.initialize("bindmonitor_perf_event_array", EBPF_EXECUTION_NATIVE);
+    native_helper.initialize("sample_perf_event_array", EBPF_EXECUTION_NATIVE);
 
     REQUIRE(
         program_load_helper(
-            "bindmonitor_perf_event_array.sys", BPF_PROG_TYPE_BIND, EBPF_EXECUTION_NATIVE, &object, &program_fd) == 0);
+            "sample_perf_event_array.sys", BPF_PROG_TYPE_SAMPLE, EBPF_EXECUTION_NATIVE, &object, &program_fd) == 0);
 
     // RAII cleanup for program object. Declared before helper so bpf_object outlives the perf buffer
     // (perf_buffer__free uses map_fd for IOCTLs, and bpf_object__close closes the map fd).
@@ -2240,12 +2240,12 @@ TEST_CASE("ring_buffer_sync_reopen", "[ring_buffer]")
 TEMPLATE_TEST_CASE("perf_buffer_sync_api", "[perf_buffer]", ENABLED_EXECUTION_TYPES)
 {
     ebpf_execution_type_t execution_type = TestType::value;
-    std::string file_name = _get_program_file_name("bindmonitor_perf_event_array", execution_type);
-    const uint16_t base_test_port = 12400;
+    std::string file_name = _get_program_file_name("sample_perf_event_array", execution_type);
     struct bpf_object* object = nullptr;
-    hook_helper_t hook(EBPF_ATTACH_TYPE_BIND);
+    hook_helper_t hook(EBPF_ATTACH_TYPE_SAMPLE);
     program_load_attach_helper_t _helper;
-    _helper.initialize(file_name.c_str(), BPF_PROG_TYPE_BIND, "bind_monitor", execution_type, nullptr, 0, hook);
+    _helper.initialize(
+        file_name.c_str(), BPF_PROG_TYPE_SAMPLE, "perf_event_array_monitor", execution_type, nullptr, 0, hook);
     object = _helper.get_object();
 
     fd_t process_map_fd = bpf_object__find_map_fd_by_name(object, "process_map");
@@ -2267,22 +2267,29 @@ TEMPLATE_TEST_CASE("perf_buffer_sync_api", "[perf_buffer]", ENABLED_EXECUTION_TY
     REQUIRE(cpu_count > 0);
     REQUIRE(buffer_cnt == static_cast<size_t>(cpu_count));
 
-    // Generate event to consume by triggering socket bind.
-    perform_socket_bind(base_test_port, true);
+    // Generate an event to consume by invoking the sample program through the sample extension hook.
+    _sample_extension_helper extension;
+    std::string app_id = "api_test.exe";
+    std::vector<char> event_input(app_id.begin(), app_id.end());
+    auto generate_event = [&]() {
+        std::vector<char> output_buffer(event_input.size());
+        extension.invoke(event_input, output_buffer);
+    };
+    generate_event();
 
     // Test 1: Use WaitForSingleObject and consume to verify we can consume after notify.
     DWORD wait_result = WaitForSingleObject(reinterpret_cast<HANDLE>(wait_handle), 5000);
     REQUIRE(wait_result == WAIT_OBJECT_0);
 
-    // The BPF bind monitor may emit multiple perf events per socket bind (e.g. bind + unbind).
+    // A single invocation may emit one perf event.
     int consume_result = perf_buffer__consume(pb);
     REQUIRE(consume_result > 0);
     REQUIRE(helper.context.event_count > 0);
 
     // Generate some additional events.
     const uint32_t expected_events = 10;
-    for (uint16_t i = 1; i < expected_events; i++) {
-        perform_socket_bind(base_test_port + i, true);
+    for (uint32_t i = 1; i < expected_events; i++) {
+        generate_event();
     }
 
     // Test 2: Use poll API until we get all expected events.
@@ -3054,8 +3061,8 @@ TEST_CASE("load_all_sample_programs", "[native_tests]")
         {"bindmonitor.sys", BPF_PROG_TYPE_UNSPEC},
         {"sample_bpf2bpf.sys", BPF_PROG_TYPE_UNSPEC},
         {"bindmonitor_mt_tailcall.sys", BPF_PROG_TYPE_UNSPEC},
-        {"bindmonitor_perf_event_array.sys", BPF_PROG_TYPE_UNSPEC},
-        {"bindmonitor_ringbuf.sys", BPF_PROG_TYPE_UNSPEC},
+        {"sample_perf_event_array.sys", BPF_PROG_TYPE_UNSPEC},
+        {"sample_ringbuf.sys", BPF_PROG_TYPE_UNSPEC},
         {"bindmonitor_tailcall.sys", BPF_PROG_TYPE_UNSPEC},
         {"cgroup_count_connect4.sys", BPF_PROG_TYPE_UNSPEC},
         {"cgroup_count_connect6.sys", BPF_PROG_TYPE_UNSPEC},
