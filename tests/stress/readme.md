@@ -122,6 +122,25 @@ Sample command line invocations:
 - Extension restart enabled.
 - Delay of 250 ms between successive extension restarts.
 
+## 1.7. sock_addr_bind_tail_call_invoke_program_test
+This test is the sock_addr-bind (`BPF_CGROUP_INET4_BIND` / `BPF_CGROUP_INET6_BIND`) counterpart of `bindmonitor_tail_call_invoke_program_test`. It loads a tail-call sock_addr-bind program, populates the program array map with all MAX_TAIL_CALL_CNT tail call programs, and attaches the program at both the INET4 and INET6 bind hooks. It then creates the specified number of threads, each attempting a TCP 'bind' (alternating IPv4 / IPv6) to a unique port continuously in a loop.
+
+This causes the in-kernel eBPF tail call programs to execute in sequence. The last tail call program returns a `BPF_SOCK_ADDR_VERDICT_PROCEED_SOFT` (permit) verdict.
+
+This test can be run with or without the extension restart option.
+
+Sample command line invocations:
+
+### 1.7.1. `ebpf_stress_test_km sock_addr_bind_tail_call_invoke_program_test`
+- Uses default values for all supported options.
+
+### 1.7.2. `ebpf_stress_test_km -tt=32 -td=15 -vo=true -er=true -erd=250 sock_addr_bind_tail_call_invoke_program_test`
+- Creates 32 test threads.
+- Runs test for 15 minutes.
+- Verbose test trace output enabled.
+- Extension restart enabled.
+- Delay of 250 ms between successive extension restarts.
+
 # 2.0. ebpf_stress_test_um.exe (test sources in .\um\)
 
 This test application provides tests that are meant to be run against the user mode 'mock' of the eBPF sub-system. This
@@ -144,8 +163,8 @@ This application provides the following tests:
 
 ## 2.1. load_attach_detach_unload_sequential_test
 This test loads, attaches, detaches and closes (in a sequential manner) the specified JIT'ed programs in their
-respective thread sets. The test currently supprorts the `droppacket` and `bindmonitor_tailcall` programs only. Either
-one or both can be specified, else `droppacket` is used by default.
+respective thread sets. The test currently supprorts the `droppacket`, `bindmonitor_tailcall` and
+`sock_addr_bind_mt_tailcall` programs only. Any combination can be specified, else `droppacket` is used by default.
 
 Sample command line invocations:
 

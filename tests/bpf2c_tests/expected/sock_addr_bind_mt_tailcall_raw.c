@@ -1,0 +1,6401 @@
+// Copyright (c) eBPF for Windows contributors
+// SPDX-License-Identifier: MIT
+
+// Do not alter this generated file.
+// This file was generated from sock_addr_bind_mt_tailcall.o
+
+#include "bpf2c.h"
+
+static void
+_get_hash(_Outptr_result_buffer_maybenull_(*size) const uint8_t** hash, _Out_ size_t* size)
+{
+    *hash = NULL;
+    *size = 0;
+}
+
+#pragma data_seg(push, "maps")
+static map_entry_t _maps[] = {
+    {
+     {0, 0},
+     {
+         1,                       // Current Version.
+         80,                      // Struct size up to the last field.
+         80,                      // Total struct size including padding.
+     },
+     {
+         BPF_MAP_TYPE_PROG_ARRAY, // Type of map.
+         4,                       // Size in bytes of a map key.
+         4,                       // Size in bytes of a map value.
+         33,                      // Maximum number of entries allowed in the map.
+         0,                       // Inner map index.
+         LIBBPF_PIN_NONE,         // Pinning type for the map.
+         0,                       // Identifier for a map template.
+         0,                       // The id of the inner map template.
+     },
+     "bind_tail_call_map"},
+};
+#pragma data_seg(pop)
+
+static void
+_get_maps(_Outptr_result_buffer_maybenull_(*count) map_entry_t** maps, _Out_ size_t* count)
+{
+    *maps = _maps;
+    *count = 1;
+}
+
+static void
+_get_global_variable_sections(
+    _Outptr_result_buffer_maybenull_(*count) global_variable_section_info_t** global_variable_sections,
+    _Out_ size_t* count)
+{
+    *global_variable_sections = NULL;
+    *count = 0;
+}
+
+static helper_function_entry_t SockAddrBind_Callee0_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee0_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee0_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee0_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~33")
+static uint64_t
+SockAddrBind_Callee0(void* context, const program_runtime_context_t* runtime_context)
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=1
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(1);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=1
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(1);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=1
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(1);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 67 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee1_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee1_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee1_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee1_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~32")
+static uint64_t
+SockAddrBind_Callee1(void* context, const program_runtime_context_t* runtime_context)
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=2
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(2);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=2
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(2);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=2
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(2);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 68 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee10_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee10_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee10_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee10_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~23")
+static uint64_t
+SockAddrBind_Callee10(void* context, const program_runtime_context_t* runtime_context)
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=11
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(11);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=11
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(11);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=11
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(11);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 77 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee11_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee11_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee11_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee11_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~22")
+static uint64_t
+SockAddrBind_Callee11(void* context, const program_runtime_context_t* runtime_context)
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=12
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(12);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=12
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(12);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=12
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(12);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 78 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee12_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee12_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee12_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee12_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~21")
+static uint64_t
+SockAddrBind_Callee12(void* context, const program_runtime_context_t* runtime_context)
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=13
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(13);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=13
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(13);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=13
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(13);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 79 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee13_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee13_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee13_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee13_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~20")
+static uint64_t
+SockAddrBind_Callee13(void* context, const program_runtime_context_t* runtime_context)
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=14
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(14);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=14
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(14);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=14
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(14);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 80 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee14_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee14_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee14_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee14_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~19")
+static uint64_t
+SockAddrBind_Callee14(void* context, const program_runtime_context_t* runtime_context)
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=15
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(15);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=15
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(15);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=15
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(15);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 81 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee15_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee15_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee15_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee15_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~18")
+static uint64_t
+SockAddrBind_Callee15(void* context, const program_runtime_context_t* runtime_context)
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=16
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(16);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=16
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(16);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=16
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(16);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 82 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee16_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee16_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee16_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee16_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~17")
+static uint64_t
+SockAddrBind_Callee16(void* context, const program_runtime_context_t* runtime_context)
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=17
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(17);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=17
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(17);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=17
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(17);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 83 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee17_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee17_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee17_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee17_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~16")
+static uint64_t
+SockAddrBind_Callee17(void* context, const program_runtime_context_t* runtime_context)
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=18
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(18);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=18
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(18);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=18
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(18);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 84 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee18_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee18_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee18_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee18_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~15")
+static uint64_t
+SockAddrBind_Callee18(void* context, const program_runtime_context_t* runtime_context)
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=19
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(19);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=19
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(19);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=19
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(19);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 85 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee19_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee19_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee19_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee19_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~14")
+static uint64_t
+SockAddrBind_Callee19(void* context, const program_runtime_context_t* runtime_context)
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=20
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(20);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=20
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(20);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=20
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(20);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 86 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee2_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee2_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee2_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee2_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~31")
+static uint64_t
+SockAddrBind_Callee2(void* context, const program_runtime_context_t* runtime_context)
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=3
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(3);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=3
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(3);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=3
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(3);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 69 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee20_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee20_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee20_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee20_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~13")
+static uint64_t
+SockAddrBind_Callee20(void* context, const program_runtime_context_t* runtime_context)
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=21
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(21);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=21
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(21);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=21
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(21);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 87 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee21_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee21_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee21_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee21_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~12")
+static uint64_t
+SockAddrBind_Callee21(void* context, const program_runtime_context_t* runtime_context)
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=22
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(22);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=22
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(22);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=22
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(22);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 88 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee22_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee22_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee22_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee22_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~11")
+static uint64_t
+SockAddrBind_Callee22(void* context, const program_runtime_context_t* runtime_context)
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=23
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(23);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=23
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(23);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=23
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(23);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 89 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee23_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee23_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee23_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee23_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~10")
+static uint64_t
+SockAddrBind_Callee23(void* context, const program_runtime_context_t* runtime_context)
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=24
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(24);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=24
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(24);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=24
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(24);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 90 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee24_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee24_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee24_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee24_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgroup~9")
+static uint64_t
+SockAddrBind_Callee24(void* context, const program_runtime_context_t* runtime_context)
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=25
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(25);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=25
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(25);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=25
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(25);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 91 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee25_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee25_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee25_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee25_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgroup~8")
+static uint64_t
+SockAddrBind_Callee25(void* context, const program_runtime_context_t* runtime_context)
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=26
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(26);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=26
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(26);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=26
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(26);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 92 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee26_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee26_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee26_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee26_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgroup~7")
+static uint64_t
+SockAddrBind_Callee26(void* context, const program_runtime_context_t* runtime_context)
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=27
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(27);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=27
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(27);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=27
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(27);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 93 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee27_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee27_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee27_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee27_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgroup~6")
+static uint64_t
+SockAddrBind_Callee27(void* context, const program_runtime_context_t* runtime_context)
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=28
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(28);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=28
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(28);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=28
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(28);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 94 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee28_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee28_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee28_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee28_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgroup~5")
+static uint64_t
+SockAddrBind_Callee28(void* context, const program_runtime_context_t* runtime_context)
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=29
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(29);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=29
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(29);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=29
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(29);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 95 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee29_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee29_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee29_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee29_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgroup~4")
+static uint64_t
+SockAddrBind_Callee29(void* context, const program_runtime_context_t* runtime_context)
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=30
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(30);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=30
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(30);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=30
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(30);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 96 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee3_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee3_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee3_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee3_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~30")
+static uint64_t
+SockAddrBind_Callee3(void* context, const program_runtime_context_t* runtime_context)
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=4
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(4);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=4
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(4);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=4
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(4);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 70 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee30_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee30_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee30_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee30_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgroup~3")
+static uint64_t
+SockAddrBind_Callee30(void* context, const program_runtime_context_t* runtime_context)
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=31
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(31);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=31
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(31);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=31
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(31);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 97 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee31_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee31_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee31_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee31_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgroup~2")
+static uint64_t
+SockAddrBind_Callee31(void* context, const program_runtime_context_t* runtime_context)
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=32
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(32);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=32
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(32);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=32
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(32);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 98 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static GUID SockAddrBind_Callee32_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee32_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+#pragma code_seg(push, "cgroup~1")
+static uint64_t
+SockAddrBind_Callee32(void* context, const program_runtime_context_t* runtime_context)
+#line 106 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 106 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 106 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 106 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 106 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 106 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 106 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 106 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+#line 106 "sample/sock_addr_bind_mt_tailcall.c"
+    UNREFERENCED_PARAMETER(runtime_context);
+
+    // EBPF_OP_MOV64_IMM pc=0 dst=r0 src=r0 offset=0 imm=1
+#line 106 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(1);
+    // EBPF_OP_EXIT pc=1 dst=r0 src=r0 offset=0 imm=0
+#line 106 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 106 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee4_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee4_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee4_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee4_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~29")
+static uint64_t
+SockAddrBind_Callee4(void* context, const program_runtime_context_t* runtime_context)
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=5
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(5);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=5
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(5);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=5
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(5);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 71 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee5_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee5_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee5_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee5_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~28")
+static uint64_t
+SockAddrBind_Callee5(void* context, const program_runtime_context_t* runtime_context)
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=6
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(6);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=6
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(6);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=6
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(6);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 72 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee6_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee6_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee6_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee6_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~27")
+static uint64_t
+SockAddrBind_Callee6(void* context, const program_runtime_context_t* runtime_context)
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=7
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(7);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=7
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(7);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=7
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(7);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 73 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee7_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee7_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee7_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee7_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~26")
+static uint64_t
+SockAddrBind_Callee7(void* context, const program_runtime_context_t* runtime_context)
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=8
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(8);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=8
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(8);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=8
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(8);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 74 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee8_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee8_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee8_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee8_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~25")
+static uint64_t
+SockAddrBind_Callee8(void* context, const program_runtime_context_t* runtime_context)
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r2 src=r0 offset=0 imm=20
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r3 src=r0 offset=0 imm=9
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(9);
+    // EBPF_OP_CALL pc=13 dst=r0 src=r0 offset=0 imm=13
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=14 dst=r1 src=r6 offset=0 imm=0
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=15 dst=r2 src=r1 offset=0 imm=1
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=17 dst=r3 src=r0 offset=0 imm=9
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(9);
+    // EBPF_OP_CALL pc=18 dst=r0 src=r0 offset=0 imm=5
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=19 dst=r0 src=r0 offset=16 imm=-1
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=20 dst=r1 src=r0 offset=0 imm=10
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(10);
+    // EBPF_OP_STXH pc=21 dst=r10 src=r1 offset=-4 imm=0
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r1, OFFSET(-4));
+    // EBPF_OP_MOV64_IMM pc=22 dst=r1 src=r0 offset=0 imm=1680154744
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=23 dst=r10 src=r1 offset=-8 imm=0
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=24 dst=r1 src=r0 offset=0 imm=544497952
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=26 dst=r10 src=r1 offset=-16 imm=0
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=27 dst=r1 src=r0 offset=0 imm=1634082924
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r1 offset=-24 imm=0
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=30 dst=r10 src=r7 offset=-32 imm=0
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=9
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(9);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 75 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t SockAddrBind_Callee9_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID SockAddrBind_Callee9_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID SockAddrBind_Callee9_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t SockAddrBind_Callee9_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~24")
+static uint64_t
+SockAddrBind_Callee9(void* context, const program_runtime_context_t* runtime_context)
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r7 = 0;
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r8 = 0;
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_MOV64_IMM pc=1 dst=r1 src=r0 offset=0 imm=680997
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(680997);
+    // EBPF_OP_STXW pc=2 dst=r10 src=r1 offset=-16 imm=0
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=3 dst=r1 src=r0 offset=0 imm=1852383340
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)2339731488442490988;
+    // EBPF_OP_STXDW pc=5 dst=r10 src=r1 offset=-24 imm=0
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=6 dst=r7 src=r0 offset=0 imm=1818845524
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r7 = (uint64_t)7809632219746099540;
+    // EBPF_OP_STXDW pc=8 dst=r10 src=r7 offset=-32 imm=0
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_MOV64_REG pc=9 dst=r1 src=r10 offset=0 imm=0
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=10 dst=r1 src=r0 offset=0 imm=-32
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=11 dst=r8 src=r0 offset=0 imm=10
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r8 = IMMEDIATE(10);
+    // EBPF_OP_MOV64_IMM pc=12 dst=r2 src=r0 offset=0 imm=20
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(20);
+    // EBPF_OP_MOV64_IMM pc=13 dst=r3 src=r0 offset=0 imm=10
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(10);
+    // EBPF_OP_CALL pc=14 dst=r0 src=r0 offset=0 imm=13
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=15 dst=r1 src=r6 offset=0 imm=0
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=16 dst=r2 src=r1 offset=0 imm=1
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=18 dst=r3 src=r0 offset=0 imm=10
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(10);
+    // EBPF_OP_CALL pc=19 dst=r0 src=r0 offset=0 imm=5
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_JSGT_IMM pc=20 dst=r0 src=r0 offset=15 imm=-1
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    if ((int64_t)r0 > IMMEDIATE(-1)) {
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+        goto label_1;
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=21 dst=r1 src=r0 offset=0 imm=1680154744
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(1680154744);
+    // EBPF_OP_STXW pc=22 dst=r10 src=r1 offset=-8 imm=0
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_32(r10, (uint32_t)r1, OFFSET(-8));
+    // EBPF_OP_LDDW pc=23 dst=r1 src=r0 offset=0 imm=544497952
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7306085893296906528;
+    // EBPF_OP_STXDW pc=25 dst=r10 src=r1 offset=-16 imm=0
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=26 dst=r1 src=r0 offset=0 imm=1634082924
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7234307576302018668;
+    // EBPF_OP_STXDW pc=28 dst=r10 src=r1 offset=-24 imm=0
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_STXDW pc=29 dst=r10 src=r7 offset=-32 imm=0
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r7, OFFSET(-32));
+    // EBPF_OP_STXH pc=30 dst=r10 src=r8 offset=-4 imm=0
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_16(r10, (uint16_t)r8, OFFSET(-4));
+    // EBPF_OP_MOV64_REG pc=31 dst=r1 src=r10 offset=0 imm=0
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=32 dst=r1 src=r0 offset=0 imm=-32
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-32);
+    // EBPF_OP_MOV64_IMM pc=33 dst=r2 src=r0 offset=0 imm=30
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(30);
+    // EBPF_OP_MOV64_IMM pc=34 dst=r3 src=r0 offset=0 imm=10
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(10);
+    // EBPF_OP_CALL pc=35 dst=r0 src=r0 offset=0 imm=13
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+label_1:
+    // EBPF_OP_MOV64_IMM pc=36 dst=r0 src=r0 offset=0 imm=0
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=37 dst=r0 src=r0 offset=0 imm=0
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 76 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t authorize_bind4_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID authorize_bind4_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID authorize_bind4_attach_type_guid = {
+    0x0d7ce21a, 0x7773, 0x405c, {0x93, 0xb6, 0xd5, 0xbf, 0xb9, 0x2e, 0x74, 0xbc}};
+static uint16_t authorize_bind4_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~35")
+static uint64_t
+authorize_bind4(void* context, const program_runtime_context_t* runtime_context)
+#line 41 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 41 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 41 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 41 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 41 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 41 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 41 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 41 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 41 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 41 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 41 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 41 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 41 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 41 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_LDDW pc=1 dst=r1 src=r0 offset=0 imm=2019910766
+#line 41 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)748764259439436910;
+    // EBPF_OP_STXDW pc=3 dst=r10 src=r1 offset=-16 imm=0
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=4 dst=r1 src=r0 offset=0 imm=1633886316
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7575173785983328364;
+    // EBPF_OP_STXDW pc=6 dst=r10 src=r1 offset=-24 imm=0
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=7 dst=r1 src=r0 offset=0 imm=980575596
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7593442944119629164;
+    // EBPF_OP_STXDW pc=9 dst=r10 src=r1 offset=-32 imm=0
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-32));
+    // EBPF_OP_LDDW pc=10 dst=r1 src=r0 offset=0 imm=1684957506
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7809597305823062338;
+    // EBPF_OP_STXDW pc=12 dst=r10 src=r1 offset=-40 imm=0
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-40));
+    // EBPF_OP_LDDW pc=13 dst=r1 src=r0 offset=0 imm=1801678675
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)8242823450132180819;
+    // EBPF_OP_STXDW pc=15 dst=r10 src=r1 offset=-48 imm=0
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-48));
+    // EBPF_OP_MOV64_IMM pc=16 dst=r1 src=r0 offset=0 imm=0
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(0);
+    // EBPF_OP_STXB pc=17 dst=r10 src=r1 offset=-8 imm=0
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_8(r10, (uint8_t)r1, OFFSET(-8));
+    // EBPF_OP_MOV64_REG pc=18 dst=r1 src=r10 offset=0 imm=0
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=19 dst=r1 src=r0 offset=0 imm=-48
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-48);
+    // EBPF_OP_MOV64_IMM pc=20 dst=r2 src=r0 offset=0 imm=41
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(41);
+    // EBPF_OP_MOV64_IMM pc=21 dst=r3 src=r0 offset=0 imm=0
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(0);
+    // EBPF_OP_CALL pc=22 dst=r0 src=r0 offset=0 imm=13
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=23 dst=r1 src=r6 offset=0 imm=0
+#line 34 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=24 dst=r2 src=r1 offset=0 imm=1
+#line 34 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=26 dst=r3 src=r0 offset=0 imm=0
+#line 34 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(0);
+    // EBPF_OP_CALL pc=27 dst=r0 src=r0 offset=0 imm=5
+#line 34 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 34 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 34 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 34 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=28 dst=r0 src=r0 offset=0 imm=0
+#line 43 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=29 dst=r0 src=r0 offset=0 imm=0
+#line 43 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 41 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+static helper_function_entry_t authorize_bind6_helpers[] = {
+    {
+     {1, 40, 40}, // Version header.
+     13,
+     "helper_id_13",
+    },
+    {
+     {1, 40, 40}, // Version header.
+     5,
+     "helper_id_5",
+    },
+};
+
+static GUID authorize_bind6_program_type_guid = {
+    0x92ec8e39, 0xaeec, 0x11ec, {0x9a, 0x30, 0x18, 0x60, 0x24, 0x89, 0xbe, 0xee}};
+static GUID authorize_bind6_attach_type_guid = {
+    0x81de64c0, 0x2973, 0x468d, {0x83, 0x82, 0x67, 0x69, 0xf0, 0x33, 0xd7, 0x59}};
+static uint16_t authorize_bind6_maps[] = {
+    0,
+};
+
+#pragma code_seg(push, "cgrou~34")
+static uint64_t
+authorize_bind6(void* context, const program_runtime_context_t* runtime_context)
+#line 48 "sample/sock_addr_bind_mt_tailcall.c"
+{
+#line 48 "sample/sock_addr_bind_mt_tailcall.c"
+    // Prologue.
+#line 48 "sample/sock_addr_bind_mt_tailcall.c"
+    uint64_t stack[(UBPF_STACK_SIZE + 7) / 8];
+#line 48 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r0 = 0;
+#line 48 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r1 = 0;
+#line 48 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r2 = 0;
+#line 48 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r3 = 0;
+#line 48 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r4 = 0;
+#line 48 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r5 = 0;
+#line 48 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r6 = 0;
+#line 48 "sample/sock_addr_bind_mt_tailcall.c"
+    register uint64_t r10 = 0;
+
+#line 48 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uintptr_t)context;
+#line 48 "sample/sock_addr_bind_mt_tailcall.c"
+    r10 = (uintptr_t)((uint8_t*)stack + sizeof(stack));
+
+    // EBPF_OP_MOV64_REG pc=0 dst=r6 src=r1 offset=0 imm=0
+#line 48 "sample/sock_addr_bind_mt_tailcall.c"
+    r6 = r1;
+    // EBPF_OP_LDDW pc=1 dst=r1 src=r0 offset=0 imm=2019910766
+#line 48 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)748764259439436910;
+    // EBPF_OP_STXDW pc=3 dst=r10 src=r1 offset=-16 imm=0
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-16));
+    // EBPF_OP_LDDW pc=4 dst=r1 src=r0 offset=0 imm=1633886316
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7575173785983328364;
+    // EBPF_OP_STXDW pc=6 dst=r10 src=r1 offset=-24 imm=0
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-24));
+    // EBPF_OP_LDDW pc=7 dst=r1 src=r0 offset=0 imm=980575596
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7593442944119629164;
+    // EBPF_OP_STXDW pc=9 dst=r10 src=r1 offset=-32 imm=0
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-32));
+    // EBPF_OP_LDDW pc=10 dst=r1 src=r0 offset=0 imm=1684957506
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)7809597305823062338;
+    // EBPF_OP_STXDW pc=12 dst=r10 src=r1 offset=-40 imm=0
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-40));
+    // EBPF_OP_LDDW pc=13 dst=r1 src=r0 offset=0 imm=1801678675
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = (uint64_t)8242823450132180819;
+    // EBPF_OP_STXDW pc=15 dst=r10 src=r1 offset=-48 imm=0
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_64(r10, (uint64_t)r1, OFFSET(-48));
+    // EBPF_OP_MOV64_IMM pc=16 dst=r1 src=r0 offset=0 imm=0
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = IMMEDIATE(0);
+    // EBPF_OP_STXB pc=17 dst=r10 src=r1 offset=-8 imm=0
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    WRITE_ONCE_8(r10, (uint8_t)r1, OFFSET(-8));
+    // EBPF_OP_MOV64_REG pc=18 dst=r1 src=r10 offset=0 imm=0
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r10;
+    // EBPF_OP_ADD64_IMM pc=19 dst=r1 src=r0 offset=0 imm=-48
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 += IMMEDIATE(-48);
+    // EBPF_OP_MOV64_IMM pc=20 dst=r2 src=r0 offset=0 imm=41
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = IMMEDIATE(41);
+    // EBPF_OP_MOV64_IMM pc=21 dst=r3 src=r0 offset=0 imm=0
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(0);
+    // EBPF_OP_CALL pc=22 dst=r0 src=r0 offset=0 imm=13
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[0].address(r1, r2, r3, r4, r5, context);
+#line 33 "sample/sock_addr_bind_mt_tailcall.c"
+    PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_REG pc=23 dst=r1 src=r6 offset=0 imm=0
+#line 34 "sample/sock_addr_bind_mt_tailcall.c"
+    r1 = r6;
+    // EBPF_OP_LDDW pc=24 dst=r2 src=r1 offset=0 imm=1
+#line 34 "sample/sock_addr_bind_mt_tailcall.c"
+    r2 = POINTER(runtime_context->map_data[0].address);
+    // EBPF_OP_MOV64_IMM pc=26 dst=r3 src=r0 offset=0 imm=0
+#line 34 "sample/sock_addr_bind_mt_tailcall.c"
+    r3 = IMMEDIATE(0);
+    // EBPF_OP_CALL pc=27 dst=r0 src=r0 offset=0 imm=5
+#line 34 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = runtime_context->helper_data[1].address(r1, r2, r3, r4, r5, context);
+#line 34 "sample/sock_addr_bind_mt_tailcall.c"
+    if (r0 == 0) {
+#line 34 "sample/sock_addr_bind_mt_tailcall.c"
+        return 0;
+#line 34 "sample/sock_addr_bind_mt_tailcall.c"
+    }
+    // EBPF_OP_MOV64_IMM pc=28 dst=r0 src=r0 offset=0 imm=0
+#line 50 "sample/sock_addr_bind_mt_tailcall.c"
+    r0 = IMMEDIATE(0);
+    // EBPF_OP_EXIT pc=29 dst=r0 src=r0 offset=0 imm=0
+#line 50 "sample/sock_addr_bind_mt_tailcall.c"
+    return r0;
+#line 48 "sample/sock_addr_bind_mt_tailcall.c"
+}
+#pragma code_seg(pop)
+#line __LINE__ __FILE__
+
+#pragma data_seg(push, "programs")
+static program_entry_t _programs[] = {
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee0,
+        "cgrou~33",
+        "cgroup/bind4/0",
+        "SockAddrBind_Callee0",
+        SockAddrBind_Callee0_maps,
+        1,
+        SockAddrBind_Callee0_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee0_program_type_guid,
+        &SockAddrBind_Callee0_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee1,
+        "cgrou~32",
+        "cgroup/bind4/1",
+        "SockAddrBind_Callee1",
+        SockAddrBind_Callee1_maps,
+        1,
+        SockAddrBind_Callee1_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee1_program_type_guid,
+        &SockAddrBind_Callee1_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee10,
+        "cgrou~23",
+        "cgroup/bind4/10",
+        "SockAddrBind_Callee10",
+        SockAddrBind_Callee10_maps,
+        1,
+        SockAddrBind_Callee10_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee10_program_type_guid,
+        &SockAddrBind_Callee10_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee11,
+        "cgrou~22",
+        "cgroup/bind4/11",
+        "SockAddrBind_Callee11",
+        SockAddrBind_Callee11_maps,
+        1,
+        SockAddrBind_Callee11_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee11_program_type_guid,
+        &SockAddrBind_Callee11_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee12,
+        "cgrou~21",
+        "cgroup/bind4/12",
+        "SockAddrBind_Callee12",
+        SockAddrBind_Callee12_maps,
+        1,
+        SockAddrBind_Callee12_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee12_program_type_guid,
+        &SockAddrBind_Callee12_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee13,
+        "cgrou~20",
+        "cgroup/bind4/13",
+        "SockAddrBind_Callee13",
+        SockAddrBind_Callee13_maps,
+        1,
+        SockAddrBind_Callee13_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee13_program_type_guid,
+        &SockAddrBind_Callee13_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee14,
+        "cgrou~19",
+        "cgroup/bind4/14",
+        "SockAddrBind_Callee14",
+        SockAddrBind_Callee14_maps,
+        1,
+        SockAddrBind_Callee14_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee14_program_type_guid,
+        &SockAddrBind_Callee14_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee15,
+        "cgrou~18",
+        "cgroup/bind4/15",
+        "SockAddrBind_Callee15",
+        SockAddrBind_Callee15_maps,
+        1,
+        SockAddrBind_Callee15_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee15_program_type_guid,
+        &SockAddrBind_Callee15_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee16,
+        "cgrou~17",
+        "cgroup/bind4/16",
+        "SockAddrBind_Callee16",
+        SockAddrBind_Callee16_maps,
+        1,
+        SockAddrBind_Callee16_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee16_program_type_guid,
+        &SockAddrBind_Callee16_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee17,
+        "cgrou~16",
+        "cgroup/bind4/17",
+        "SockAddrBind_Callee17",
+        SockAddrBind_Callee17_maps,
+        1,
+        SockAddrBind_Callee17_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee17_program_type_guid,
+        &SockAddrBind_Callee17_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee18,
+        "cgrou~15",
+        "cgroup/bind4/18",
+        "SockAddrBind_Callee18",
+        SockAddrBind_Callee18_maps,
+        1,
+        SockAddrBind_Callee18_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee18_program_type_guid,
+        &SockAddrBind_Callee18_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee19,
+        "cgrou~14",
+        "cgroup/bind4/19",
+        "SockAddrBind_Callee19",
+        SockAddrBind_Callee19_maps,
+        1,
+        SockAddrBind_Callee19_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee19_program_type_guid,
+        &SockAddrBind_Callee19_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee2,
+        "cgrou~31",
+        "cgroup/bind4/2",
+        "SockAddrBind_Callee2",
+        SockAddrBind_Callee2_maps,
+        1,
+        SockAddrBind_Callee2_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee2_program_type_guid,
+        &SockAddrBind_Callee2_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee20,
+        "cgrou~13",
+        "cgroup/bind4/20",
+        "SockAddrBind_Callee20",
+        SockAddrBind_Callee20_maps,
+        1,
+        SockAddrBind_Callee20_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee20_program_type_guid,
+        &SockAddrBind_Callee20_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee21,
+        "cgrou~12",
+        "cgroup/bind4/21",
+        "SockAddrBind_Callee21",
+        SockAddrBind_Callee21_maps,
+        1,
+        SockAddrBind_Callee21_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee21_program_type_guid,
+        &SockAddrBind_Callee21_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee22,
+        "cgrou~11",
+        "cgroup/bind4/22",
+        "SockAddrBind_Callee22",
+        SockAddrBind_Callee22_maps,
+        1,
+        SockAddrBind_Callee22_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee22_program_type_guid,
+        &SockAddrBind_Callee22_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee23,
+        "cgrou~10",
+        "cgroup/bind4/23",
+        "SockAddrBind_Callee23",
+        SockAddrBind_Callee23_maps,
+        1,
+        SockAddrBind_Callee23_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee23_program_type_guid,
+        &SockAddrBind_Callee23_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee24,
+        "cgroup~9",
+        "cgroup/bind4/24",
+        "SockAddrBind_Callee24",
+        SockAddrBind_Callee24_maps,
+        1,
+        SockAddrBind_Callee24_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee24_program_type_guid,
+        &SockAddrBind_Callee24_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee25,
+        "cgroup~8",
+        "cgroup/bind4/25",
+        "SockAddrBind_Callee25",
+        SockAddrBind_Callee25_maps,
+        1,
+        SockAddrBind_Callee25_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee25_program_type_guid,
+        &SockAddrBind_Callee25_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee26,
+        "cgroup~7",
+        "cgroup/bind4/26",
+        "SockAddrBind_Callee26",
+        SockAddrBind_Callee26_maps,
+        1,
+        SockAddrBind_Callee26_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee26_program_type_guid,
+        &SockAddrBind_Callee26_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee27,
+        "cgroup~6",
+        "cgroup/bind4/27",
+        "SockAddrBind_Callee27",
+        SockAddrBind_Callee27_maps,
+        1,
+        SockAddrBind_Callee27_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee27_program_type_guid,
+        &SockAddrBind_Callee27_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee28,
+        "cgroup~5",
+        "cgroup/bind4/28",
+        "SockAddrBind_Callee28",
+        SockAddrBind_Callee28_maps,
+        1,
+        SockAddrBind_Callee28_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee28_program_type_guid,
+        &SockAddrBind_Callee28_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee29,
+        "cgroup~4",
+        "cgroup/bind4/29",
+        "SockAddrBind_Callee29",
+        SockAddrBind_Callee29_maps,
+        1,
+        SockAddrBind_Callee29_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee29_program_type_guid,
+        &SockAddrBind_Callee29_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee3,
+        "cgrou~30",
+        "cgroup/bind4/3",
+        "SockAddrBind_Callee3",
+        SockAddrBind_Callee3_maps,
+        1,
+        SockAddrBind_Callee3_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee3_program_type_guid,
+        &SockAddrBind_Callee3_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee30,
+        "cgroup~3",
+        "cgroup/bind4/30",
+        "SockAddrBind_Callee30",
+        SockAddrBind_Callee30_maps,
+        1,
+        SockAddrBind_Callee30_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee30_program_type_guid,
+        &SockAddrBind_Callee30_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee31,
+        "cgroup~2",
+        "cgroup/bind4/31",
+        "SockAddrBind_Callee31",
+        SockAddrBind_Callee31_maps,
+        1,
+        SockAddrBind_Callee31_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee31_program_type_guid,
+        &SockAddrBind_Callee31_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee32,
+        "cgroup~1",
+        "cgroup/bind4/32",
+        "SockAddrBind_Callee32",
+        NULL,
+        0,
+        NULL,
+        0,
+        2,
+        &SockAddrBind_Callee32_program_type_guid,
+        &SockAddrBind_Callee32_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee4,
+        "cgrou~29",
+        "cgroup/bind4/4",
+        "SockAddrBind_Callee4",
+        SockAddrBind_Callee4_maps,
+        1,
+        SockAddrBind_Callee4_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee4_program_type_guid,
+        &SockAddrBind_Callee4_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee5,
+        "cgrou~28",
+        "cgroup/bind4/5",
+        "SockAddrBind_Callee5",
+        SockAddrBind_Callee5_maps,
+        1,
+        SockAddrBind_Callee5_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee5_program_type_guid,
+        &SockAddrBind_Callee5_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee6,
+        "cgrou~27",
+        "cgroup/bind4/6",
+        "SockAddrBind_Callee6",
+        SockAddrBind_Callee6_maps,
+        1,
+        SockAddrBind_Callee6_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee6_program_type_guid,
+        &SockAddrBind_Callee6_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee7,
+        "cgrou~26",
+        "cgroup/bind4/7",
+        "SockAddrBind_Callee7",
+        SockAddrBind_Callee7_maps,
+        1,
+        SockAddrBind_Callee7_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee7_program_type_guid,
+        &SockAddrBind_Callee7_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee8,
+        "cgrou~25",
+        "cgroup/bind4/8",
+        "SockAddrBind_Callee8",
+        SockAddrBind_Callee8_maps,
+        1,
+        SockAddrBind_Callee8_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee8_program_type_guid,
+        &SockAddrBind_Callee8_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        SockAddrBind_Callee9,
+        "cgrou~24",
+        "cgroup/bind4/9",
+        "SockAddrBind_Callee9",
+        SockAddrBind_Callee9_maps,
+        1,
+        SockAddrBind_Callee9_helpers,
+        2,
+        38,
+        &SockAddrBind_Callee9_program_type_guid,
+        &SockAddrBind_Callee9_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        authorize_bind4,
+        "cgrou~35",
+        "cgroup/bind4",
+        "authorize_bind4",
+        authorize_bind4_maps,
+        1,
+        authorize_bind4_helpers,
+        2,
+        30,
+        &authorize_bind4_program_type_guid,
+        &authorize_bind4_attach_type_guid,
+    },
+    {
+        0,
+        {1, 144, 144}, // Version header.
+        authorize_bind6,
+        "cgrou~34",
+        "cgroup/bind6",
+        "authorize_bind6",
+        authorize_bind6_maps,
+        1,
+        authorize_bind6_helpers,
+        2,
+        30,
+        &authorize_bind6_program_type_guid,
+        &authorize_bind6_attach_type_guid,
+    },
+};
+#pragma data_seg(pop)
+
+static void
+_get_programs(_Outptr_result_buffer_(*count) program_entry_t** programs, _Out_ size_t* count)
+{
+    *programs = _programs;
+    *count = 35;
+}
+
+static void
+_get_version(_Out_ bpf2c_version_t* version)
+{
+    version->major = 1;
+    version->minor = 4;
+    version->revision = 0;
+}
+
+static void
+_get_map_initial_values(_Outptr_result_buffer_(*count) map_initial_values_t** map_initial_values, _Out_ size_t* count)
+{
+    *map_initial_values = NULL;
+    *count = 0;
+}
+
+metadata_table_t sock_addr_bind_mt_tailcall_metadata_table = {
+    sizeof(metadata_table_t),
+    _get_programs,
+    _get_maps,
+    _get_hash,
+    _get_version,
+    _get_map_initial_values,
+    _get_global_variable_sections,
+};

@@ -1318,7 +1318,8 @@ _print_test_control_info(const test_control_info& test_control_info)
 }
 
 static void
-_set_up_tailcall_program(bpf_object* object, const std::string& map_name)
+_set_up_tailcall_program(
+    bpf_object* object, const std::string& map_name, const std::string& callee_prefix = "BindMonitor_Callee")
 {
     REQUIRE(object != nullptr);
 
@@ -1336,7 +1337,7 @@ _set_up_tailcall_program(bpf_object* object, const std::string& map_name)
     // Set up tail calls.
     for (int index = 0; index < MAX_TAIL_CALL_CNT; index++) {
         try {
-            std::string bind_program_name{"BindMonitor_Callee"};
+            std::string bind_program_name{callee_prefix};
             bind_program_name += std::to_string(index);
 
             // Try to get a handle to the 'BindMonitor_Callee<index>' program.
@@ -1630,6 +1631,106 @@ _mt_bindmonitor_tail_call_invoke_program_test(
     WSACleanup();
 }
 
+// Multi-threaded invoke stress test for the sock_addr bind hook
+// (BPF_CGROUP_INET4_BIND / BPF_CGROUP_INET6_BIND). Mirrors
+// _mt_bindmonitor_tail_call_invoke_program_test but attaches the tail-call
+// sock_addr-bind program at both the INET4 and INET6 bind hooks and drives both
+// IPv4 and IPv6 real binds from the worker threads.
+static void
+_mt_sock_addr_bind_tail_call_invoke_program_test(
+    ebpf_execution_type_t program_type, const test_control_info& test_control_info)
+{
+    WSAData data{};
+    auto error = WSAStartup(MAKEWORD(2, 2), &data);
+    REQUIRE(error == 0);
+
+    // Choose file extension based on execution type.
+    bool is_native = (program_type == EBPF_EXECUTION_NATIVE);
+    std::string file_name =
+        is_native ? _make_unique_file_copy("sock_addr_bind_mt_tailcall.sys") : "sock_addr_bind_mt_tailcall.o";
+
+    // Load the program and attach the INET4 bind entry program.
+    std::vector<object_table_entry> dummy_table(1);
+    thread_context program_load_context = {
+        {}, {}, false, {}, thread_role_type::ROLE_NOT_SET, 0, 0, 0, false, 0, 0, dummy_table};
+    program_load_context.program_name = "authorize_bind4";
+    program_load_context.file_name = file_name;
+    program_load_context.map_name = "bind_tail_call_map";
+    program_load_context.thread_index = 0;
+    auto [program_object, _] = _load_attach_tail_program(
+        program_load_context, EBPF_ATTACH_TYPE_CGROUP_INET4_BIND, BPF_PROG_TYPE_CGROUP_SOCK_ADDR);
+    REQUIRE(program_load_context.succeeded == true);
+
+    // Attach the INET6 bind entry program from the same object.
+    bpf_program* bind6_program = bpf_object__find_program_by_name(program_object.get(), "authorize_bind6");
+    REQUIRE(bind6_program != nullptr);
+    bpf_link* bind6_link = nullptr;
+    ebpf_attach_type_t inet6_bind_attach_type = EBPF_ATTACH_TYPE_CGROUP_INET6_BIND;
+    REQUIRE(ebpf_program_attach(bind6_program, &inet6_bind_attach_type, nullptr, 0, &bind6_link) == ERROR_SUCCESS);
+
+    // Set up the tail call programs.
+    _set_up_tailcall_program(program_object.get(), program_load_context.map_name, "SockAddrBind_Callee");
+
+    // Needed for thread_context initialization.
+    constexpr uint32_t MAX_BIND_PROGRAM = 1;
+
+    // Storage for object pointers for each ebpf program file opened by bpf_object__open().
+    std::vector<object_table_entry> object_table(MAX_BIND_PROGRAM);
+    for (uint32_t index = 0; auto& entry : object_table) {
+        entry.available = true;
+        entry.lock = std::make_unique<std::mutex>();
+        entry.object = std::move(program_object);
+        entry.attach = !(index % 2) ? true : false;
+        entry.index = index++;
+        entry.reuse_count = 0;
+        entry.tag = 0xC001DEA3;
+    }
+
+    size_t total_threads = test_control_info.threads_count;
+    std::vector<thread_context> thread_context_table(
+        total_threads, {{}, {}, false, {}, thread_role_type::ROLE_NOT_SET, 0, 0, 0, false, 0, 0, object_table});
+    std::vector<std::thread> test_thread_table(total_threads);
+    for (uint32_t i = 0; i < total_threads; i++) {
+
+        // First, prepare the context for this thread.
+        auto& context_entry = thread_context_table[i];
+        context_entry.is_native_program = is_native;
+        // Alternate IPv4 / IPv6 binds to exercise both the INET4 and INET6 bind hooks.
+        context_entry.role = (i % 2 == 0) ? thread_role_type::MONITOR_IPV4 : thread_role_type::MONITOR_IPV6;
+        context_entry.thread_index = i;
+        context_entry.duration_minutes = test_control_info.duration_minutes;
+        context_entry.extension_restart_enabled = test_control_info.extension_restart_enabled;
+
+        // Now create the thread.
+        auto& thread_entry = test_thread_table[i];
+        thread_entry =
+            std::move(std::thread(_invoke_mt_bindmonitor_tail_call_thread_function, std::ref(context_entry)));
+    }
+
+    // If requested, start the 'extension stop-and-restart' thread for extension for this program type.
+    std::vector<std::string> extension_names = {"netebpfext"};
+    std::vector<std::thread> extension_restart_thread_table;
+    std::vector<thread_context> extension_restart_thread_context_table;
+    if (test_control_info.extension_restart_enabled) {
+        configure_extension_restart(
+            test_control_info,
+            extension_names,
+            extension_restart_thread_table,
+            extension_restart_thread_context_table,
+            object_table);
+    }
+
+    wait_and_verify_test_threads(
+        test_control_info,
+        test_thread_table,
+        thread_context_table,
+        extension_restart_thread_table,
+        extension_restart_thread_context_table);
+
+    // Clean up Winsock.
+    WSACleanup();
+}
+
 #if !defined(CONFIG_BPF_JIT_DISABLED)
 TEST_CASE("jit_load_attach_detach_unload_random_v4_test", "[jit_mt_stress_test]")
 {
@@ -1774,6 +1875,24 @@ TEST_CASE("bindmonitor_tail_call_invoke_program_test", "[native_mt_stress_test]"
     _mt_bindmonitor_tail_call_invoke_program_test(EBPF_EXECUTION_NATIVE, local_test_control_info);
 }
 
+TEST_CASE("sock_addr_bind_tail_call_invoke_program_test", "[native_mt_stress_test]")
+{
+    // Test layout:
+    // 1. Load the "sock_addr_bind_mt_tailcall.sys" native ebpf program.
+    // 2. Load MAX_TAIL_CALL_CNT tail call programs.
+    // 3. Attach the program at both the INET4 and INET6 sock_addr bind hooks.
+    // 4. Create the specified number of threads.
+    //   - Each thread will invoke the TCP 'bind' (IPv4 or IPv6).
+    //   - This will invoke MAX_TAIL_CALL_CNT tail call programs for permit.
+
+    _km_test_init();
+    LOG_INFO("\nStarting test *** sock_addr_bind_tail_call_invoke_program_test ***");
+    test_control_info local_test_control_info = _global_test_control_info;
+
+    _print_test_control_info(local_test_control_info);
+    _mt_sock_addr_bind_tail_call_invoke_program_test(EBPF_EXECUTION_NATIVE, local_test_control_info);
+}
+
 #if !defined(CONFIG_BPF_JIT_DISABLED)
 TEST_CASE("jit_unique_load_attach_detach_unload_random_v4_test", "[jit_mt_stress_test]")
 {
@@ -1874,6 +1993,24 @@ TEST_CASE("jit_bindmonitor_tail_call_invoke_program_test", "[jit_mt_stress_test]
 
     _print_test_control_info(local_test_control_info);
     _mt_bindmonitor_tail_call_invoke_program_test(EBPF_EXECUTION_JIT, local_test_control_info);
+}
+
+TEST_CASE("jit_sock_addr_bind_tail_call_invoke_program_test", "[jit_mt_stress_test]")
+{
+    // Test layout:
+    // 1. Load the "sock_addr_bind_mt_tailcall.o" JIT ebpf program.
+    // 2. Load MAX_TAIL_CALL_CNT tail call programs.
+    // 3. Attach the program at both the INET4 and INET6 sock_addr bind hooks.
+    // 4. Create the specified number of threads.
+    //   - Each thread will invoke the TCP 'bind' (IPv4 or IPv6).
+    //   - This will invoke MAX_TAIL_CALL_CNT tail call programs for permit.
+
+    _km_test_init();
+    LOG_INFO("\nStarting test *** jit_sock_addr_bind_tail_call_invoke_program_test ***");
+    test_control_info local_test_control_info = _global_test_control_info;
+
+    _print_test_control_info(local_test_control_info);
+    _mt_sock_addr_bind_tail_call_invoke_program_test(EBPF_EXECUTION_JIT, local_test_control_info);
 }
 #endif // !defined(CONFIG_BPF_JIT_DISABLED)
 

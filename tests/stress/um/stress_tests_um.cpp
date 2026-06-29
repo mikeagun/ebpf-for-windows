@@ -155,6 +155,95 @@ _bindmonitor_tailcall_stress_thread_function(const stress_test_thread_context& t
 }
 
 static void
+_sock_addr_bind_tailcall_stress_thread_function(const stress_test_thread_context& test_params)
+{
+    uint32_t count{0};
+    using sc = std::chrono::steady_clock;
+    auto endtime = sc::now() + std::chrono::minutes(test_params.duration_minutes);
+    int bpf_error = 0;
+    ebpf_result_t ebpf_result = EBPF_SUCCESS;
+
+    auto log_error_and_increment_failure_count = [&](int error, const char* function_name) {
+        if (error != 0) {
+            LOG_ERROR("{}({}): {} failed with error: {}", __func__, test_params.thread_index, function_name, error);
+            (*test_params.failure_count)++;
+        }
+    };
+
+    while (sc::now() < endtime) {
+
+        LOG_VERBOSE(
+            "{}({}): Instantiating _program_load. Iteration #: {}", __func__, test_params.thread_index, count++);
+
+        auto [result, _] = _program_load(test_params.file_name, test_params.program_type, test_params.execution_type);
+        if (std::holds_alternative<int>(result)) {
+            auto error = std::get<int>(result);
+            log_error_and_increment_failure_count(error, "_program_load");
+        }
+
+        const auto& local_program_object_info = std::get<program_object_info>(result);
+
+        // Set up tail calls.
+        struct bpf_program* callee0 =
+            bpf_object__find_program_by_name(local_program_object_info.object.get(), "SockAddrBind_Callee0");
+        if (callee0 == nullptr) {
+            log_error_and_increment_failure_count(-1, "bpf_object__find_program_by_name(SockAddrBind_Callee0)");
+        }
+        fd_t callee0_fd = bpf_program__fd(callee0);
+        if (callee0_fd < 0) {
+            log_error_and_increment_failure_count(callee0_fd, "bpf_program__fd(SockAddrBind_Callee0)");
+        }
+
+        struct bpf_program* callee1 =
+            bpf_object__find_program_by_name(local_program_object_info.object.get(), "SockAddrBind_Callee1");
+        if (callee1 == nullptr) {
+            log_error_and_increment_failure_count(-1, "bpf_object__find_program_by_name(SockAddrBind_Callee1)");
+        }
+        fd_t callee1_fd = bpf_program__fd(callee1);
+        if (callee1_fd < 0) {
+            log_error_and_increment_failure_count(callee1_fd, "bpf_program__fd(SockAddrBind_Callee1)");
+        }
+
+        fd_t prog_map_fd = bpf_object__find_map_fd_by_name(local_program_object_info.object.get(), "bind_tail_call_map");
+        if (prog_map_fd < 0) {
+            log_error_and_increment_failure_count(prog_map_fd, "bpf_object__find_map_fd_by_name(bind_tail_call_map)");
+        }
+
+        // Set up tail calls.
+        uint32_t index = 0;
+        bpf_error = bpf_map_update_elem(prog_map_fd, &index, &callee0_fd, 0);
+        log_error_and_increment_failure_count(bpf_error, "bpf_map_update_elem(bind_tail_call_map, callee0_fd)");
+        index = 1;
+        bpf_error = bpf_map_update_elem(prog_map_fd, &index, &callee1_fd, 0);
+        log_error_and_increment_failure_count(bpf_error, "bpf_map_update_elem(bind_tail_call_map, callee1_fd)");
+
+        // Attach and detach link at the sock_addr INET4 bind hook.
+        single_instance_hook_t hook(EBPF_PROGRAM_TYPE_CGROUP_SOCK_ADDR, EBPF_ATTACH_TYPE_CGROUP_INET4_BIND);
+        ebpf_result = hook.initialize();
+        log_error_and_increment_failure_count(ebpf_result, "hook.initialize()");
+        uint32_t ifindex = test_params.thread_index;
+        bpf_link* link = nullptr;
+        ebpf_result = hook.attach_link(local_program_object_info.fd, &ifindex, sizeof(ifindex), &link);
+        log_error_and_increment_failure_count(ebpf_result, "hook.attach_link()");
+
+        if (link) {
+            hook.detach_link(link);
+            hook.close_link(link);
+        }
+
+        // Tear down tail calls.
+        index = 0;
+        bpf_error = bpf_map_update_elem(prog_map_fd, &index, &ebpf_fd_invalid, 0);
+        log_error_and_increment_failure_count(bpf_error, "bpf_map_update_elem(bind_tail_call_map, ebpf_fd_invalid)");
+        index = 1;
+        bpf_error = bpf_map_update_elem(prog_map_fd, &index, &ebpf_fd_invalid, 0);
+        log_error_and_increment_failure_count(bpf_error, "bpf_map_update_elem(bind_tail_call_map, ebpf_fd_invalid)");
+    }
+
+    LOG_INFO("{} done. Iterations: {}", test_params.file_name.c_str(), count);
+}
+
+static void
 _droppacket_stress_thread_function(const stress_test_thread_context& test_params)
 {
     single_instance_hook_t hook(EBPF_PROGRAM_TYPE_XDP, EBPF_ATTACH_TYPE_XDP);
@@ -269,6 +358,12 @@ static const std::map<std::string, test_program_attributes> _test_program_info =
       {"bindmonitor_tailcall_um.dll"},
       {},
       _bindmonitor_tailcall_stress_thread_function,
+      BPF_PROG_TYPE_UNSPEC}},
+    {{"sock_addr_bind_mt_tailcall"},
+     {{"sock_addr_bind_mt_tailcall.o"},
+      {"sock_addr_bind_mt_tailcall_um.dll"},
+      {},
+      _sock_addr_bind_tailcall_stress_thread_function,
       BPF_PROG_TYPE_UNSPEC}}};
 
 // This call is called by the common test initialization code to get a list of programs supported by the user mode or
@@ -293,6 +388,7 @@ query_supported_program_names()
 static std::unique_ptr<_test_helper_end_to_end> _test_helper;
 static std::unique_ptr<program_info_provider_t> _bind_program_info_provider;
 static std::unique_ptr<program_info_provider_t> _xdp_program_info_provider;
+static std::unique_ptr<program_info_provider_t> _sock_addr_program_info_provider;
 
 static test_control_info _test_control_info{0};
 
@@ -315,6 +411,12 @@ um_test_init()
         REQUIRE(local_xdp_program_info_provider != nullptr);
         REQUIRE(local_xdp_program_info_provider->initialize(EBPF_PROGRAM_TYPE_XDP) == EBPF_SUCCESS);
         _xdp_program_info_provider.reset(local_xdp_program_info_provider);
+
+        program_info_provider_t* local_sock_addr_program_info_provider = new program_info_provider_t();
+        REQUIRE(local_sock_addr_program_info_provider != nullptr);
+        REQUIRE(
+            local_sock_addr_program_info_provider->initialize(EBPF_PROGRAM_TYPE_CGROUP_SOCK_ADDR) == EBPF_SUCCESS);
+        _sock_addr_program_info_provider.reset(local_sock_addr_program_info_provider);
 
         _test_control_info = get_test_control_info();
         if (_test_control_info.programs.size()) {
