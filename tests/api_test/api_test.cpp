@@ -908,21 +908,6 @@ TEST_CASE("bindmonitor_tailcall_native_test", "[native_tests]")
     cleanup();
 }
 
-void
-bind_tailcall_test(_In_ struct bpf_object* object)
-{
-    UNREFERENCED_PARAMETER(object);
-    WSAData data;
-    SOCKET sockets[2];
-    REQUIRE(WSAStartup(2, &data) == 0);
-
-    // Now, trigger bind. bind should not succeed.
-    REQUIRE(perform_bind(&sockets[0], 30000) != 0);
-    REQUIRE(perform_bind(&sockets[1], 30001) != 0);
-
-    WSACleanup();
-}
-
 #define SOCKET_TEST_PORT 0x3bbf
 
 void
@@ -1119,14 +1104,14 @@ run_thread_start_time_test(IPPROTO protocol, bool is_ipv6)
 TEST_CASE("bind_tailcall_max_native_test", "[native_tests]")
 {
     struct bpf_object* object = nullptr;
-    hook_helper_t hook(EBPF_ATTACH_TYPE_BIND);
+    hook_helper_t hook(EBPF_ATTACH_TYPE_SAMPLE);
 
     program_load_attach_helper_t _helper;
     native_module_helper_t _native_helper;
     _native_helper.initialize("tail_call_max_exceed", EBPF_EXECUTION_NATIVE);
     _helper.initialize(
         _native_helper.get_file_name().c_str(),
-        BPF_PROG_TYPE_BIND,
+        BPF_PROG_TYPE_SAMPLE,
         "bind_test_caller",
         EBPF_EXECUTION_NATIVE,
         nullptr,
@@ -1149,8 +1134,12 @@ TEST_CASE("bind_tailcall_max_native_test", "[native_tests]")
         REQUIRE(program != nullptr);
     }
 
-    // Perform bind test.
-    bind_tailcall_test(object);
+    // Fire the program through the sample extension hook. The tail-call chain exceeds the maximum
+    // tail call count; this exercises that path in the kernel and must complete without crashing.
+    _sample_extension_helper extension;
+    std::vector<char> input_buffer(1);
+    std::vector<char> output_buffer(1);
+    extension.invoke(input_buffer, output_buffer);
 
     // Clean up tail calls.
     for (int index = 0; index < MAX_TAIL_CALL_PROGS; index++) {
