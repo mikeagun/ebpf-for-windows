@@ -80,20 +80,19 @@ copy_to_vm(session_id="<id>",
 
 ### Step 3: Install eBPF
 
-Install the MSI with all components:
+Install the MSI with all components. **CRITICAL**: Use `Start-Process -Wait` — bare `msiexec.exe` returns in <1 second via PSDirect while the actual installation takes ~35 seconds. Without `-Wait`, services won't exist yet when you check them.
 ```
 invoke_command(session_id="<id>",
-    command="msiexec.exe /i C:\\Release\\ebpf-for-windows.msi INSTALLFOLDER=C:\\ebpf ADDLOCAL=ALL /qn /norestart /l*v C:\\msi-install.log",
-    initial_wait=30)
+    command="$p = Start-Process -FilePath 'msiexec.exe' -ArgumentList '/i C:\\Release\\ebpf-for-windows.msi INSTALLFOLDER=C:\\ebpf ADDLOCAL=ALL /qn /norestart /l*v C:\\msi-install.log' -Wait -PassThru; exit $p.ExitCode",
+    initial_wait=45, timeout=120)
 ```
 
-Wait a few seconds then verify services are running:
+Verify services are running (no sleep needed — `Start-Process -Wait` blocks until the MSI completes):
 ```
-invoke_command(session_id="<id>", command="Start-Sleep 5")
 get_services(session_id="<id>", names=["eBPFSvc", "NetEbpfExt", "eBPFCore"])
 ```
 
-Expected: all three services show `Running` (Status=4). **Do not trust the msiexec exit code**— it may report 0 even on failure. Always verify by checking services. If services are missing, check the MSI log:
+Expected: all three services show `Running` (Status=4). If services are missing, check the MSI log:
 ```
 invoke_command(session_id="<id>",
     command="Get-Content C:\\msi-install.log -Tail 50",
