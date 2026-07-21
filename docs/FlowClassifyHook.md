@@ -193,9 +193,10 @@ The flow map is a **custom map** registered by the network extension, using
   flow.
 - **Value:** a per-flow record (below).
 
-Proposed value layout (non-final). Typed unions are used so that, depending on the
-flow type, a program reads the correctly named and typed values rather than
-overloading a single field:
+The entry is a **fixed header followed by a configurable per-flow scratch region**
+(see [Per-flow storage](#per-flow-storage)). Proposed header layout (non-final).
+Typed unions are used so that, depending on the flow type, a program reads the
+correctly named and typed values rather than overloading a single field:
 
 ```c
 typedef enum _ebpf_flow_classify_data_path
@@ -260,33 +261,79 @@ typedef struct _ebpf_flow_map_entry
     // Verdict: writable (asynchronous / user-mode channel).
     uint32_t action; ///< ebpf_flow_classify_action_t.
 
-    // Opaque per-flow scratch for the owning classifier.
-    uint64_t user_cookie;
-
     // Reserved for future phases (redirect target reference, direction flag,
     // pend handle). Interpreted per action type when used.
     uint32_t action_flags;
     uint32_t reserved0;
     uint64_t reserved_ref;
-} ebpf_flow_map_entry_t;
+    // The fixed header above is followed by a configurable per-flow scratch
+    // region of (value_size - sizeof(header)) bytes (see "Per-flow storage").
+} ebpf_flow_map_entry_header_t;
 ```
 
-Field ownership:
+Field ownership (of the header):
 
 - **Extension-owned, read-only** (to programs and user mode): `flow_id`, tuple and
   metadata, `data_path`, `metadata_flags`, `state`. These are populated by the
   extension when the flow is tracked and cannot be forged.
-- **Writable:** `action` (the asynchronous verdict channel) and `user_cookie`.
+- **Writable:** `action` (the asynchronous verdict channel).
 - **Reserved:** redirect and pend fields, used by later phases.
 
 The entry does **not** carry a version/size header. The entry size is the map's
-value size, and its layout is determined by the extension version negotiated
-through the program information. Field-level forward compatibility is signaled by
-`metadata_flags` / `action_flags` and the reserved fields.
+value size, and the header layout is determined by the extension version
+negotiated through the program information. Field-level forward compatibility is
+signaled by `metadata_flags` / `action_flags` and the reserved fields.
 
-Bulk, application-specific per-flow data does **not** live in the entry; it lives
-in the classifier's own maps. The entry carries classification state plus a small
-opaque `user_cookie`.
+#### Per-flow storage
+
+Most classifiers need to keep some state per flow (for example a parser state
+machine or a byte accumulator), and the amount varies by program. This design
+provides per-flow storage as a fixed part of the flow map entry - a **configurable
+scratch region** immediately following the header, sized at map creation:
+`value_size = sizeof(header) + N`, where `N >= 0` is chosen by the program (via its
+map value type). The extension validates `value_size >= sizeof(header)` and manages
+`N = value_size - sizeof(header)` scratch bytes per flow, freed automatically when
+the flow is deleted.
+
+Because the header is read-only and the scratch is read/write, and a verifier
+cannot represent a read-only region immediately followed by a read/write region
+inside one map value, **programs do not write the entry through a plain map value
+pointer**. Instead the scratch is exposed as a bounded read/write region that the
+verifier can track:
+
+- **Primary:** the verdict program reads its persistent scratch through bounded
+  `scratch_start` / `scratch_end` pointers in the [context](#context-structure)
+  (mirroring `data_start` / `data_end`). `[VERIFY]` PREVAIL can bound a helper- or
+  context-provided pointer by `value_size - sizeof(header)`; it already bounds
+  `data` and map-value pointers, so this is expected to be feasible.
+- **Complementary:** a helper (for example `bpf_flow_map_scratch()`) may return the
+  same bounded read/write pointer, covering cases the context cannot (for example
+  initializing scratch at enrollment). Header fields remain read-only because a
+  writable pointer is only ever handed out for the scratch region.
+
+User mode reads the header (metadata, `state`) and writes `action` through normal
+map operations; the extension's update path keeps the header authoritative.
+
+**Alternative (decoupled) storage model.** Linux keeps membership/verdict
+(`sockmap` / `sockhash`) separate from per-object data
+(`BPF_MAP_TYPE_SK_STORAGE`, "socket local storage"): `sk_storage` holds
+program-defined `value_size` data per socket, accessed via
+`bpf_sk_storage_get()` (a bounded read/write pointer, created on first access and
+freed when the socket is destroyed). An equivalent decoupled model here would keep
+the flow map fixed (header only) and add a separate **flow-local-storage** map (the
+`sk_storage` analog) accessed through a `bpf_flow_storage_get()`-style helper, with
+storage sized and managed independently and freed on flow deletion. This ports the
+Linux model directly and removes the read-only/read-write layout concern from the
+flow map, at the cost of a second map type and helper, and an extra
+lookup/allocation per flow.
+
+**Current leaning: the unified model** (configurable entry size). In the typical
+case a classifier stores some state for **every** tracked flow, so co-locating it
+with the entry is lower overhead (one entry, one allocation, one lookup per flow)
+than a separate storage map, while still letting each program choose how much state
+to keep. The decoupled `sk_storage`-style model is retained as an alternative and
+may be preferable where per-flow data must be associated independently of
+classification, or sized/managed separately.
 
 ### Context Structure
 
@@ -330,6 +377,8 @@ typedef struct _ebpf_flow_classify
     uint32_t state;      ///< Current classification state (ebpf_flow_state_t).
     uint8_t* data_start; ///< Start of payload for this invocation.
     uint8_t* data_end;   ///< End of payload for this invocation.
+    uint8_t* scratch_start; ///< Start of this flow's per-flow scratch (read/write).
+    uint8_t* scratch_end;   ///< End of this flow's per-flow scratch (read/write).
 } ebpf_flow_classify_t;
 ```
 
@@ -337,9 +386,14 @@ Notes:
 
 - `data_start` / `data_end` are valid only for the duration of the invocation. For
   datagrams they bound one complete datagram payload.
-- A program reaches its flow map entry with a normal `bpf_map_lookup_elem()` using
-  the flow's key (the `flow_id` in the context, or a key the program can re-derive
-  from the tuple). The entry is not exposed as a pointer in the context.
+- `scratch_start` / `scratch_end` bound this flow's persistent per-flow scratch (see
+  [Per-flow storage](#per-flow-storage)); the region is read/write and persists
+  across invocations for the life of the flow. Its size is
+  `value_size - sizeof(header)` (zero when the map defines no scratch).
+- The program does **not** write the flow map entry through a plain map value
+  pointer (the header is read-only); it reads header fields from this context and
+  reads/writes its scratch through the bounded scratch pointers. If a program needs
+  to read another flow's entry, it may use a read-only `bpf_map_lookup_elem()`.
 - The context is a fixed, verifier-checked layout (registered through the program
   information); it does not carry an inline version header.
 
@@ -409,12 +463,27 @@ Proposed helpers (BTF-resolved functions; signatures non-final):
  * @retval 0 on success, negative on failure.
  */
 long bpf_flow_map_track(void* ctx, struct bpf_map* map, const void* key, uint64_t flags);
+
+/**
+ * @brief Get a bounded read/write pointer to the current flow's per-flow scratch
+ *        in a flow map (complementary to the context scratch pointers).
+ * @param[in] ctx  Current program context (identifies the flow).
+ * @param[in] map  Flow map holding the flow's entry.
+ * @return Pointer to (value_size - sizeof(header)) scratch bytes, or NULL.
+ */
+void* bpf_flow_map_scratch(void* ctx, struct bpf_map* map);
 ```
 
-- Callable from the enrollment program (`sock_ops`). The flow identity used to arm
-  inspection comes from `ctx`; a program can only arm its own flow.
-- Flow classify programs read and (for the writable fields) update their entry
-  through the normal map helpers.
+- `bpf_flow_map_track` is callable from the enrollment program (`sock_ops`). The
+  flow identity used to arm inspection comes from `ctx`; a program can only arm its
+  own flow.
+- Flow classify programs read header fields from the context and read/write their
+  per-flow scratch through the context scratch pointers or `bpf_flow_map_scratch`
+  (never through a writable pointer to the entry header).
+- Under the decoupled storage alternative
+  ([Per-flow storage](#per-flow-storage)), a `bpf_flow_storage_get()`-style helper
+  (the Linux `bpf_sk_storage_get` analog) would return per-flow storage from a
+  separate flow-local-storage map instead.
 - A redirect helper (`bpf_flow_redirect_map`) is reserved for P4.
 
 ### Datagram specifics
@@ -580,6 +649,12 @@ stress) run on a virtual machine; unit, verifier, and fuzz tests run locally.
   reuse `sock_ops` + `bpf_flow_map_track`.
 - **Per-segment stream inspection** (Linux `SK_SKB`) and **datagram inspection**
   (Linux `SK_MSG`).
+- **Per-flow local storage** (Linux `BPF_MAP_TYPE_SK_STORAGE`, socket local
+  storage): program-defined-size data associated with an object, accessed via a
+  bounded read/write pointer and freed automatically on object teardown. Here it is
+  the flow map's configurable scratch (or, in the decoupled alternative, a separate
+  flow-local-storage map), freed on flow deletion. A flow may have storage in
+  multiple maps, as a socket may in multiple `sk_storage` maps.
 
 ### Divergences (deliberate)
 
@@ -592,6 +667,7 @@ stress) run on a virtual machine; unit, verifier, and fuzz tests run locally.
 | Classifiers per map | One | One (relaxable later) |
 | Verdict granularity | Per message (`SK_PASS` / `SK_DROP`) | Whole-flow allow/block informed by per-segment inspection |
 | Redirect | Data-path `sk_redirect`, any time | Connect-time only (WFP), with a map+key target shape reserved |
+| Membership vs per-flow data | Separate map types (`sockmap` vs `sk_storage`) | Leaning unified (one flow map: membership + verdict + configurable per-flow scratch); decoupled `sk_storage`-style model kept as an alternative |
 
 **Portability.** The design pattern ports conceptually (membership drives
 inspection), but the exact API differs: a classifier attaches to a map attach
@@ -686,5 +762,15 @@ Connect-time redirect of flows.
 - **Cross-map invocation order.** When multiple flow maps track one flow, define
   the order in which their classifiers are invoked (for example the order in which
   the flow began being tracked in each map).
-- **Flow map bounds.** The `max_entries` and any systemwide bound on the number of
-  concurrently tracked flows.
+- **Flow map bounds and per-flow storage size.** The `max_entries` and any
+  systemwide bound on the number of concurrently tracked flows. Configurable
+  per-flow scratch makes memory accounting more pointed: worst-case memory scales
+  with `max_entries x (sizeof(header) + N)`, so a per-map and/or systemwide bound on
+  scratch is needed.
+- **Storage model.** Whether to keep the leaning **unified** model (configurable
+  scratch in the flow map entry) or adopt the **decoupled** Linux `sk_storage`-style
+  model (a separate flow-local-storage map). See
+  [Per-flow storage](#per-flow-storage).
+- **Scratch access mechanism.** Context `scratch_start`/`scratch_end` pointers, a
+  `bpf_flow_map_scratch()` helper, or both; and `[VERIFY]` that PREVAIL can bound
+  such a pointer by `value_size - sizeof(header)`.
