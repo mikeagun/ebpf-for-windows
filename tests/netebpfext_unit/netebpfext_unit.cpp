@@ -1015,6 +1015,50 @@ TEST_CASE("wfp_filter_delete_failure_unload_deletes_stale_filter", "[netebpfext]
     REQUIRE(usersim_fwp_get_fwpm_filter_count() == 0);
 }
 
+// Verifies the opportunistic reaper: zombie filters left by one client's failed detach are reclaimed at runtime by
+// a later WFP operation (attaching a second client), without waiting for driver unload.
+TEST_CASE("wfp_filter_delete_failure_runtime_reaper", "[netebpfext][wfp_cleanup]")
+{
+    if (cxplat_fault_injection_is_enabled()) {
+        return;
+    }
+
+    ebpf_extension_data_t npi_specific_characteristics = {
+        .header = EBPF_ATTACH_CLIENT_DATA_HEADER_VERSION,
+    };
+    test_sock_addr_client_context_header_t client_a_header = {0};
+    client_a_header.context.base.desired_attach_types = {BPF_CGROUP_INET4_CONNECT, BPF_CGROUP_INET6_CONNECT};
+    test_sock_addr_client_context_t* client_a = &client_a_header.context;
+
+    netebpf_ext_helper_t helper(
+        &npi_specific_characteristics,
+        (_ebpf_extension_dispatch_function)netebpfext_unit_invoke_sock_addr_program,
+        (netebpfext_helper_base_client_context_t*)client_a);
+
+    uint32_t filters_per_client = usersim_fwp_get_fwpm_filter_count();
+    REQUIRE(filters_per_client > 0);
+
+    // Strand client A's filters as zombies: every delete (including the inline retries) fails during detach.
+    usersim_fwp_set_filter_delete_failure_count(UINT32_MAX);
+    helper.detach_hook_client();
+
+    // A's filters could not be deleted, so they remain in the engine as zombies awaiting recovery.
+    REQUIRE(usersim_fwp_get_fwpm_filter_count() == filters_per_client);
+
+    // Let deletes succeed, then attach a second client. Its WFP add invokes the reaper, which reclaims client A's
+    // zombies; the net filter count returns to one client's worth (not two).
+    usersim_fwp_set_filter_delete_failure_count(0);
+
+    test_sock_addr_client_context_header_t client_b_header = {0};
+    client_b_header.context.base.desired_attach_types = {BPF_CGROUP_INET4_CONNECT, BPF_CGROUP_INET6_CONNECT};
+    test_sock_addr_client_context_t* client_b = &client_b_header.context;
+    helper.attach_secondary_hook_client((netebpfext_helper_base_client_context_t*)client_b);
+
+    REQUIRE(usersim_fwp_get_fwpm_filter_count() == filters_per_client);
+
+    helper.detach_secondary_hook_client();
+}
+
 #pragma endregion cgroup_sock_addr
 #pragma region sock_ops
 

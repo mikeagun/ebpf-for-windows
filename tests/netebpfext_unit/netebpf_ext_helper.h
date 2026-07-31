@@ -132,6 +132,23 @@ typedef class _netebpf_ext_helper
         }
     }
 
+    // Attach a second hook client (a distinct filter context) to drive a WFP add, which invokes the reaper. The
+    // primary client must already be detached so this attach does not match its removed filter context.
+    void
+    attach_secondary_hook_client(_In_ netebpfext_helper_base_client_context_t* client_context)
+    {
+        client_context->helper = this;
+        nmr_secondary_hook_client_handle = std::make_unique<nmr_client_registration_t>(&hook_client, client_context);
+    }
+
+    void
+    detach_secondary_hook_client()
+    {
+        if (nmr_secondary_hook_client_handle) {
+            nmr_secondary_hook_client_handle.reset(nullptr);
+        }
+    }
+
   private:
     bool trace_initiated = false;
     bool ndis_handle_initialized = false;
@@ -255,6 +272,7 @@ typedef class _netebpf_ext_helper
 
     std::unique_ptr<nmr_client_registration_t> nmr_program_info_client_handle;
     std::unique_ptr<nmr_client_registration_t> nmr_hook_client_handle;
+    std::unique_ptr<nmr_client_registration_t> nmr_secondary_hook_client_handle;
 
 } netebpf_ext_helper_t;
 

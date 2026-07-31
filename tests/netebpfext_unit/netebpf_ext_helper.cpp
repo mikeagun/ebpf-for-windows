@@ -100,6 +100,10 @@ _netebpf_ext_helper::_netebpf_ext_helper(
 
 _netebpf_ext_helper::~_netebpf_ext_helper()
 {
+    if (nmr_secondary_hook_client_handle) {
+        nmr_secondary_hook_client_handle.reset(nullptr);
+    }
+
     if (nmr_hook_client_handle) {
         nmr_hook_client_handle.reset(nullptr);
     }

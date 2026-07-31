@@ -146,6 +146,7 @@ typedef struct _net_ebpf_extension_wfp_filter_context
     bool wildcard : 1;         ///< True if the filter context is for wildcard filters.
     bool initialized : 1;      ///< True if the filter context has been successfully initialized.
     HANDLE wfp_engine_handle;  ///< WFP engine handle.
+    uint32_t reap_generation;  ///< Last zombie-reaper pass that visited this context.
 } net_ebpf_extension_wfp_filter_context_t;
 
 /**
@@ -305,7 +306,7 @@ _IRQL_requires_(PASSIVE_LEVEL) _Must_inspect_result_ ebpf_result_t net_ebpf_exte
  *
  * Marks each filter as deleting and calls @c FwpmFilterDeleteById; a successful delete releases the per-filter
  * reference through the synchronous WFP delete notification. A filter whose delete fails is left in the
- * @c NET_EBPF_EXT_WFP_FILTER_DELETE_FAILED state for the driver-unload sweep to recover.
+ * @c NET_EBPF_EXT_WFP_FILTER_DELETE_FAILED state for the opportunistic reaper or the driver-unload sweep to recover.
  *
  * @param[in,out] filter_context The filter context whose WFP filters are being deleted.
  */

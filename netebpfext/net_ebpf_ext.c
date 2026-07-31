@@ -51,15 +51,31 @@ static net_ebpf_ext_sublayer_info_t _net_ebpf_ext_sublayers[] = {
 // Global object used to store state for cleanup.
 static net_ebpf_extension_wfp_cleanup_state_t _net_ebpf_ext_wfp_cleanup_state = {0};
 
+// Count of filters in the DELETE_FAILED (zombie) state across all contexts; a fast gate for the reaper. Kept
+// balanced by pairing each increment/decrement with a DELETE_FAILED transition under the owning context lock.
+static volatile long _net_ebpf_ext_zombie_filter_count = 0;
+
+// Serializes the reaper so at most one pass runs at a time; concurrent callers skip (reaping is best-effort).
+static volatile long _net_ebpf_ext_reaper_active = 0;
+
+// Generation stamped onto each context visited by a reaper pass, so one pass visits a context at most once.
+static volatile long _net_ebpf_ext_reap_generation = 0;
+
 // Bounded inline retry for a transient FwpmFilterDeleteById failure: up to this many attempts (initial + retries).
 #define NET_EBPF_EXT_DELETE_RETRY_MAX_ATTEMPTS 3
 #define NET_EBPF_EXT_DELETE_RETRY_DELAY_100NS (-(SECONDSTO100NS(1) / 20)) // 50 ms, expressed as a relative timeout.
+
+// Max zombie-delete retries per reaper pass. The reaper runs under the caller's provider push lock, so this bounds
+// added latency; unreached zombies are retried on later WFP operations and the unload sweep is the backstop.
+#define NET_EBPF_EXT_REAP_MAX_PER_PASS 8
 
 static void
 _net_ebpf_ext_flow_delete(uint16_t layer_id, uint32_t callout_id, uint64_t flow_context);
 
 _IRQL_requires_(PASSIVE_LEVEL) static NTSTATUS _net_ebpf_ext_try_delete_wfp_filter(
     _In_ HANDLE wfp_engine_handle, uint64_t filter_id, uint32_t max_attempts, _Out_opt_ NTSTATUS* last_failed_status);
+
+_IRQL_requires_(PASSIVE_LEVEL) static void _net_ebpf_ext_reap_zombie_filters(void);
 
 NTSTATUS
 net_ebpf_ext_filter_change_notify(
@@ -468,10 +484,11 @@ _IRQL_requires_(PASSIVE_LEVEL) void net_ebpf_extension_delete_wfp_filters(
                 status,
                 filter_ids[index].id);
             // The failed delete issues no notification, so the reference is still held. Mark it DELETE_FAILED for
-            // recovery by the unload sweep, unless a notification already moved it to DELETED.
+            // later recovery (reaper or unload sweep), unless a notification already moved it to DELETED.
             old_irql = ExAcquireSpinLockExclusive(&filter_context->lock);
             if (filter_ids[index].state == NET_EBPF_EXT_WFP_FILTER_DELETING) {
                 filter_ids[index].state = NET_EBPF_EXT_WFP_FILTER_DELETE_FAILED;
+                InterlockedIncrement(&_net_ebpf_ext_zombie_filter_count);
             }
             ExReleaseSpinLockExclusive(&filter_context->lock, old_irql);
         } else if (last_failed_status != STATUS_SUCCESS) {
@@ -492,6 +509,9 @@ _IRQL_requires_(PASSIVE_LEVEL) void net_ebpf_extension_delete_wfp_filters(
                 filter_ids[index].id);
         }
     }
+
+    // BFE is reachable now, so opportunistically retry outstanding zombie filters from other contexts.
+    _net_ebpf_ext_reap_zombie_filters();
 
     EBPF_EXT_LOG_EXIT();
 }
@@ -529,6 +549,103 @@ _IRQL_requires_(PASSIVE_LEVEL) static NTSTATUS _net_ebpf_ext_try_delete_wfp_filt
         *last_failed_status = most_recent_failed_status;
     }
     return status;
+}
+
+// Opportunistically retries "zombie" filters (a prior delete failed), invoked from the WFP add and delete paths.
+// Non-destructive: each candidate context is pinned, retried outside the list lock, then released (may free it).
+_IRQL_requires_(PASSIVE_LEVEL) static void _net_ebpf_ext_reap_zombie_filters(void)
+{
+    // Fast gate: nothing to do if there are no known zombies.
+    if (InterlockedCompareExchange(&_net_ebpf_ext_zombie_filter_count, 0, 0) == 0) {
+        return;
+    }
+
+    // Serialize reaper passes; concurrent callers skip because the active pass makes forward progress.
+    if (InterlockedCompareExchange(&_net_ebpf_ext_reaper_active, 1, 0) != 0) {
+        return;
+    }
+
+    uint32_t generation = (uint32_t)InterlockedIncrement(&_net_ebpf_ext_reap_generation);
+    uint32_t retries_this_pass = 0;
+
+    for (;;) {
+        net_ebpf_extension_wfp_filter_context_t* filter_context = NULL;
+        KIRQL old_irql;
+
+        // Pin the next not-yet-visited context so it cannot be freed while we operate on it outside the list lock.
+        old_irql = ExAcquireSpinLockExclusive(&_net_ebpf_ext_wfp_cleanup_state.lock);
+#pragma warning(push)
+#pragma warning(disable : 6001) // Using uninitialized memory '*candidate'. candidate is a live list entry.
+        for (PLIST_ENTRY entry = _net_ebpf_ext_wfp_cleanup_state.filter_cleanup_list.Flink;
+             entry != &_net_ebpf_ext_wfp_cleanup_state.filter_cleanup_list;
+             entry = entry->Flink) {
+            net_ebpf_extension_wfp_filter_context_t* candidate =
+                CONTAINING_RECORD(entry, net_ebpf_extension_wfp_filter_context_t, link);
+            if (candidate->reap_generation == generation) {
+                continue;
+            }
+            candidate->reap_generation = generation;
+            filter_context = candidate;
+            REFERENCE_FILTER_CONTEXT(filter_context);
+            break;
+        }
+#pragma warning(pop)
+        ExReleaseSpinLockExclusive(&_net_ebpf_ext_wfp_cleanup_state.lock, old_irql);
+
+        if (filter_context == NULL) {
+            break;
+        }
+
+        // Retry each zombie filter in this context with a single attempt to bound the cost while running under the
+        // caller's provider push lock. A successful delete synchronously fires the WFP notification, which releases
+        // the per-filter reference.
+        for (uint32_t index = 0; index < filter_context->filter_ids_count; index++) {
+            net_ebpf_ext_wfp_filter_id_t* filter_id = &filter_context->filter_ids[index];
+            net_ebpf_ext_wfp_filter_state_t state;
+            NTSTATUS status;
+
+            old_irql = ExAcquireSpinLockExclusive(&filter_context->lock);
+            state = filter_id->state;
+            if (state == NET_EBPF_EXT_WFP_FILTER_DELETE_FAILED) {
+                filter_id->state = NET_EBPF_EXT_WFP_FILTER_DELETING;
+                InterlockedDecrement(&_net_ebpf_ext_zombie_filter_count);
+            }
+            ExReleaseSpinLockExclusive(&filter_context->lock, old_irql);
+
+            if (state != NET_EBPF_EXT_WFP_FILTER_DELETE_FAILED) {
+                continue;
+            }
+
+            status = _net_ebpf_ext_try_delete_wfp_filter(filter_context->wfp_engine_handle, filter_id->id, 1, NULL);
+            retries_this_pass++;
+            if (NT_SUCCESS(status)) {
+                EBPF_EXT_LOG_MESSAGE_UINT64(
+                    EBPF_EXT_TRACELOG_LEVEL_INFO,
+                    EBPF_EXT_TRACELOG_KEYWORD_EXTENSION,
+                    "Recovered stranded WFP filter via opportunistic reaper.",
+                    filter_id->id);
+            } else {
+                // Still failing: restore DELETE_FAILED unless a racing notification already claimed the reference.
+                old_irql = ExAcquireSpinLockExclusive(&filter_context->lock);
+                if (filter_id->state == NET_EBPF_EXT_WFP_FILTER_DELETING) {
+                    filter_id->state = NET_EBPF_EXT_WFP_FILTER_DELETE_FAILED;
+                    InterlockedIncrement(&_net_ebpf_ext_zombie_filter_count);
+                }
+                ExReleaseSpinLockExclusive(&filter_context->lock, old_irql);
+            }
+        }
+
+        // Release the pin. This may free the context if the retries released its last reference.
+        DEREFERENCE_FILTER_CONTEXT(filter_context);
+
+        // Bound the number of (blocking) retries performed while holding the caller's provider push lock. Remaining
+        // zombies are retried on subsequent WFP operations, and the driver-unload sweep is the guaranteed backstop.
+        if (retries_this_pass >= NET_EBPF_EXT_REAP_MAX_PER_PASS) {
+            break;
+        }
+    }
+
+    InterlockedExchange(&_net_ebpf_ext_reaper_active, 0);
 }
 
 #pragma warning(suppress : 6386) // filter_ids receives a separately allocated buffer sized for filter_count entries.
@@ -639,6 +756,9 @@ _IRQL_requires_(PASSIVE_LEVEL) _Must_inspect_result_ ebpf_result_t net_ebpf_exte
     is_in_transaction = FALSE;
 
     *filter_ids = local_filter_ids;
+
+    // A successful add means BFE is reachable; opportunistically retry any outstanding zombie filters.
+    _net_ebpf_ext_reap_zombie_filters();
 
 Exit:
     if (!NT_SUCCESS(status)) {
@@ -931,6 +1051,9 @@ _net_ebpf_ext_cleanup_leaked_filters(bool all_callouts_unregistered)
             // fired still holds it). If a notification races, whichever path reaches DELETED first releases once.
             filter_irql = ExAcquireSpinLockExclusive(&filter_context->lock);
             if (filter_id->state != NET_EBPF_EXT_WFP_FILTER_DELETED) {
+                if (filter_id->state == NET_EBPF_EXT_WFP_FILTER_DELETE_FAILED) {
+                    InterlockedDecrement(&_net_ebpf_ext_zombie_filter_count);
+                }
                 filter_id->state = NET_EBPF_EXT_WFP_FILTER_DELETED;
                 release_count++;
                 EBPF_EXT_LOG_MESSAGE_UINT64(
@@ -1121,6 +1244,9 @@ net_ebpf_ext_filter_change_notify(
                 // Any non-DELETED state still owns the reference (including an external delete or a BFE teardown of
                 // an ADDED filter); claim it by transitioning to DELETED.
                 if (cur_filter_id->state != NET_EBPF_EXT_WFP_FILTER_DELETED) {
+                    if (cur_filter_id->state == NET_EBPF_EXT_WFP_FILTER_DELETE_FAILED) {
+                        InterlockedDecrement(&_net_ebpf_ext_zombie_filter_count);
+                    }
                     cur_filter_id->state = NET_EBPF_EXT_WFP_FILTER_DELETED;
                     release_reference = true;
                 }
