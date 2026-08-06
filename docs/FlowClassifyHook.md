@@ -60,7 +60,10 @@ inspects payload segments in order and reaches an allow/block decision about the
 
 Phase 1 (normative):
 
-- A way to choose, per flow, whether to classify that flow's transport payload.
+- A way to choose, per flow, whether to classify that flow's transport payload, at
+  flow establishment or at any later point in the flow's lifetime.
+- A way to stop classifying a flow and later resume, without losing its per-flow
+  state.
 - A hook that receives each transport payload segment in order, for both ingress
   and egress, for flows selected for classification.
   - Three synchronous actions:
@@ -755,6 +758,11 @@ Connect-time redirect of flows.
 
 ## Open Questions
 
+- **Arming after establishment (P1).** Inspection is armed only at flow
+  establishment, and `ALLOW` is the only way to stop inspecting, so inspection
+  cannot be paused and later resumed over the life of a flow. Should P1 support
+  arming and disarming after establishment, and is that an extension of
+  [Re-authorization (P3)](#re-authorization-p3) or a separate mechanism?
 - **Re-authorization data-less re-invoke (P3).** In addition to the re-arm /
   data-driven model, should re-authorization support a **data-less re-invoke**? If
   so, is it a flow classify re-invoke, or a `sock_ops` (or similar) re-invoke that
