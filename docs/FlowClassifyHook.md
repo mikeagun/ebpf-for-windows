@@ -60,13 +60,18 @@ inspects payload segments in order and reaches an allow/block decision about the
 
 Phase 1 (normative):
 
-- A way to choose, per flow, whether to classify that flow's transport payload.
+- A way to choose, per flow, whether to classify that flow's transport payload, at
+  flow establishment or at any later point in the flow's lifetime.
+- A way to stop classifying a flow and later resume, without losing its per-flow
+  state.
 - A hook that receives each transport payload segment in order, for both ingress
   and egress, for flows selected for classification.
-  - Three synchronous actions:
+  - Four synchronous actions:
     - **Allow** the flow and stop inspecting it (for the returning program).
     - **Block** the flow (no further inspection for the returning program).
     - **Need more data**: allow the current segment but keep inspecting.
+    - **Suspend**: allow the current segment and stop inspecting without
+      deciding (keeps per-flow state).
 - A way to clean up per-flow state when a flow is deleted while still being
   classified.
 - No eBPF program is invoked for segments of flows not selected for
@@ -214,6 +219,7 @@ typedef enum _ebpf_flow_classify_metadata_flag
 typedef enum _ebpf_flow_state
 {
     EBPF_FLOW_STATE_CLASSIFYING, ///< Under classification.
+    EBPF_FLOW_STATE_SUSPENDED,   ///< Tracked, not inspecting; resumable.
     EBPF_FLOW_STATE_PENDED,      ///< Awaiting an asynchronous decision (P2).
     EBPF_FLOW_STATE_ALLOWED,     ///< Allowed by this classifier.
     EBPF_FLOW_STATE_BLOCKED,     ///< Blocked (terminal).
@@ -408,6 +414,8 @@ typedef enum _ebpf_flow_classify_action
     EBPF_FLOW_CLASSIFY_ALLOW,          ///< Allow the flow; stop inspecting (this classifier).
     EBPF_FLOW_CLASSIFY_BLOCK,          ///< Block the flow (terminal).
     EBPF_FLOW_CLASSIFY_NEED_MORE_DATA, ///< Allow current segment; keep inspecting.
+    EBPF_FLOW_CLASSIFY_SUSPEND,        ///< Stop inspecting without deciding; resumable.
+    EBPF_FLOW_CLASSIFY_RESUME,         ///< Resume a suspended flow (asynchronous only).
     EBPF_FLOW_CLASSIFY_PEND,           ///< Defer to an asynchronous decision (P2).
     EBPF_FLOW_CLASSIFY_REINVOKE,       ///< Re-run classification (P2 completion).
     EBPF_FLOW_CLASSIFY_REDIRECT,       ///< Redirect (reserved; P4).
@@ -417,8 +425,8 @@ typedef enum _ebpf_flow_classify_action
 Production channels:
 
 - **Inline (synchronous):** a flow classify program returns `ALLOW`, `BLOCK`,
-  `NEED_MORE_DATA`, or (in P2) `PEND`. This is the fast path; it does not require a
-  map write.
+  `NEED_MORE_DATA`, `SUSPEND`, or (in P2) `PEND`. This is the fast path; it does not
+  require a map write.
 - **Asynchronous / user-mode:** a decision is written into the entry's `action`
   field (for example a pending flow's completion, or a re-authorization). The same
   action semantics and the same WFP application path apply, regardless of source.
@@ -440,13 +448,47 @@ the maps tracking a flow:
 
 - `BLOCK` from any classifier is terminal for the flow.
 - `ALLOW` finalizes that map's entry; other maps continue classifying.
+- `SUSPEND` leaves that map's entry in place, in `EBPF_FLOW_STATE_SUSPENDED`.
 - The flow is fully allowed (inspection disarmed) only when **all** tracking maps
   have allowed it.
+- Inspection is armed while **any** tracking map holds the flow in
+  `EBPF_FLOW_STATE_CLASSIFYING`, or in P2 `EBPF_FLOW_STATE_PENDED`.
+- A classifier is invoked only for its own map's entry, and only while that entry
+  is `EBPF_FLOW_STATE_CLASSIFYING`.
 
 This is a deliberate divergence from Linux, which errors if a socket is placed in
 more than one program-bearing map. Allowing multiple maps per flow lets
 independent solutions (for example a security agent and an observability agent)
 classify the same flow without conflict.
+
+#### Suspend / resume and post-establishment arming
+
+Stop and restart inspection of a live flow. Addresses
+[Arming after establishment](#open-questions).
+
+- **Suspend.** `SUSPEND` moves the entry to `EBPF_FLOW_STATE_SUSPENDED`. The entry
+  and its per-flow state remain and the classifier is not invoked. If no other
+  tracking map keeps the flow armed, inspection is disarmed as on `ALLOW`.
+  Available on both channels.
+- **Resume.** `RESUME` returns a `SUSPENDED` entry to `CLASSIFYING` and re-arms
+  inspection. Asynchronous only, since no program runs for a suspended flow.
+- **Arming an untracked flow.** Suspend and resume do not reach a flow that was
+  never tracked, since no program runs for it. Enrollment is re-invoked instead,
+  through a `sock_ops` callback (`BPF_SOCK_OPS_FLOW_REEVALUATE_CB`) issued outside
+  any classify, so the enrollment decision and the `bpf_flow_map_track()` call
+  stay in the program. Scope and trigger mirror
+  [Re-authorization (P3)](#re-authorization-p3), bounded and rate limited.
+- **Re-evaluate context.** Direction is carried today by the establishment op, so
+  the re-evaluate op carries the original direction alongside it. The callback is
+  opt-in, so existing `sock_ops` programs are not invoked with an unknown op.
+- **Resumption contract.** A classifier's per-flow state is valid only for the
+  data it saw. Segments are delivered in order while armed, so a suspension or a
+  late arming leaves a gap the classifier must be told about. How it is signalled
+  is open: a flag distinguishing continuous arming from late or resumed arming is
+  the minimum, and since WFP reports `missedBytes` even while a callout is
+  associated, a per-direction byte offset may be needed instead.
+- `[VERIFY]` Associating a WFP flow context from outside a callout invocation for
+  that flow.
 
 ### Helpers
 
@@ -755,6 +797,12 @@ Connect-time redirect of flows.
 
 ## Open Questions
 
+- **Arming after establishment (P1).** Inspection is armed only at flow
+  establishment, and `ALLOW` is the only way to stop inspecting, so inspection
+  cannot be paused and later resumed over the life of a flow. Should P1 support
+  arming and disarming after establishment, and is that an extension of
+  [Re-authorization (P3)](#re-authorization-p3) or a separate mechanism? See
+  [Suspend / resume](#suspend--resume-and-post-establishment-arming).
 - **Re-authorization data-less re-invoke (P3).** In addition to the re-arm /
   data-driven model, should re-authorization support a **data-less re-invoke**? If
   so, is it a flow classify re-invoke, or a `sock_ops` (or similar) re-invoke that
