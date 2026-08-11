@@ -67,6 +67,8 @@ Phase 1 (normative):
     - **Allow** the flow and stop inspecting it (for the returning program).
     - **Block** the flow (no further inspection for the returning program).
     - **Need more data**: allow the current segment but keep inspecting.
+- A way to obtain a segment's total length without reassembling its payload, and
+  to obtain the whole payload only when the classifier needs to inspect it.
 - A way to clean up per-flow state when a flow is deleted while still being
   classified.
 - No eBPF program is invoked for segments of flows not selected for
@@ -374,9 +376,10 @@ typedef struct _ebpf_flow_classify
             uint8_t code;
         } icmp;
     } transport;
-    uint32_t state;      ///< Current classification state (ebpf_flow_state_t).
-    uint8_t* data_start; ///< Start of payload for this invocation.
-    uint8_t* data_end;   ///< End of payload for this invocation.
+    uint32_t state;         ///< Current classification state (ebpf_flow_state_t).
+    uint32_t data_length;   ///< Total payload length for this invocation.
+    uint8_t* data_start;    ///< Start of the directly accessible payload.
+    uint8_t* data_end;      ///< End of the directly accessible payload.
     uint8_t* scratch_start; ///< Start of this flow's per-flow scratch (read/write).
     uint8_t* scratch_end;   ///< End of this flow's per-flow scratch (read/write).
 } ebpf_flow_classify_t;
@@ -384,8 +387,14 @@ typedef struct _ebpf_flow_classify
 
 Notes:
 
-- `data_start` / `data_end` are valid only for the duration of the invocation. For
-  datagrams they bound one complete datagram payload.
+- `data_length` is the payload's total length for this invocation.
+  `data_start` / `data_end` bound the portion of it that is **directly
+  accessible**, which may be less than `data_length` when the payload is not
+  stored contiguously. The pointers are valid only for the duration of the
+  invocation. For datagrams the payload is one complete datagram.
+- A classifier that needs only the length - to maintain a byte count, for
+  example - reads `data_length` and never touches the payload. To read past
+  `data_end`, call `bpf_flow_classify_pull_data()` (see [Helpers](#helpers)).
 - `scratch_start` / `scratch_end` bound this flow's persistent per-flow scratch (see
   [Per-flow storage](#per-flow-storage)); the region is read/write and persists
   across invocations for the life of the flow. Its size is
@@ -472,6 +481,18 @@ long bpf_flow_map_track(void* ctx, struct bpf_map* map, const void* key, uint64_
  * @return Pointer to (value_size - sizeof(header)) scratch bytes, or NULL.
  */
 void* bpf_flow_map_scratch(void* ctx, struct bpf_map* map);
+
+/**
+ * @brief Make the current invocation's payload directly accessible, up to
+ *        length bytes. On success the context's data_start / data_end bound at
+ *        least that many bytes.
+ * @param[in] ctx     Current program context (identifies the payload).
+ * @param[in] length  Bytes to make directly accessible; 0 requests the whole
+ *                    payload.
+ * @retval 0 on success, negative on failure (for example a length greater than
+ *         the payload's data_length).
+ */
+long bpf_flow_classify_pull_data(void* ctx, uint32_t length);
 ```
 
 - `bpf_flow_map_track` is callable from the enrollment program (`sock_ops`). The
@@ -484,6 +505,13 @@ void* bpf_flow_map_scratch(void* ctx, struct bpf_map* map);
   ([Per-flow storage](#per-flow-storage)), a `bpf_flow_storage_get()`-style helper
   (the Linux `bpf_sk_storage_get` analog) would return per-flow storage from a
   separate flow-local-storage map instead.
+- `bpf_flow_classify_pull_data` is callable from a flow classify program and is
+  the Linux `bpf_skb_pull_data` analog. Because it can move the payload it is
+  declared with the `reallocate_packet` contract flag
+  (`ebpf_helper_function_prototype_t`), which invalidates payload-derived
+  pointers: the program must re-check `data_start` / `data_end` bounds after the
+  call. The flag and its verifier handling already exist, so this helper
+  requires no new verifier capability.
 - A redirect helper (`bpf_flow_redirect_map`) is reserved for P4.
 
 ### Datagram specifics
@@ -563,7 +591,9 @@ integration points (WFP implementation details are intentionally minimized here)
 - Tracking a flow associates a per-flow context and arms the corresponding
   data-layer callout so it is invoked **only** for tracked flows. Allowing (by all
   classifiers), blocking, or deleting a flow disarms it.
-- A program receives a contiguous payload buffer valid for the invocation only.
+- A program receives a payload buffer valid for the invocation only, holding the
+  directly accessible portion of the payload, which may be shorter than the
+  payload itself.
 - Verdicts map to WFP permit/block dispositions; a blocked flow's subsequent data
   is dropped.
 
@@ -576,6 +606,9 @@ implementation, not established facts:
   for flows with an associated context).
 - `[VERIFY]` One-complete-datagram-per-callback delivery, and datagram callout
   ordering relative to flow establishment, on every supported release.
+- `[VERIFY]` Whether the stream and datagram layers can expose a payload's total
+  length and its first contiguous chunk without reassembling it, and the cost of
+  reassembling on demand.
 
 ## Security and Access Control
 
@@ -621,14 +654,18 @@ implementation, not established facts:
 
 - **Unit (local):** flow-map custom-map operations (create / update / lookup /
   delete callbacks and value translation), action-to-WFP mapping, cross-map
-  verdict aggregation, and verifier / program-information acceptance of the context
-  and both attach types.
+  verdict aggregation, verifier / program-information acceptance of the context
+  and both attach types, and verifier rejection of a payload pointer used after
+  `bpf_flow_classify_pull_data()` without re-checking bounds.
 - **Fuzzing (local):** program-information / verifier coverage and the new context
   and helpers.
 - **Socket / functional (VM):** stream (TCP) and datagram (UDP / ICMP / ICMPv6 /
   raw) classification end to end - enroll, arm, classify, allow / block /
   need-more-data; multiple classifiers (multiple maps) over one flow; cleanup on
   flow delete.
+- **Payload access (VM):** payload delivered across more than one buffer -
+  `data_length` correct when the directly accessible portion is shorter, and
+  `bpf_flow_classify_pull_data()` making the whole payload accessible.
 - **End to end (VM):** map-attach attach/detach, map pinning and lifetime, and
   one-classifier-per-map enforcement.
 - **Stress (VM):** many concurrent tracked flows, high segment / datagram rate,
@@ -649,6 +686,10 @@ stress) run on a virtual machine; unit, verifier, and fuzz tests run locally.
   reuse `sock_ops` + `bpf_flow_map_track`.
 - **Per-segment stream inspection** (Linux `SK_SKB`) and **datagram inspection**
   (Linux `SK_MSG`).
+- **Payload length and on-demand reassembly** (Linux `__sk_buff.len` and
+  `bpf_skb_pull_data`): the total length is in the context, direct access covers
+  the contiguous portion, and a program makes the rest accessible only when it
+  needs to read it.
 - **Per-flow local storage** (Linux `BPF_MAP_TYPE_SK_STORAGE`, socket local
   storage): program-defined-size data associated with an object, accessed via a
   bounded read/write pointer and freed automatically on object teardown. Here it is
