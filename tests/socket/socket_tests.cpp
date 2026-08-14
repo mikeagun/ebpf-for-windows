@@ -1952,6 +1952,279 @@ TEMPLATE_TEST_CASE("sock_addr_bind_multi_detach_last", "[bind_tests][multi_attac
     });
 }
 
+// ===========================================================================
+// Wildcard vs compartment-specific bind attach.
+//
+// The attach parameter for the sock_addr bind hook is a compartment id, and
+// UNSPECIFIED_COMPARTMENT_ID means "any compartment". Programs sharing an attach
+// parameter join one filter context and are chained together, while a different
+// attach parameter produces a separate filter context with its own WFP filter.
+// The tests above only ever attach with the wildcard parameter, so they exercise
+// a single filter context.
+//
+// These tests attach one group of programs to a specific compartment and another
+// group with the wildcard parameter, so both filter contexts match the same bind.
+//
+// OBSERVED BEHAVIOR: only the compartment-specific programs are consulted. The wildcard
+// programs' verdicts are ignored entirely, in either attach order -- so a program attached
+// to a specific compartment silently disables a wildcard program for that compartment's
+// traffic, which is the opposite of what "wildcard matches every compartment" implies.
+//
+// The mechanism is WFP filter arbitration: the compartment-specific filter carries an
+// FWPM_CONDITION_COMPARTMENT_ID condition and so receives a higher auto-weight, the bind
+// classify always writes a terminating FWP_ACTION_PERMIT or FWP_ACTION_BLOCK, and WFP stops
+// evaluating a sub-layer once a filter returns permit or block. The lower-weight wildcard
+// filter is therefore never reached. The equivalent connect-hook test
+// (test_multi_attach_combined) does combine both groups, because the connect redirect
+// classify returns FWP_ACTION_CONTINUE for non-terminal verdicts and so lets evaluation
+// continue to the next filter.
+//
+// These tests lock in the behavior as it is today; they are not an endorsement of it.
+// See docs/BindHook.md for the limitation.
+// ===========================================================================
+
+// Priority of a sock_addr verdict; mirrors _get_verdict_priority() in
+// netebpfext/net_ebpf_ext_sock_addr.c. Note the enumerator values themselves are
+// not ordered by priority, so they cannot be compared directly.
+static int
+_bind_verdict_priority(ebpf_sock_addr_verdict_t verdict)
+{
+    switch (verdict) {
+    case BPF_SOCK_ADDR_VERDICT_REJECT:
+        return 3;
+    case BPF_SOCK_ADDR_VERDICT_PROCEED_HARD:
+        return 2;
+    case BPF_SOCK_ADDR_VERDICT_PROCEED_SOFT:
+        return 1;
+    default:
+        return 0;
+    }
+}
+
+// The most-restrictive verdict wins. When selector is non-null, only the programs it marks
+// contribute.
+static ebpf_sock_addr_verdict_t
+_bind_multi_attach_get_combined_verdict(
+    _In_reads_(count) const ebpf_sock_addr_verdict_t* verdicts,
+    uint32_t count,
+    _In_reads_opt_(count) const bool* selector)
+{
+    ebpf_sock_addr_verdict_t combined = BPF_SOCK_ADDR_VERDICT_PROCEED_SOFT;
+    for (uint32_t i = 0; i < count; i++) {
+        if ((selector != nullptr) && !selector[i]) {
+            continue;
+        }
+        if (_bind_verdict_priority(verdicts[i]) > _bind_verdict_priority(combined)) {
+            combined = verdicts[i];
+        }
+    }
+    return combined;
+}
+
+// Attempt a bind on the test port and return 0 on success or the Winsock error.
+// socket_family selects the socket type the way socket_helper does: IPv4 creates an AF_INET
+// socket, IPv6 an AF_INET6 socket, and Dual an AF_INET6 socket with IPV6_V6ONLY cleared. The
+// bound address selects the V4 vs V6 WFP layer.
+static int
+_bind_multi_attach_try_bind(socket_family_t socket_family, ADDRESS_FAMILY address_family, IPPROTO protocol)
+{
+    int sock_type = (protocol == IPPROTO_TCP) ? SOCK_STREAM : SOCK_DGRAM;
+    ADDRESS_FAMILY socket_address_family = (socket_family == socket_family_t::IPv4) ? AF_INET : AF_INET6;
+    SOCKET sock = WSASocketW(socket_address_family, sock_type, protocol, nullptr, 0, 0);
+    SAFE_REQUIRE(sock != INVALID_SOCKET);
+
+    if (socket_family == socket_family_t::Dual) {
+        DWORD v6only = 0;
+        SAFE_REQUIRE(
+            setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, reinterpret_cast<const char*>(&v6only), sizeof(v6only)) == 0);
+    }
+
+    int rc;
+    if (socket_family == socket_family_t::IPv4) {
+        sockaddr_in bind_addr = {};
+        bind_addr.sin_family = AF_INET;
+        bind_addr.sin_addr = in4addr_loopback;
+        bind_addr.sin_port = htons(SOCKET_TEST_PORT);
+        rc = bind(sock, reinterpret_cast<sockaddr*>(&bind_addr), sizeof(bind_addr));
+    } else {
+        sockaddr_in6 bind_addr = {};
+        if (address_family == AF_INET) {
+            // Dual-stack socket bound to a v4-mapped address, which selects the V4 bind layer.
+            IN6ADDR_SETV4MAPPED(&bind_addr, &in4addr_loopback, scopeid_unspecified, htons(SOCKET_TEST_PORT));
+        } else {
+            IN6ADDR_SETLOOPBACK(&bind_addr);
+            bind_addr.sin6_port = htons(SOCKET_TEST_PORT);
+        }
+        rc = bind(sock, reinterpret_cast<sockaddr*>(&bind_addr), sizeof(bind_addr));
+    }
+
+    int error = (rc == 0) ? 0 : WSAGetLastError();
+    closesocket(sock);
+    return error;
+}
+
+// Detaches on scope exit so an assertion failure cannot leak an attachment. Catch2's REQUIRE
+// throws, which would otherwise skip an explicit detach at the end of the test body.
+// Non-copyable: assigning a braced temporary would detach as soon as that temporary died.
+struct _bind_attach_guard
+{
+    bpf_program* program{nullptr};
+    uint32_t compartment_id{0};
+    bpf_attach_type attach_type{};
+    bool attached{false};
+
+    _bind_attach_guard() = default;
+    _bind_attach_guard(const _bind_attach_guard&) = delete;
+    _bind_attach_guard&
+    operator=(const _bind_attach_guard&) = delete;
+
+    ~_bind_attach_guard()
+    {
+        if (attached) {
+            // Best effort: destructors must not throw, so the result is deliberately ignored.
+            bpf_prog_detach2(bpf_program__fd(program), compartment_id, attach_type);
+        }
+    }
+};
+
+static void
+test_bind_multi_attach_wildcard_and_specific(
+    ADDRESS_FAMILY address_family, IPPROTO protocol, bool attach_wildcard_first)
+{
+    // Loads program_count_per_group * 2 programs: program_count_per_group attached to a
+    // specific compartment id, and program_count_per_group attached with the wildcard
+    // compartment id. It then iterates over every combination of verdicts for those
+    // programs and validates the bind result, using both a dual-stack socket and a socket
+    // of the address family under test.
+    //
+    // attach_wildcard_first flips which group is attached first, to distinguish precedence
+    // by attach order from precedence by attach-parameter specificity.
+    constexpr uint32_t program_count_per_group = 2;
+    constexpr uint32_t program_count = program_count_per_group * 2;
+
+    // The compartment the test process runs in, so that the compartment-specific filter
+    // matches the same bind as the wildcard filter.
+    constexpr uint32_t specific_compartment_id = 1;
+
+    // Verdicts the odometer walks, ordered least to most restrictive.
+    static const ebpf_sock_addr_verdict_t all_verdicts[] = {
+        BPF_SOCK_ADDR_VERDICT_PROCEED_SOFT,
+        BPF_SOCK_ADDR_VERDICT_PROCEED_HARD,
+        BPF_SOCK_ADDR_VERDICT_REJECT,
+    };
+    constexpr uint32_t verdict_count = static_cast<uint32_t>(std::size(all_verdicts));
+
+    native_module_helper_t helpers[program_count];
+    struct bpf_object* objects[program_count] = {nullptr};
+    bpf_object_ptr object_ptrs[program_count];
+    _bind_attach_guard attach_guards[program_count];
+    fd_t verdict_map_fds[program_count] = {ebpf_fd_invalid};
+    uint32_t verdict_indices[program_count] = {0};
+    bool is_specific[program_count] = {false};
+
+    const char* program_name = (address_family == AF_INET) ? "authorize_bind4" : "authorize_bind6";
+    bpf_attach_type attach_type = (address_family == AF_INET) ? BPF_CGROUP_INET4_BIND : BPF_CGROUP_INET6_BIND;
+
+    // Load the programs. Each helper mangles the file name so the same object loads as an
+    // independent module with its own bind_verdict_map.
+    for (uint32_t i = 0; i < program_count; i++) {
+        helpers[i].initialize("cgroup_sock_addr_bind", _is_main_thread);
+        objects[i] = bpf_object__open(helpers[i].get_file_name().c_str());
+        SAFE_REQUIRE(objects[i] != nullptr);
+        object_ptrs[i] = bpf_object_ptr(objects[i]);
+        SAFE_REQUIRE(bpf_object__load(objects[i]) == 0);
+
+        bpf_map* verdict_map = bpf_object__find_map_by_name(objects[i], "bind_verdict_map");
+        SAFE_REQUIRE(verdict_map != nullptr);
+        verdict_map_fds[i] = bpf_map__fd(verdict_map);
+        SAFE_REQUIRE(verdict_map_fds[i] != ebpf_fd_invalid);
+    }
+
+    // Attach one group to a specific compartment and the other with the wildcard compartment
+    // id, so both filter contexts match a bind in that compartment.
+    for (uint32_t i = 0; i < program_count; i++) {
+        bpf_program* program = bpf_object__find_program_by_name(objects[i], program_name);
+        SAFE_REQUIRE(program != nullptr);
+
+        const bool first_group = (i < program_count_per_group);
+        is_specific[i] = attach_wildcard_first ? !first_group : first_group;
+        const uint32_t compartment_id = is_specific[i] ? specific_compartment_id : UNSPECIFIED_COMPARTMENT_ID;
+
+        CAPTURE(i, program_name, is_specific[i]);
+        int result =
+            bpf_prog_attach(bpf_program__fd(const_cast<const bpf_program*>(program)), compartment_id, attach_type, 0);
+        SAFE_REQUIRE(result == 0);
+
+        attach_guards[i].program = program;
+        attach_guards[i].compartment_id = compartment_id;
+        attach_guards[i].attach_type = attach_type;
+        attach_guards[i].attached = true;
+    }
+
+    // Iterate over every combination of verdicts across the two groups.
+    while (true) {
+        ebpf_sock_addr_verdict_t verdicts[program_count] = {};
+        for (uint32_t i = 0; i < program_count; i++) {
+            verdicts[i] = all_verdicts[verdict_indices[i]];
+            _update_sock_addr_bind_verdict_map_entry(
+                verdict_map_fds[i],
+                htons(static_cast<uint16_t>(SOCKET_TEST_PORT)),
+                static_cast<uint8_t>(protocol),
+                verdicts[i]);
+        }
+
+        // Only the compartment-specific programs are consulted -- see the block comment above.
+        // The wildcard programs' verdicts are ignored entirely, in either attach order.
+        ebpf_sock_addr_verdict_t specific_verdict =
+            _bind_multi_attach_get_combined_verdict(verdicts, program_count, is_specific);
+        ebpf_sock_addr_verdict_t all_programs_verdict =
+            _bind_multi_attach_get_combined_verdict(verdicts, program_count, nullptr);
+        int expected_error = (specific_verdict == BPF_SOCK_ADDR_VERDICT_REJECT) ? WSAEACCES : 0;
+
+        // Exercise both a dual-stack socket and a socket of the address family under test, so
+        // that the v4-mapped and native paths to the bind layer are both covered.
+        const socket_family_t socket_families[] = {
+            socket_family_t::Dual, (address_family == AF_INET) ? socket_family_t::IPv4 : socket_family_t::IPv6};
+
+        for (socket_family_t socket_family : socket_families) {
+            CAPTURE(
+                attach_wildcard_first,
+                static_cast<uint32_t>(socket_family),
+                static_cast<uint32_t>(verdicts[0]),
+                static_cast<uint32_t>(verdicts[1]),
+                static_cast<uint32_t>(verdicts[2]),
+                static_cast<uint32_t>(verdicts[3]),
+                static_cast<uint32_t>(specific_verdict),
+                static_cast<uint32_t>(all_programs_verdict));
+            SAFE_REQUIRE(_bind_multi_attach_try_bind(socket_family, address_family, protocol) == expected_error);
+        }
+
+        // Advance the odometer; stop once every combination has been covered.
+        uint32_t position = 0;
+        for (; position < program_count; position++) {
+            verdict_indices[position] = (verdict_indices[position] + 1) % verdict_count;
+            if (verdict_indices[position] != 0) {
+                break;
+            }
+        }
+        if (position == program_count) {
+            break;
+        }
+    }
+}
+
+// Verifies how a wildcard attach and a compartment-specific attach interact when both match
+// the same bind, across every combination of the three verdicts and both attach orders.
+TEMPLATE_TEST_CASE(
+    "sock_addr_bind_multi_wildcard_and_specific", "[bind_tests][multi_attach]", ALL_CONNECTION_TEST_PARAMS)
+{
+    constexpr ADDRESS_FAMILY family = std::tuple_element_t<0, TestType>::value;
+    constexpr IPPROTO protocol = std::tuple_element_t<1, TestType>::value;
+
+    SECTION("specific attached first") { test_bind_multi_attach_wildcard_and_specific(family, protocol, false); }
+    SECTION("wildcard attached first") { test_bind_multi_attach_wildcard_and_specific(family, protocol, true); }
+}
+
 void
 helper_functions_validation_test(
     ADDRESS_FAMILY address_family,
@@ -3658,28 +3931,15 @@ test_multi_attach_combined(socket_family_t family, ADDRESS_FAMILY address_family
     }
 }
 
-TEST_CASE("multi_attach_test_combined_TCP_IPV4", "[sock_addr_tests][multi_attach_tests]")
+TEMPLATE_TEST_CASE("multi_attach_test_combined", "[sock_addr_tests][multi_attach_tests]", ALL_CONNECTION_TEST_PARAMS)
 {
-    test_multi_attach_combined(socket_family_t::Dual, AF_INET, IPPROTO_TCP);
-    test_multi_attach_combined(socket_family_t::IPv4, AF_INET, IPPROTO_TCP);
-}
+    constexpr ADDRESS_FAMILY address_family = std::tuple_element_t<0, TestType>::value;
+    constexpr IPPROTO protocol = std::tuple_element_t<1, TestType>::value;
+    constexpr socket_family_t specific_family =
+        (address_family == AF_INET) ? socket_family_t::IPv4 : socket_family_t::IPv6;
 
-TEST_CASE("multi_attach_test_combined_UDP_IPV4", "[sock_addr_tests][multi_attach_tests]")
-{
-    test_multi_attach_combined(socket_family_t::Dual, AF_INET, IPPROTO_UDP);
-    test_multi_attach_combined(socket_family_t::IPv4, AF_INET, IPPROTO_UDP);
-}
-
-TEST_CASE("multi_attach_test_combined_TCP_IPV6", "[sock_addr_tests][multi_attach_tests]")
-{
-    test_multi_attach_combined(socket_family_t::Dual, AF_INET6, IPPROTO_TCP);
-    test_multi_attach_combined(socket_family_t::IPv6, AF_INET6, IPPROTO_TCP);
-}
-
-TEST_CASE("multi_attach_test_combined_UDP_IPV6", "[sock_addr_tests][multi_attach_tests]")
-{
-    test_multi_attach_combined(socket_family_t::Dual, AF_INET6, IPPROTO_UDP);
-    test_multi_attach_combined(socket_family_t::IPv6, AF_INET6, IPPROTO_UDP);
+    test_multi_attach_combined(socket_family_t::Dual, address_family, protocol);
+    test_multi_attach_combined(specific_family, address_family, protocol);
 }
 
 TEST_CASE("multi_attach_test_redirection_TCP_IPV4", "[sock_addr_tests][multi_attach_tests]")
