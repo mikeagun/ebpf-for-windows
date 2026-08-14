@@ -185,6 +185,32 @@ Refer to [WFP Filter Arbitration](https://learn.microsoft.com/en-us/windows/win3
 for the effect of WFP filters in other sublayers on a connection that was
 permitted or rejected by the eBPF programs.
 
+### Known Limitation: wildcard attach vs compartment-specific attach
+
+The above accumulation applies only to programs that share the same **attach
+parameter**. The bind attach parameter is a compartment id, where
+`UNSPECIFIED_COMPARTMENT_ID` (or no attach parameter) means "any compartment".
+Programs sharing an attach parameter join one WFP filter context and are chained
+together; a different attach parameter creates a *separate* filter context with
+its own WFP filter, and a compartment-specific one carries an
+`FWPM_CONDITION_COMPARTMENT_ID` condition.
+
+When a wildcard attach and a compartment-specific attach both match the same
+bind, **only the compartment-specific programs run**. The wildcard programs are
+not invoked and their verdicts are ignored, regardless of attach order. In other
+words, attaching a program to a specific compartment silently disables a wildcard
+program for that compartment's traffic.
+
+This follows from WFP filter arbitration: the compartment-specific filter has a
+higher auto-weight, the bind classify always returns a terminating
+`FWP_ACTION_PERMIT` or `FWP_ACTION_BLOCK`, and WFP stops evaluating a sublayer
+once a filter returns permit or block. The `cgroup/connect` hook does not behave
+this way, because its redirect classify returns `FWP_ACTION_CONTINUE` for
+non-terminal verdicts and so allows evaluation to continue to the next filter.
+
+The behavior is covered by `sock_addr_bind_multi_wildcard_and_specific` in
+`tests/socket/socket_tests.cpp`, which asserts it as it exists today.
+
 ### Multi-Attach Test Coverage
 
 The following scenarios are exercised in `tests/socket/socket_tests.cpp`
@@ -208,6 +234,7 @@ The following scenarios are exercised in `tests/socket/socket_tests.cpp`
 | Three soft permits | 3× `PROCEED_SOFT` | Bind allowed |
 | Third program rejects | 2× `PROCEED_SOFT` + `REJECT` | Bind denied |
 | Third program hard permit overrides WFP | 2× `PROCEED_SOFT` + `PROCEED_HARD` + WFP block | Bind allowed |
+| Wildcard vs compartment-specific attach | 2 programs on compartment 1 + 2 wildcard, both attach orders | Only the compartment-specific programs decide (see limitation above) |
 
 ## Architecture
 
