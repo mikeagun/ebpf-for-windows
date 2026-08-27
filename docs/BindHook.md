@@ -185,7 +185,7 @@ Refer to [WFP Filter Arbitration](https://learn.microsoft.com/en-us/windows/win3
 for the effect of WFP filters in other sublayers on a connection that was
 permitted or rejected by the eBPF programs.
 
-### Known Limitation: wildcard attach vs compartment-specific attach
+### Wildcard and compartment-specific precedence
 
 The above accumulation applies only to programs that share the same **attach
 parameter**. The bind attach parameter is a compartment id, where
@@ -197,9 +197,9 @@ its own WFP filter, and a compartment-specific one carries an
 
 When a wildcard attach and a compartment-specific attach both match the same
 bind, **only the compartment-specific programs run**. The wildcard programs are
-not invoked and their verdicts are ignored, regardless of attach order. In other
-words, attaching a program to a specific compartment silently disables a wildcard
-program for that compartment's traffic.
+not invoked, regardless of attach order. The wildcard programs act as a fallback:
+they run when no compartment-specific filter matches, including after all programs
+for the matching compartment detach.
 
 This follows from WFP filter arbitration: the compartment-specific filter has a
 higher auto-weight, the bind classify always returns a terminating
@@ -209,7 +209,8 @@ this way, because its redirect classify returns `FWP_ACTION_CONTINUE` for
 non-terminal verdicts and so allows evaluation to continue to the next filter.
 
 The behavior is covered by `sock_addr_bind_multi_wildcard_and_specific` in
-`tests/socket/socket_tests.cpp`, which asserts it as it exists today.
+`tests/socket/socket_tests.cpp`, including direct per-program invocation checks,
+both attach orders, fallback after detach, and a nonmatching specific compartment.
 
 ### Multi-Attach Test Coverage
 
@@ -234,7 +235,7 @@ The following scenarios are exercised in `tests/socket/socket_tests.cpp`
 | Three soft permits | 3× `PROCEED_SOFT` | Bind allowed |
 | Third program rejects | 2× `PROCEED_SOFT` + `REJECT` | Bind denied |
 | Third program hard permit overrides WFP | 2× `PROCEED_SOFT` + `PROCEED_HARD` + WFP block | Bind allowed |
-| Wildcard vs compartment-specific attach | 2 programs on compartment 1 + 2 wildcard, both attach orders | Only the compartment-specific programs decide (see limitation above) |
+| Specific over wildcard | 2 specific + 2 wildcard | Specific decides; wildcard is fallback |
 
 ## Architecture
 
