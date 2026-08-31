@@ -14,6 +14,7 @@
 #include "ebpf_tracelog.h"
 #include "helpers.h"
 #include "libbpf_test_jit.h"
+#include "map_in_map_tests.h"
 #include "platform.h"
 #include "program_helper.h"
 #include "spec/vm_isa.hpp"
@@ -23,6 +24,8 @@
 #include <crtdbg.h>
 #include <cstdlib>
 #include <fstream>
+#include <map>
+#include <memory>
 #include <mutex>
 #include <stop_token>
 #include <thread>
@@ -2734,6 +2737,358 @@ _wrong_inner_map_types_test(ebpf_execution_type_t execution_type)
 }
 
 DECLARE_JIT_TEST_CASES("disallow wrong inner map types", "[libbpf]", _wrong_inner_map_types_test);
+
+#pragma region map_in_map_all_types
+
+// The tests below drive the map_in_map_all_types.c eBPF program, which declares
+// every supported inner map type against both outer map types. The pair table
+// they iterate is derived from ALL_INNER_MAP_TYPES and cross-checked against
+// the program's MIM_INNER_MAP_TYPES table.
+
+// Collects the values an eBPF program wrote into an inner ring buffer or perf
+// event array map, so the test can confirm the sentinel arrived on the specific
+// inner map that the outer map lookup should have resolved to.
+typedef struct _map_in_map_event_consumer
+{
+    std::mutex lock;
+    std::vector<int32_t> values;
+
+    void
+    add_record(_In_reads_bytes_(size) const void* data, size_t size)
+    {
+        if (size != sizeof(int32_t)) {
+            return;
+        }
+        std::lock_guard<std::mutex> guard(lock);
+        values.push_back(*reinterpret_cast<const int32_t*>(data));
+    }
+
+    bool
+    contains(int32_t value)
+    {
+        std::lock_guard<std::mutex> guard(lock);
+        return std::find(values.begin(), values.end(), value) != values.end();
+    }
+} map_in_map_event_consumer_t;
+
+static int
+_map_in_map_ring_buffer_callback(_In_ void* ctx, _In_reads_bytes_(size) void* data, size_t size)
+{
+    static_cast<map_in_map_event_consumer_t*>(ctx)->add_record(data, size);
+    return 0;
+}
+
+static void
+_map_in_map_perf_sample_callback(_In_ void* ctx, int cpu, _In_reads_bytes_(size) void* data, uint32_t size)
+{
+    UNREFERENCED_PARAMETER(cpu);
+    static_cast<map_in_map_event_consumer_t*>(ctx)->add_record(data, size);
+}
+
+static void
+_map_in_map_perf_lost_callback(_In_ void* ctx, int cpu, uint64_t count)
+{
+    UNREFERENCED_PARAMETER(ctx);
+    UNREFERENCED_PARAMETER(cpu);
+    UNREFERENCED_PARAMETER(count);
+}
+
+// Opens and loads map_in_map_all_types for the requested execution type.
+static bpf_object_ptr
+_map_in_map_load_object(ebpf_execution_type_t execution_type)
+{
+    const char* file_name =
+        (execution_type == EBPF_EXECUTION_NATIVE) ? "map_in_map_all_types_um.dll" : "map_in_map_all_types.o";
+
+    bpf_object_ptr object(bpf_object__open(file_name));
+    REQUIRE(object != nullptr);
+    REQUIRE(ebpf_object_set_execution_type(object.get(), execution_type) == EBPF_SUCCESS);
+    REQUIRE(bpf_object__load(object.get()) == 0);
+
+    return object;
+}
+
+/**
+ * @brief Verify that the ELF/BTF loader created every statically declared inner
+ * map template with the right parameters, and linked each outer map to it.
+ */
+static void
+_map_in_map_static_init_test(ebpf_execution_type_t execution_type)
+{
+    _test_helper_end_to_end test_helper;
+    test_helper.initialize();
+    program_info_provider_t sample_program_info;
+    REQUIRE(sample_program_info.initialize(EBPF_PROGRAM_TYPE_SAMPLE) == EBPF_SUCCESS);
+
+    bpf_object_ptr object = _map_in_map_load_object(execution_type);
+
+    const int cpu_count = libbpf_num_possible_cpus();
+    REQUIRE(cpu_count > 0);
+
+    for (const auto& pair : map_in_map_pairs()) {
+        INFO(
+            "inner map " << pair.inner_map_name << " (type " << pair.inner_map_type << ") in outer map "
+                         << pair.outer_map_name << " (type " << pair.outer_map_type << ")");
+
+        bpf_map* inner_map = bpf_object__find_map_by_name(object.get(), pair.inner_map_name.c_str());
+        REQUIRE(inner_map != nullptr);
+        bpf_map* outer_map = bpf_object__find_map_by_name(object.get(), pair.outer_map_name.c_str());
+        REQUIRE(outer_map != nullptr);
+
+        fd_t inner_map_fd = bpf_map__fd(inner_map);
+        REQUIRE(inner_map_fd > 0);
+        fd_t outer_map_fd = bpf_map__fd(outer_map);
+        REQUIRE(outer_map_fd > 0);
+
+        // The loader must have created the inner map template exactly as declared.
+        bpf_map_info inner_info;
+        uint32_t inner_info_size = sizeof(inner_info);
+        memset(&inner_info, 0, sizeof(inner_info));
+        REQUIRE(bpf_obj_get_info_by_fd(inner_map_fd, &inner_info, &inner_info_size) == 0);
+        REQUIRE(inner_info.type == pair.inner_map_type);
+        REQUIRE(inner_info.key_size == pair.expected_key_size);
+        REQUIRE(inner_info.max_entries == pair.expected_max_entries);
+        // Per-CPU maps report the size of a single element here; the per-CPU
+        // expansion is only visible in the buffer a user-mode caller must pass.
+        REQUIRE(inner_info.value_size == pair.expected_value_size);
+
+        // The outer map must be linked to that inner map as its template.
+        bpf_map_info outer_info;
+        uint32_t outer_info_size = sizeof(outer_info);
+        memset(&outer_info, 0, sizeof(outer_info));
+        REQUIRE(bpf_obj_get_info_by_fd(outer_map_fd, &outer_info, &outer_info_size) == 0);
+        REQUIRE(outer_info.type == pair.outer_map_type);
+        REQUIRE(outer_info.inner_map_id == inner_info.id);
+
+        // Issue: https://github.com/microsoft/ebpf-for-windows/issues/3210
+        // Only native execution populates a map-of-maps from its static
+        // initializer, so only then can the entry itself be checked.
+        if (execution_type == EBPF_EXECUTION_NATIVE) {
+            uint32_t outer_key = MIM_OUTER_KEY;
+            ebpf_id_t stored_inner_map_id = 0;
+            REQUIRE(bpf_map_lookup_elem(outer_map_fd, &outer_key, &stored_inner_map_id) == 0);
+            REQUIRE(stored_inner_map_id == inner_info.id);
+        }
+    }
+}
+
+DECLARE_JIT_TEST_CASES("map_in_map_all_types static init", "[libbpf][map_in_map]", _map_in_map_static_init_test);
+
+/**
+ * @brief Drive the eBPF programs that walk every (outer, inner) pair and verify
+ * that each pair's unique sentinel made it across.
+ */
+static void
+_map_in_map_driver_test(ebpf_execution_type_t execution_type)
+{
+    _test_helper_end_to_end test_helper;
+    test_helper.initialize();
+    program_info_provider_t sample_program_info;
+    REQUIRE(sample_program_info.initialize(EBPF_PROGRAM_TYPE_SAMPLE) == EBPF_SUCCESS);
+
+    bpf_object_ptr object = _map_in_map_load_object(execution_type);
+
+    const int cpu_count = libbpf_num_possible_cpus();
+    REQUIRE(cpu_count > 0);
+
+    bpf_map* results_map = bpf_object__find_map_by_name(object.get(), "results");
+    REQUIRE(results_map != nullptr);
+    fd_t results_map_fd = bpf_map__fd(results_map);
+    REQUIRE(results_map_fd > 0);
+
+    std::map<uint32_t, fd_t> inner_map_fds;
+    std::map<uint32_t, map_in_map_event_consumer_t> consumers;
+    // Declared after the consumer contexts they reference so that unwinding
+    // tears the subscriptions down first if an assertion below fails.
+    std::vector<std::unique_ptr<ring_buffer, decltype(&ring_buffer__free)>> ring_buffers;
+    std::vector<std::unique_ptr<perf_buffer, decltype(&perf_buffer__free)>> perf_buffers;
+
+    // Prepare every pair: link the inner map into the outer map, seed the maps
+    // the program reads from, and attach consumers to the maps it writes to.
+    for (const auto& pair : map_in_map_pairs()) {
+        INFO("preparing inner map " << pair.inner_map_name << " in outer map " << pair.outer_map_name);
+
+        bpf_map* inner_map = bpf_object__find_map_by_name(object.get(), pair.inner_map_name.c_str());
+        REQUIRE(inner_map != nullptr);
+        bpf_map* outer_map = bpf_object__find_map_by_name(object.get(), pair.outer_map_name.c_str());
+        REQUIRE(outer_map != nullptr);
+
+        fd_t inner_map_fd = bpf_map__fd(inner_map);
+        REQUIRE(inner_map_fd > 0);
+        fd_t outer_map_fd = bpf_map__fd(outer_map);
+        REQUIRE(outer_map_fd > 0);
+        inner_map_fds[pair.results_index] = inner_map_fd;
+
+        // Issue: https://github.com/microsoft/ebpf-for-windows/issues/3210
+        // Outside native execution the static initializer does not populate the
+        // outer map, so the inner map has to be inserted explicitly.
+        if (execution_type != EBPF_EXECUTION_NATIVE) {
+            uint32_t outer_key = MIM_OUTER_KEY;
+            REQUIRE(bpf_map_update_elem(outer_map_fd, &outer_key, &inner_map_fd, 0) == 0);
+        }
+
+        switch (pair.direction) {
+        case map_in_map_direction::test_seeds_program_reads: {
+            uint32_t inner_key = 0;
+            int32_t value = pair.sentinel;
+            REQUIRE(bpf_map_update_elem(inner_map_fd, &inner_key, &value, BPF_ANY) == 0);
+            break;
+        }
+        case map_in_map_direction::test_seeds_lpm_trie: {
+            struct
+            {
+                uint32_t prefix_length;
+                uint32_t value;
+            } inner_key = {MIM_LPM_PREFIX_LENGTH, MIM_LPM_KEY_VALUE};
+            int32_t value = pair.sentinel;
+            REQUIRE(bpf_map_update_elem(inner_map_fd, &inner_key, &value, BPF_ANY) == 0);
+            break;
+        }
+        case map_in_map_direction::program_writes_ringbuf: {
+            // Subscribe in auto-callback mode, matching ring_buffer_api_test_helper.
+            ebpf_ring_buffer_opts ring_opts{.sz = sizeof(ring_opts), .flags = EBPF_RINGBUF_FLAG_AUTO_CALLBACK};
+#pragma warning(suppress : 4996) // deprecated
+            ring_buffer* rb = ebpf_ring_buffer__new(
+                inner_map_fd, _map_in_map_ring_buffer_callback, &consumers[pair.results_index], &ring_opts);
+            REQUIRE(rb != nullptr);
+            ring_buffers.emplace_back(rb, ring_buffer__free);
+            break;
+        }
+        case map_in_map_direction::program_writes_perf: {
+            ebpf_perf_buffer_opts perf_opts{.sz = sizeof(perf_opts), .flags = EBPF_PERFBUF_FLAG_AUTO_CALLBACK};
+#pragma warning(suppress : 4996) // deprecated
+            perf_buffer* pb = ebpf_perf_buffer__new(
+                inner_map_fd,
+                0,
+                _map_in_map_perf_sample_callback,
+                _map_in_map_perf_lost_callback,
+                &consumers[pair.results_index],
+                &perf_opts);
+            REQUIRE(pb != nullptr);
+            perf_buffers.emplace_back(pb, perf_buffer__free);
+            break;
+        }
+        case map_in_map_direction::program_writes_per_cpu:
+        case map_in_map_direction::program_pushes:
+            // Nothing to prepare; the program writes and the test reads back.
+            break;
+        }
+    }
+
+    // Run the program for each outer map type.
+    for (bpf_map_type outer_map_type : {BPF_MAP_TYPE_ARRAY_OF_MAPS, BPF_MAP_TYPE_HASH_OF_MAPS}) {
+        const char* program_name = map_in_map_program_name(outer_map_type);
+        INFO("running program " << program_name);
+
+        bpf_program* program = bpf_object__find_program_by_name(object.get(), program_name);
+        REQUIRE(program != nullptr);
+        fd_t program_fd = bpf_program__fd(program);
+        REQUIRE(program_fd > 0);
+
+        sample_program_context_t in_ctx{0};
+        sample_program_context_t out_ctx{0};
+        bpf_test_run_opts opts = {};
+        opts.repeat = 1;
+        opts.ctx_in = reinterpret_cast<uint8_t*>(&in_ctx);
+        opts.ctx_size_in = sizeof(in_ctx);
+        opts.ctx_out = reinterpret_cast<uint8_t*>(&out_ctx);
+        opts.ctx_size_out = sizeof(out_ctx);
+
+        REQUIRE(bpf_prog_test_run_opts(program_fd, &opts) == 0);
+        REQUIRE(opts.retval == 0);
+    }
+
+    // Every pair reports its own sentinel on success, so one assertion covers
+    // all of them and a failure names the exact pair.
+    for (const auto& pair : map_in_map_pairs()) {
+        INFO(
+            "results entry " << pair.results_index << " for inner map " << pair.inner_map_name << " in outer map "
+                             << pair.outer_map_name);
+
+        int32_t status = 0;
+        REQUIRE(bpf_map_lookup_elem(results_map_fd, &pair.results_index, &status) == 0);
+        REQUIRE(status == pair.sentinel);
+    }
+
+    // For the pairs the program wrote to, read the sentinel back off the
+    // specific inner map to prove the outer lookup resolved to the right map.
+    for (const auto& pair : map_in_map_pairs()) {
+        INFO(
+            "verifying written value for inner map " << pair.inner_map_name << " in outer map " << pair.outer_map_name);
+
+        fd_t inner_map_fd = inner_map_fds[pair.results_index];
+
+        switch (pair.direction) {
+        case map_in_map_direction::program_writes_per_cpu: {
+            // The program's write lands in the current CPU's slot only, so
+            // exactly one slot holds the sentinel and the rest stay zero.
+            // A per-CPU map reports the size of a single element, while a
+            // user-mode caller must supply one 8-byte aligned slot per CPU.
+            bpf_map_info info;
+            uint32_t info_size = sizeof(info);
+            memset(&info, 0, sizeof(info));
+            REQUIRE(bpf_obj_get_info_by_fd(inner_map_fd, &info, &info_size) == 0);
+
+            const size_t stride = EBPF_PAD_8(static_cast<size_t>(info.value_size));
+            REQUIRE(stride >= sizeof(int32_t));
+
+            std::vector<uint8_t> value_buffer(stride * static_cast<size_t>(cpu_count), 0);
+            uint32_t inner_key = 0;
+            REQUIRE(bpf_map_lookup_elem(inner_map_fd, &inner_key, value_buffer.data()) == 0);
+
+            size_t sentinel_count = 0;
+            size_t non_zero_count = 0;
+            for (int cpu = 0; cpu < cpu_count; cpu++) {
+                int32_t slot = 0;
+                memcpy(&slot, value_buffer.data() + (static_cast<size_t>(cpu) * stride), sizeof(slot));
+                if (slot == pair.sentinel) {
+                    sentinel_count++;
+                }
+                if (slot != 0) {
+                    non_zero_count++;
+                }
+            }
+            REQUIRE(sentinel_count == 1);
+            REQUIRE(non_zero_count == 1);
+            break;
+        }
+        case map_in_map_direction::program_pushes: {
+            int32_t value = 0;
+            REQUIRE(bpf_map_lookup_and_delete_elem(inner_map_fd, nullptr, &value) == 0);
+            REQUIRE(value == pair.sentinel);
+            break;
+        }
+        case map_in_map_direction::program_writes_ringbuf:
+        case map_in_map_direction::program_writes_perf:
+            // Verified below, after draining the consumers.
+            break;
+        case map_in_map_direction::test_seeds_program_reads:
+        case map_in_map_direction::test_seeds_lpm_trie:
+            // Verified by the results map above.
+            break;
+        }
+    }
+
+    // Records arrive asynchronously via the subscription callbacks, so wait for
+    // the expected sentinel to show up on each event map.
+    for (const auto& pair : map_in_map_pairs()) {
+        if (pair.direction != map_in_map_direction::program_writes_ringbuf &&
+            pair.direction != map_in_map_direction::program_writes_perf) {
+            continue;
+        }
+        INFO("verifying event record for inner map " << pair.inner_map_name << " in outer map " << pair.outer_map_name);
+
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        while (!consumers[pair.results_index].contains(pair.sentinel) && std::chrono::steady_clock::now() < deadline) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+        REQUIRE(consumers[pair.results_index].contains(pair.sentinel));
+    }
+}
+
+DECLARE_JIT_TEST_CASES("map_in_map_all_types driver", "[libbpf][map_in_map]", _map_in_map_driver_test);
+
+#pragma endregion map_in_map_all_types
 
 TEST_CASE("create map with name", "[libbpf]")
 {
