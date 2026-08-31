@@ -2945,25 +2945,20 @@ _map_in_map_driver_test(ebpf_execution_type_t execution_type)
             break;
         }
         case map_in_map_direction::program_writes_ringbuf: {
-            // Subscribe in auto-callback mode, matching ring_buffer_api_test_helper.
-            ebpf_ring_buffer_opts ring_opts{.sz = sizeof(ring_opts), .flags = EBPF_RINGBUF_FLAG_AUTO_CALLBACK};
-#pragma warning(suppress : 4996) // deprecated
-            ring_buffer* rb = ebpf_ring_buffer__new(
-                inner_map_fd, _map_in_map_ring_buffer_callback, &consumers[pair.results_index], &ring_opts);
+            ring_buffer* rb = ring_buffer__new(
+                inner_map_fd, _map_in_map_ring_buffer_callback, &consumers[pair.results_index], nullptr);
             REQUIRE(rb != nullptr);
             ring_buffers.emplace_back(rb, ring_buffer__free);
             break;
         }
         case map_in_map_direction::program_writes_perf: {
-            ebpf_perf_buffer_opts perf_opts{.sz = sizeof(perf_opts), .flags = EBPF_PERFBUF_FLAG_AUTO_CALLBACK};
-#pragma warning(suppress : 4996) // deprecated
-            perf_buffer* pb = ebpf_perf_buffer__new(
+            perf_buffer* pb = perf_buffer__new(
                 inner_map_fd,
                 0,
                 _map_in_map_perf_sample_callback,
                 _map_in_map_perf_lost_callback,
                 &consumers[pair.results_index],
-                &perf_opts);
+                nullptr);
             REQUIRE(pb != nullptr);
             perf_buffers.emplace_back(pb, perf_buffer__free);
             break;
@@ -3069,19 +3064,21 @@ _map_in_map_driver_test(ebpf_execution_type_t execution_type)
         }
     }
 
-    // Records arrive asynchronously via the subscription callbacks, so wait for
-    // the expected sentinel to show up on each event map.
+    // Drain each subscription, then confirm the pair's sentinel arrived on that
+    // specific inner map.
+    for (auto& ring_buffer_subscription : ring_buffers) {
+        REQUIRE(ring_buffer__consume(ring_buffer_subscription.get()) >= 0);
+    }
+    for (auto& perf_buffer_subscription : perf_buffers) {
+        REQUIRE(perf_buffer__consume(perf_buffer_subscription.get()) >= 0);
+    }
+
     for (const auto& pair : map_in_map_pairs()) {
         if (pair.direction != map_in_map_direction::program_writes_ringbuf &&
             pair.direction != map_in_map_direction::program_writes_perf) {
             continue;
         }
         INFO("verifying event record for inner map " << pair.inner_map_name << " in outer map " << pair.outer_map_name);
-
-        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
-        while (!consumers[pair.results_index].contains(pair.sentinel) && std::chrono::steady_clock::now() < deadline) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
         REQUIRE(consumers[pair.results_index].contains(pair.sentinel));
     }
 }
