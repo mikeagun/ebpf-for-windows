@@ -39,8 +39,8 @@ All type and function declarations below are proposed and non-final.
 
 ## Purpose
 
-The flow classification hook lets eBPF programs inspect transport payload and make a policy decision for the associated
-network flow.
+The flow classification hook lets eBPF programs inspect transport payload and contribute to a flow-level policy
+decision to allow or block the associated network flow.
 
 A **network flow** is traffic with common endpoint and protocol metadata tracked under one stable identifier and
 lifecycle. TCP flows are connections. Related UDP datagrams and ICMP or ICMPv6 messages are grouped under the same flow
@@ -57,11 +57,12 @@ The design follows the Linux sockmap principle that map membership drives inspec
 1. A flow-classify program attaches to a **flow map**.
 2. An existing `sock_ops` program runs at flow establishment and decides whether the current flow needs payload
    inspection.
-3. The `sock_ops` program calls `bpf_flow_map_track()` for each classifier map that should inspect the flow.
+3. The `sock_ops` program calls `bpf_flow_map_track()` for each classifier map that should inspect the flow's payload.
 4. Membership in a flow map activates that map's classifier for the flow.
 5. On each applicable payload indication, the extension invokes active classifiers in global program-attachment order.
-6. `ALLOW` removes only the returning classifier's membership. `NEED_MORE_DATA` keeps that classifier active.
-   `BLOCK` is terminal for the flow.
+   Each classifier returns an action.
+6. The extension applies each returned action. `ALLOW` removes only the returning classifier's membership.
+   `NEED_MORE_DATA` keeps that classifier active. `BLOCK` is terminal for the flow.
 7. When no active classifier remains, payload inspection is disarmed.
 
 ```text
@@ -115,15 +116,14 @@ The context and flow-map value contain fields used by both stream and datagram c
 
 ### Flow map
 
-`BPF_MAP_TYPE_FLOW_MAP` is a custom map provided by `netebpfext`, backed by a hash map.
+`BPF_MAP_TYPE_FLOW_MAP` is a new custom map type provided by `netebpfext` and backed by a hash map.
 
 Map creation requires a `uint64_t` key, the exact fixed metadata value size for the negotiated ABI, and a nonzero
 `max_entries`.
 
 #### Key
 
-The key is the stable `uint64_t flow_id` supplied by WFP and exposed by
-`bpf_sock_ops_get_flow_id()`.
+The key is the stable `uint64_t flow_id` exposed by `bpf_sock_ops_get_flow_id()`.
 
 #### Value
 
@@ -156,6 +156,7 @@ typedef enum _ebpf_flow_classify_metadata_flag
  */
 typedef enum _ebpf_flow_direction
 {
+    EBPF_FLOW_DIRECTION_UNSPECIFIED = 0,  /**< No payload direction is associated with the event. */
     EBPF_FLOW_DIRECTION_INBOUND = 1 << 0,  /**< Inbound payload. */
     EBPF_FLOW_DIRECTION_OUTBOUND = 1 << 1, /**< Outbound payload. */
     EBPF_FLOW_DIRECTION_BOTH = 0x3,        /**< Inbound and outbound payload. */
@@ -169,8 +170,8 @@ typedef enum _ebpf_flow_direction
  */
 typedef struct _ebpf_flow_map_value
 {
-    uint64_t flow_id; /**< Stable WFP flow identifier and flow-map key. */
-    uint32_t family;  /**< IP address family. */
+    uint64_t flow_id; /**< Stable flow identifier and flow-map key. */
+    uint32_t family;  /**< IP address family selecting the valid member in both address unions. */
     union
     {
         uint32_t local_ip4;    /**< Local IPv4 address in network byte order. */
@@ -217,7 +218,8 @@ store mutable parser or policy state in ordinary program maps keyed by `flow_id`
 - Membership is created only by `bpf_flow_map_track()`.
 - Membership is removed only by classifier verdict or lifecycle processing.
 
-The map's `max_entries` bounds the number of active classifier memberships across stream and datagram flows.
+The map creator selects `max_entries` based on the expected number of concurrently tracked flows. It bounds the
+aggregate number of active stream and datagram memberships in the map.
 
 ### Program attachment
 
@@ -238,11 +240,13 @@ A flow map supports:
 A second program for an occupied attach type is rejected. Multiple classifiers of the same type use separate flow
 maps.
 
-Every successful link receives a monotonically increasing global attachment sequence. Applicable classifiers run in
-that order. Detaching and reattaching a program creates a new sequence at the end.
+Each successful attach operation assigns the new link the next number in a monotonically increasing global sequence.
+Applicable classifiers run in sequence-number order. Reattaching assigns the new link a number at the end of that
+order.
 
-A classifier must be attached before a flow can be tracked for its protocol. No dormant memberships exist. Detaching a
-classifier drains in-flight invocations, removes only memberships governed by that attach type, and disarms inspection
+A classifier must be attached before a flow can be tracked for its protocol. No dormant memberships exist. A
+classifier can run concurrently for different flows tracked in its map. Detaching it prevents new invocations, waits
+for all in-flight invocations to finish, removes only memberships governed by that attach type, and disarms inspection
 only when no other classifier map still requires it.
 
 The link retains the map even if the map FD is closed or the map is unpinned.
@@ -269,9 +273,7 @@ long
 bpf_flow_map_track(bpf_sock_ops_t* context, struct bpf_map* flow_map, uint64_t flags);
 ```
 
-The helper derives the flow ID from the current `sock_ops` context. A program cannot track another flow.
-
-Direction-selection flags are:
+The `flags` argument selects inbound payload, outbound payload, or both for this membership:
 
 ```c
 /**
@@ -326,8 +328,8 @@ typedef enum _ebpf_flow_classify_event
  */
 typedef struct _ebpf_flow_classify
 {
-    uint64_t flow_id; /**< Stable WFP flow identifier. */
-    uint32_t family;  /**< IP address family. */
+    uint64_t flow_id; /**< Stable flow identifier. */
+    uint32_t family;  /**< IP address family selecting the valid member in both address unions. */
     union
     {
         uint32_t local_ip4;    /**< Local IPv4 address in network byte order. */
@@ -348,7 +350,7 @@ typedef struct _ebpf_flow_classify
     uint32_t event;            /**< One ebpf_flow_classify_event_t value. */
     uint32_t data_path;        /**< One ebpf_flow_classify_data_path_t value. */
     uint32_t metadata_flags;   /**< Bitmask of ebpf_flow_classify_metadata_flag_t values. */
-    uint32_t direction;        /**< One ebpf_flow_direction_t value for the current payload. */
+    uint32_t direction;        /**< Current payload direction, or UNSPECIFIED for a deletion event. */
     uint32_t armed_directions; /**< Directions selected for this classifier membership. */
 
     union
@@ -366,7 +368,7 @@ typedef struct _ebpf_flow_classify
     } transport; /**< Protocol-specific transport metadata. */
 
     uint32_t data_length; /**< Total logical payload length for this invocation. */
-    uint32_t missed_bytes; /**< Stream bytes not observed by this callout before the current payload. */
+    uint32_t missed_bytes; /**< Stream bytes not delivered to this classifier before the current payload. */
     uint8_t* data_start;   /**< Start of the directly accessible payload span. */
     uint8_t* data_end;     /**< End of the directly accessible payload span. */
 } ebpf_flow_classify_t;
@@ -381,13 +383,19 @@ The concrete layout is non-final. Its contract is:
 - `armed_directions` reports the membership's requested directions. It is `BOTH` during the TCP phase.
 - `data_length` is the total logical payload length for this invocation.
 - `data_start..data_end` is the directly accessible first span and is valid only for this invocation.
-- `missed_bytes` reports stream bytes that WFP indicates this callout did not observe. Each classifier chooses whether
-  to reset, fail closed, or continue.
-- deletion has no payload; payload pointers are null and lengths are zero.
+- `missed_bytes` reports a gap before the current stream payload. Each classifier handles the gap in its program logic
+  by resetting its parser state, returning `BLOCK`, or continuing inspection.
 
-Process identity is captured when the flow is tracked, while ALE flow-establishment identity is valid. The extension
-stores a fixed summary: `process_id`, `logon_id`, tri-state `is_admin`, and validity flags. It does not retain a raw
-token or borrowed WFP identity pointer.
+Field validity depends on `event`:
+
+- For `DATA`, stable metadata is valid according to `metadata_flags`; `direction` is `INBOUND` or `OUTBOUND`; the
+  payload fields describe the current payload; and `missed_bytes` is valid only for stream data.
+- For `DELETED`, stable captured metadata, `data_path`, `metadata_flags`, and `armed_directions` remain valid;
+  `direction` is `UNSPECIFIED`; `data_length` and `missed_bytes` are zero; and the payload pointers are `NULL`.
+
+When a flow is tracked, the extension records its stable process and security identity. It stores a fixed summary:
+`process_id`, `logon_id`, tri-state `is_admin`, and validity flags. It does not retain a raw token or borrowed identity
+pointer.
 
 `bpf_get_current_logon_id(context)` and `bpf_is_current_admin(context)` are available to flow-classify programs and
 return the captured values for source compatibility with `sock_addr`.
