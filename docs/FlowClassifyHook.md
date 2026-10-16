@@ -262,36 +262,23 @@ bpf_program__attach_flow_classify(
     const struct bpf_program* program, int flow_map_fd, enum bpf_attach_type attach_type);
 ```
 
-The pending phase adds a versioned `bpf_program__attach_flow_classify_opts()` variant for declaring pending capability.
-The base API creates a classifier that cannot return `PEND`.
-
-eBPF core resolves and validates the map FD in the attaching process, holds a map reference in the link, and passes the
-map's provider context to `netebpfext`. Only the resolved map reference is retained after the attach operation. The
-caller retains or pins the returned link for the desired attachment lifetime.
+The returned link owns the attachment and retains the flow map. The caller retains or pins the link for the desired
+attachment lifetime.
 
 A flow map supports:
 
 - zero or one stream classifier; and
 - zero or one datagram classifier.
 
-A second program for an occupied attach type fails with `EEXIST`. Multiple classifiers of the same type use separate
-flow maps.
-
-One program instance cannot attach to more than one map with the same attach type. A separately loaded program instance
-can attach to another map. A duplicate same-type attachment also fails with `EEXIST`.
-
-Each successful attach operation assigns the new link the next number in a monotonically increasing global sequence.
-Applicable classifiers run in sequence-number order. Reattaching assigns the new link a number at the end of that
-order.
+A second program for an occupied attach type is rejected. Multiple classifiers of the same type use separate flow
+maps. Applicable classifiers run in successful attachment order; reattaching places the new link at the end.
 
 A classifier must be attached before a flow can be tracked for its protocol. No dormant memberships exist. A
 classifier can run concurrently for different flows tracked in its map. Detaching it prevents new invocations, waits
 for all in-flight invocations to finish, removes only memberships governed by that attach type, and disarms inspection
 on an ordinary active flow only when no other classifier map still requires it.
 
-The link retains the map even if the map FD is closed or the map is unpinned.
-
-The map is destroyed only after all core and provider references release it.
+Closing the map FD or removing a pin does not destroy the map while another reference remains.
 
 ### Flow enrollment
 
@@ -316,12 +303,9 @@ typedef struct _ebpf_sock_ops_flow_metadata
 ```
 
 The appended `bpf_sock_ops_t` member `flow_metadata` contains this structure. Existing endpoint, port, protocol,
-compartment, interface, and operation fields remain in the context. Metadata validity has the same meaning during
-establishment, deletion, map lookup, and classification. Existing programs compiled against the old context prefix
-remain compatible; program information versioning controls access to the appended fields.
-
-Ports are valid for supported TCP and UDP establishment events. Type and code are valid for supported non-error ICMP
-and ICMPv6 establishment events. Process and security fields remain optional and use their validity flags.
+compartment, interface, and operation fields remain unchanged. Program information versioning preserves compatibility
+with programs compiled against the existing context prefix. Optional fields use the same validity semantics during
+enrollment, map lookup, and classification.
 
 `bpf_flow_map_track()` is a BTF-resolved function callable only from an active or passive establishment `sock_ops`
 invocation:
@@ -337,12 +321,7 @@ invocation:
  * @param[in] flags Direction-selection flags from ebpf_flow_map_track_flag_t.
  *
  * @retval 0 The flow was tracked, or an identical membership already existed.
- * @retval -EEXIST The flow is already tracked in this map with different flags.
- * @retval -ENOENT The map has no classifier for the flow's protocol.
- * @retval -ENODATA Required protocol metadata is unavailable.
- * @retval -EINVAL The context, map, flags, or sock_ops operation are invalid.
  * @retval -ENOTSUP The requested direction-selection mode is not implemented.
- * @retval -ENOSPC A map, per-flow classifier, or system flow-state limit was reached.
  * @retval <0 The operation failed for another reason.
  */
 long
@@ -375,18 +354,8 @@ self-filter. The direction-selection phase enables single-direction invocation s
 A repeated track operation with the same normalized flags is idempotent. Any different flags for an existing flow/map
 membership fail explicitly. Membership configuration is immutable for its lifetime.
 
-Each helper call is atomic for one flow-map membership. On failure, it leaves no membership. If an attempted first
-membership created a flow-level data-path association, the helper also rolls that association back. Existing
-memberships and their shared association remain active.
-
-Tracking fails if:
-
-- the map has no classifier for the flow's protocol;
-- the map is full;
-- required protocol metadata is unavailable;
-- the context operation is not active or passive establishment;
-- the flags contain unsupported or reserved bits; or
-- the arguments or program type are invalid.
+Tracking fails without creating a membership when the context is not an establishment event, the map has no applicable
+classifier or capacity, required protocol metadata is unavailable, or the arguments or flags are invalid.
 
 ### Classification context
 
@@ -478,20 +447,15 @@ Field validity depends on `event`:
 Flow establishment is represented by the existing `sock_ops` enrollment invocation. Flow-classify programs receive
 only payload and membership-deletion events.
 
-When a flow is tracked, the extension records its stable process and security identity. It stores a fixed summary:
-`process_id`, `logon_id`, tri-state `is_admin`, and validity flags. It does not retain a raw token or borrowed identity
-pointer.
-
-Failure to obtain an optional identity field does not fail enrollment. The extension clears the corresponding validity
-flag, retains the unavailable sentinel where applicable, and keeps the available identity fields stable for the flow
-lifetime.
+When a flow is tracked, the extension captures the available `process_id`, `logon_id`, and tri-state `is_admin` values
+and keeps them stable for the flow lifetime. Unavailable optional fields clear their validity flags and do not fail
+enrollment.
 
 `bpf_get_current_logon_id(context)` and `bpf_is_current_admin(context)` are available to flow-classify programs and
 return the captured values for source compatibility with `sock_addr`.
 
-The initial identity summary supports logon-session and administrator-based policy. Policies requiring user/group SIDs,
-integrity level, AppContainer identity, capabilities, or other token claims require a separately versioned identity
-extension.
+The initial identity summary supports logon-session and administrator-based policy. Support for richer token claims
+requires a separately versioned identity extension.
 
 ### Payload access
 
@@ -573,125 +537,76 @@ attachment order.
 
 - **ALLOW**
   - permits the current payload unless another classifier blocks it;
-  - begins finalizing only the returning classifier;
-  - prevents new invocations of that classifier for the flow;
-  - gives it one final `DELETED` cleanup invocation after its in-flight data invocations drain; and
-  - removes its membership after cleanup.
+  - finalizes only the returning classifier; and
+  - gives it one final `DELETED` cleanup invocation after its in-flight invocations drain, then removes its membership.
 - **NEED_MORE_DATA**
   - permits the current payload unless another classifier blocks it;
   - keeps only the returning classifier active for future payload; and
   - does not hold, accumulate, replay, or partially permit the current payload.
 - **BLOCK**
   - stops the classifier chain immediately;
-  - blocks or absorbs the current payload;
-  - is terminal for the entire flow;
-  - prevents new classifier invocations;
-  - gives every membership, including the blocker or invalid-action offender, one final `DELETED` cleanup invocation
-    in attachment order after in-flight data invocations drain;
-  - removes all memberships after cleanup; and
-  - retains minimal flow enforcement state until WFP deletes the flow.
+  - is terminal for the flow and blocks current and future payload;
+  - gives every active classifier one final `DELETED` cleanup invocation after in-flight invocations drain; and
+  - removes all memberships after cleanup but retains minimal enforcement state until WFP deletes the flow.
 
 Direction controls whether a classifier is invoked, not the scope of its verdict. A classifier armed only for ingress
 can still block the whole flow.
 
-Programs release mutable per-flow state from the final `DELETED` invocation rather than before returning `ALLOW` or
-`BLOCK`, because another data invocation for the same membership can already be in flight.
+Programs release mutable per-flow state from the final `DELETED` invocation. Its return value is ignored.
 
-The return value from a `DELETED` invocation is always ignored.
-
-When no active classifier remains on an ordinary `ACTIVE` flow, payload inspection is disarmed. Blocked and
-out-of-band flows retain their required enforcement state.
+When no active classifier remains on an ordinary flow, payload inspection is disarmed. Blocked and out-of-band flows
+retain their required enforcement state.
 
 ## Lifecycle
 
 ### Enrollment
 
-At ALE flow establishment, the extension creates a reference-counted internal flow object containing the flow ID,
-endpoint metadata, protocol, process/security summary, membership state, and data-layer associations. The `sock_ops`
-enrollment program can track the flow in one or more classifier maps. If no membership is created, the extension
-releases the object without associating a data-layer context.
+At ALE flow establishment, the extension captures stable flow metadata. The `sock_ops` enrollment program can track the
+flow in one or more classifier maps. If no membership is created, payload inspection is not armed.
 
 TCP flows require the map's stream classifier. UDP and non-error ICMP/ICMPv6 flows require its datagram classifier.
 Connectionless grouping follows the WFP flow identifier and lifetime represented by the associated flow context.
 
-### Flow concurrency and state
+### Concurrency and cleanup
 
-The extension does not hold a state lock or serialization gate while an eBPF program runs. One payload indication
-invokes its classifier snapshot serially in attachment order, but WFP can concurrently invoke the same flow for the
-opposite direction or for separate datagrams. Programs synchronize any mutable per-flow state stored in ordinary maps.
-TCP byte ranges remain ordered within each direction according to the WFP stream contract.
+The extension does not hold a lock while an eBPF program runs. One payload indication invokes classifiers serially in
+attachment order, but WFP can concurrently invoke the same flow for the opposite direction or for separate datagrams.
+Programs synchronize mutable per-flow state stored in ordinary maps. TCP byte ranges remain ordered within each
+direction according to the WFP stream contract.
 
-The internal flow object has `ACTIVE`, `DISARMING`, `BLOCKED`, and `DELETING` states. Each membership has `ACTIVE`,
-`FINALIZING`, and `REMOVED` states plus a finalization reason. A future pending phase adds pending and out-of-band
-processing state.
-
-A membership's first transition to `FINALIZING` is retained; later `ALLOW` or `NEED_MORE_DATA` results from an
-already-entered invocation cannot reactivate it. A later `BLOCK` can still transition the whole flow to `BLOCKED`.
-
-A short-duration state lock protects transitions, membership updates, and invocation-reference counts. Each data
-invocation holds a flow reference and rundown references on its classifier snapshot. Each active membership holds its
-flow and map references plus rundown protection on the extension attachment context, not a core eBPF link reference.
-
-The pending phase instead serializes pending-capable flows through an owned out-of-band queue.
+Terminal membership and flow decisions are committed between program invocations. Once a classifier or flow begins
+finalizing, no new invocation starts for that scope. Cleanup runs exactly once after its in-flight invocations drain.
 
 ### Payload delivery
 
 For each payload indication:
 
-1. Acquire a flow reference and, under the state lock, read the flow state.
-2. If the flow is `BLOCKED`, block the indication without invoking a classifier.
-3. If the flow is `ACTIVE`, snapshot applicable active memberships in global attachment order and acquire their rundown
-   references.
-4. Invoke the snapshot serially. After each return, use the state lock to commit `ALLOW` or `NEED_MORE_DATA`. `BLOCK`,
-   including a synthesized block for an invalid action, atomically transitions the flow to `BLOCKED` and every active
-   membership to `FINALIZING`.
-5. Before invoking the next classifier and before committing the WFP disposition, recheck the flow state. An indication
-   whose disposition linearizes after `BLOCKED` is set must block.
-6. Release invocation and flow references. The last invocation to release a finalizing membership schedules or performs
-   its `DELETED` cleanup.
-7. Remove memberships after cleanup. If no membership remains on an `ACTIVE` flow, begin disarming payload inspection.
-
-For `ALLOW`, cleanup begins after that membership's in-flight invocations drain. For `BLOCK`, one flow-level cleanup
-owner runs after all in-flight data invocations drain and invokes every membership once with `DELETED` in attachment
-order. No new classifier invocation starts after the applicable terminal transition.
-
-### Disarming
-
-When the last membership leaves an `ACTIVE` flow, the extension changes the state to `DISARMING`, removes the flow from
-internal invocation indexes, and releases the state lock before calling `FwpsFlowRemoveContext()`. No extension lock or
-program rundown reference is held across that call because WFP can invoke `flowDeleteFn` synchronously.
-
-An atomic WFP-context ownership flag handles the three documented results:
-
-- `STATUS_SUCCESS`: `flowDeleteFn` ran synchronously and released the association reference.
-- `STATUS_PENDING`: `flowDeleteFn` releases the association reference after the active WFP callback returns.
-- `STATUS_UNSUCCESSFUL`: no context remains; the remover releases the association reference if it still owns it.
+1. Snapshot applicable active classifiers in global attachment order.
+2. Invoke every classifier in the snapshot unless one returns `BLOCK`.
+3. Finalize a classifier's membership when it returns `ALLOW`; keep it active for `NEED_MORE_DATA`. Commit each action
+   before invoking the next classifier.
+4. Recheck the flow decision before permitting the payload so a concurrent `BLOCK` remains flow-terminal.
+5. Drain and clean finalized memberships, then disarm ordinary inspection when none remain.
 
 ### Flow deletion
 
 WFP `flowDeleteFn` is the data-layer context-removal callback. It can result from natural flow teardown or explicit
-context removal while disarming. Natural deletion transitions the flow to `DELETING`, prevents new classifier
-invocations, and defers cleanup until data-invocation rundown drains. It then gives each still-active membership one
-`DELETED` event in attachment order. Explicit disarm records a distinct removal reason and does not repeat membership
-cleanup. Cleanup returns are ignored.
+context removal after disarming. Natural deletion prevents new classifier invocations and gives each still-active
+classifier one `DELETED` event after in-flight invocations drain. Explicit removal does not repeat cleanup already
+performed while disarming.
 
-Memberships already removed after `ALLOW` or `BLOCK` are not called again. A `BLOCKED` flow retains its WFP context and
-minimal enforcement state until natural deletion. If deletion races with terminal cleanup, it joins the existing
-cleanup ownership instead of starting a second cleanup sequence.
+Classifiers already removed after `ALLOW` or `BLOCK` are not called again. A blocked flow retains enforcement state
+until natural deletion.
 
 WFP does not expose a UDP "conversation ended" event. Connectionless cleanup occurs when WFP deletes the associated
 flow context, such as after endpoint closure or implementation-defined flow timeout.
 
 ### Link or map deletion
 
-Deleting a classifier link prevents new snapshots of its attachment context, transitions its active memberships to
-`FINALIZING`, drains their data invocations and cleanup callbacks, and removes their entries. It does not fabricate a
-flow-wide deletion for classifiers in other maps. A pending classifier holds attachment rundown, so detach waits for
-the pending terminal path.
+Deleting a classifier link prevents new invocations, drains in-flight invocations, cleans that classifier's active
+memberships, and removes them. It does not fabricate flow deletion for classifiers in other maps.
 
-A flow map is destroyed only after all core and provider references release it, including file descriptors, pins,
-loaded programs, classifier links, active memberships, and pending operations. Closing its FD or removing a pin has no
-effect while another reference remains.
+A flow map remains valid while file descriptors, pins, links, memberships, or pending operations reference it.
 
 ## Stream and datagram behavior
 
@@ -747,122 +662,64 @@ classifiers are not invoked for unarmed directions. Direction-specific WFP callo
 Stream and datagram payload can be scatter/gather. The extension derives total logical length and the first contiguous
 span without unconditionally flattening data. `bpf_flow_classify_pull_data()` copies only the requested range.
 
-For a `BLOCKED` TCP flow, every entered stream indication uses `FWPS_STREAM_ACTION_DROP_CONNECTION`. For a blocked UDP
-or ICMP/ICMPv6 flow, the callout blocks every current and future indication associated with the retained flow context.
-The design does not promise a particular on-wire TCP signal. Connectionless traffic can later create a new WFP flow
-and be evaluated again.
+After `BLOCK`, the stream callout uses `FWPS_STREAM_ACTION_DROP_CONNECTION`, while the datagram callout blocks every
+later indication associated with the retained flow context. The design does not promise a particular on-wire TCP
+signal. Connectionless traffic can later create a new WFP flow and be evaluated again.
 
 ## Pending flows
 
 `EBPF_FLOW_CLASSIFY_PEND` means withhold the current logical payload for an external decision. It is not equivalent to
 `NEED_MORE_DATA`. Pending is implemented in a separate phase.
 
-The pending phase:
+The pending phase adds `PEND` to `ebpf_flow_classify_action_t` and must:
 
-- appends `PEND` to `ebpf_flow_classify_action_t`;
-- adds a flow-classify-specific pend helper and a separately versioned completion channel;
-- assigns each externally visible decision cycle a new opaque identifier;
-- commits retained state before publishing an extension-owned notification;
-- includes the flow ID, decision ID, stable metadata, total payload length, and requested bounded prefix in the
-  notification;
-- binds completion authorization to the completion-map instance, classifier link, and decision identifier;
-- freezes the classifier chain at the pending classifier;
-- holds rundown and ownership references for the pending classifier, flow, map, and retained payload;
-- requires a versioned attachment capability before a classifier can return `PEND`;
-- allows one flow-wide pend and retains later payload in serialized arrival order; and
-- initially completes with `ALLOW`, `BLOCK`, or `NEED_MORE_DATA`.
+- allow at most one outstanding external decision per flow;
+- identify each decision with an opaque value that only the owning completion channel can complete;
+- freeze the classifier chain at the pending classifier;
+- retain the current payload and later payload in both directions;
+- expose total payload length and a bounded copied prefix without requiring `bpf_flow_classify_pull_data()`;
+- complete with `ALLOW`, `BLOCK`, or `NEED_MORE_DATA`; and
+- provide bounded retention, timeout, stale/duplicate rejection, and exactly-once cleanup.
 
-The pend helper can request a bounded payload prefix that the extension copies from the held logical payload. This is
-independent of `bpf_flow_classify_pull_data()`, which controls only direct eBPF access during the current invocation.
+Completion actions retain their synchronous semantics. `ALLOW` and `NEED_MORE_DATA` resume the held payload after the
+pending classifier, while `BLOCK` discards retained payload and terminates the flow. Timeout, notification failure,
+quota exhaustion, or loss of the completion subscriber fail closed as `BLOCK`.
 
-The helper atomically reserves the flow's pending slot before notification. A second attempt returns `-EBUSY` without
-publishing another decision. Returning `PEND` without a successful reservation is an invalid action and fails closed.
+TCP pending requires WFP out-of-band stream processing. WFP requires pending stream data to be cloned and absorbed and
+warns that mixing synchronous and asynchronous processing for one flow is undefined. The pending phase must define
+when a pending-capable flow enters out-of-band mode and how long it remains there.
 
-The first membership transition between pending and finalization wins. `BLOCK` remains flow-terminal.
-
-If any classifier selected for a flow has the pending capability, the extension processes that flow through an owned,
-serialized out-of-band queue from its first payload indication. A program without that attachment capability cannot
-return `PEND`; doing so is an invalid action and fails closed as `BLOCK`.
-
-For TCP, every indication remains out of band until WFP deletes the flow, even after no external decision or classifier
-remains. This avoids mixing inline and out-of-band stream processing. A datagram flow can disarm normally after no
-classifier or outstanding decision remains.
-
-Completion actions retain their synchronous classifier semantics. `ALLOW` and `NEED_MORE_DATA` finish the held
-payload's chain after the pending classifier. After that chain finishes, each later retained payload starts at the first
-currently active applicable classifier. A later classifier can start a new pending decision with a new identifier.
-`BLOCK` discards all retained data.
-
-A single atomic transition owns each outstanding decision:
-
-| Event | Payload | Classifier state |
-| --- | --- | --- |
-| Complete `ALLOW` | Resume after the pending classifier. | Clean and remove the pending membership. |
-| Complete `NEED_MORE_DATA` | Resume after the pending classifier. | Keep the pending membership active. |
-| Complete `BLOCK` | Discard and enforce `BLOCKED`. | Clean every active membership. |
-| Timeout, notification or quota failure, or subscriber loss | Fail closed as `BLOCK`. | Use `BLOCK` cleanup. |
-| Flow deletion | Discard without reinjection. | Clean every active membership. |
-| Pending-classifier detach | Wait for pending rundown. | The terminal winner performs cleanup. |
-| Duplicate, stale, or late completion | Reject without state change. | No cleanup. |
-
-Cleanup begins after applicable data-invocation rundown drains, uses attachment order, and ignores return values.
-Losing completion, timeout, teardown, and deletion paths observe the terminal state and do not notify, reinject,
-release rundown, or clean up again.
-
-Pending requires bounded retained bytes, exactly-once completion, per-cycle stale/duplicate rejection, client
-isolation, timeout, cleanup, and stream/datagram reinjection. Per-flow and system limits cover both outstanding
-decisions and queued out-of-band stream data. Quota exhaustion fails closed with `BLOCK`.
-
-Exact pending structures, queue algorithms, timeout values, teardown implementation, and reinjection mechanics are
-outside the scope of this document.
-
-These rules share the reference-lifetime, authorized-completion, opaque-identifier validation, cancellation, and
-exactly-once cleanup invariants in [Asynchronous Processing](AsyncProcessing.md). The flow-classify notification format
-and action semantics remain flow-specific.
+Exact APIs, notification structures, queueing, teardown, and reinjection mechanics are outside the scope of this
+document and are deferred to the pending phase. They must align with the lifetime, authorization, cancellation, and
+exactly-once completion principles in [Asynchronous Processing](AsyncProcessing.md).
 
 ## Security and resource management
 
 - Only the current `sock_ops` context can authorize tracking its flow.
 - The fixed map key is the context-derived WFP flow ID.
 - Flow metadata and identity are extension-owned and read-only.
-- A flow-map handle grants metadata observation and classifier-attachment authority. Link handles control detach. A
-  map handle must not be shared as a read-only observation capability. Normal process handle-access and duplication
-  rules protect both authorities.
+- A flow-map handle grants metadata observation and classifier-attachment authority; link handles control detach.
 - eBPF programs cannot use standard map CRUD on flow maps.
 - Classifier attachments retain their maps and scope membership ownership.
 - Token-derived identity is copied or derived at enrollment; no raw token pointer is exposed or retained.
-- Map capacity and allocation failures are returned explicitly.
-- `netebpfext` configuration defines a maximum classifier-membership count per flow, total tracked flow/membership
-  state budget, and maximum payload prefix that `bpf_flow_classify_pull_data()` can linearize. The flow-state budget
-  includes retained `BLOCKED` and out-of-band flows. The implementation documents the defaults. Map `max_entries`
-  remains the per-map limit.
-- Tracking fails with `-ENOSPC` when a flow-state or membership limit is reached. Payload linearization fails with
-  `-E2BIG` when the requested prefix exceeds its configured limit.
+- Map capacity, tracked-flow state, payload linearization, and pending retention are bounded and fail explicitly.
 - Pending payload and identity are disclosed only to the owning completion-map subscriber.
 
 ## Verifier, ABI, and versioning
 
 - New helpers use BTF-resolved functions.
-- `ebpf_flow_classify_t` is a fixed, verifier-described context. Phase 1A adds verifier support that rejects writes to
-  its metadata fields and direct payload region.
+- `ebpf_flow_classify_t` is a fixed, verifier-described context whose metadata and direct payload region are read-only.
 - `bpf_flow_classify_pull_data()` invalidates payload-derived pointer proofs, requiring programs to reload the context
   pointers and repeat bounds checks.
 - The context and flow-map value use one layout for stream and datagram classification.
-- The appended `sock_ops` enrollment metadata preserves the existing context prefix and is exposed through program
-  information versioning.
+- Appended `sock_ops` enrollment metadata preserves the existing context prefix.
 - The TCP phase registers the stream attach type. The datagram phase registers the datagram attach type.
-- Shared datagram enum values and fields published before the datagram phase are reserved and remain unpopulated until
-  that phase.
 - Metadata validity uses append-only bit flags with reserved bits.
 - Unsupported single-direction modes fail explicitly until the direction-selection phase.
 - The synchronous action enum contains only implemented actions. `PEND` is added with the pending phase.
-- Pending capability is negotiated through versioned classifier-attachment options.
 - Pending notification and completion structures are independently versioned.
 - The flow-map entry contains no pending control fields, retained payload, or writable program state.
-- Public headers use fixed-width fields and compile-time size/offset assertions for the enrollment metadata,
-  flow-classify context, and map value.
-- Program information, map-provider ABI, helper ABI, context ABI, flow-map value ABI, and native-module compatibility
-  are version-gated independently. Incompatible native modules are rejected.
+- Public structures use fixed-width fields and compile-time layout assertions. ABI changes are version-gated.
 
 ## Validation
 
@@ -870,40 +727,32 @@ and action semantics remain flow-specific.
 
 - custom-map creation, lookup/enumeration, rejected mutation, and program-type association;
 - map-target program attach, map/link lifetime, and one-program-per-attach-type enforcement;
-- enrollment metadata/versioning and helper validation, including rejected deletion-callback tracking;
-- enrollment idempotency, capacity, and unsupported direction flags;
-- atomic first-membership association rollback and preservation of earlier memberships after a later tracking failure;
-- verifier and program-information acceptance of the context and actions;
-- verifier rejection of metadata and direct-payload writes;
+- enrollment metadata, helper validation, idempotency, capacity, and unsupported direction flags;
+- verifier acceptance of the context and actions and rejection of metadata or direct-payload writes;
 - verifier invalidation of payload pointers after `bpf_flow_classify_pull_data()`;
-- invalid-action handling for negative, reserved, oversized, and not-yet-enabled values;
-- 64-bit payload-length propagation without truncation; and
-- action aggregation and cleanup state-machine tests, including concurrent allow/block/detach/delete races.
+- invalid-action handling, 64-bit payload lengths, action aggregation, and cleanup races.
 
 ### VM / live network stack
 
 - TCP enrollment, ordered stream delivery, discontinuity, lazy payload access, allow, block, and need-more-data;
 - multiple classifier maps and deterministic attachment order;
-- concurrent opposite-direction and datagram invocation without holding a lock across eBPF execution;
-- persistent `BLOCKED` enforcement for later datagrams and `FWPS_STREAM_ACTION_DROP_CONNECTION` for streams;
+- concurrent invocation without holding a lock across eBPF execution;
+- persistent whole-flow blocking for stream and datagram traffic;
 - natural flow deletion, explicit context removal, link detach, and map deletion cleanup;
-- synchronous, pending, and unsuccessful `FwpsFlowRemoveContext()` ownership paths;
 - process/logon/admin identity validity and stability;
-- enrollment and classification when individual identity fields are unavailable;
 - direction reporting and program-side filtering;
 - stress with many flows, high data rates, attach/detach churn, and map capacity;
-- configured per-flow classifier, system flow-state/membership, and payload-linearization limits; and
+- resource limits and failure behavior; and
 - observed on-wire behavior when `BLOCK` aborts a stream flow.
 
 The datagram phase adds UDP and ICMP/ICMPv6 boundary, metadata, cleanup, action, offload, and performance tests. The
-pending phase adds pending-capability negotiation, stream out-of-band mode from the first indication, retention,
-reinjection, queueing, timeout, quota, completion-race, notification-failure, subscriber-loss, and cancellation tests.
+pending phase adds out-of-band processing, retention, reinjection, timeout, quota, race, and cancellation tests.
 
 ## Implementation phases
 
 ### Phase 1A: common interface and core plumbing
 
-- define the flow-classify program type, stream attach type and section, flow-map type and declaration, entry-point
+- add the flow-classify program type, stream attach type and section, flow-map type and declaration, entry-point
   signature, shared contexts and map-value layout, synchronous action enum, direction and metadata enums, and helper
   prototypes;
 - add map-target link attachment with resolved map lifetime;
@@ -911,9 +760,8 @@ reinjection, queueing, timeout, quota, completion-race, notification-failure, su
 - add read-only context and direct-payload verifier enforcement; and
 - add user-mode/libbpf attach support.
 
-Phase 1A is an internal development milestone, not a supported release boundary. The new map, attach, and helper APIs
-are not enabled for applications until Phase 1B supplies their stream behavior. Phase 1A does not define the datagram
-attach type or section, `PEND`, the pend helper, completion-map types, or pending notification structures.
+Phase 1B is the first supported implementation of the interfaces introduced by Phase 1A. Datagram and pending
+interfaces are added with their implementation phases.
 
 ### Phase 1B: TCP stream implementation
 
@@ -945,8 +793,8 @@ later phases.
 
 ### Phase 2: asynchronous pending
 
-- finalize the pending-specific APIs and remaining operational decisions;
-- add `PEND`, versioned attachment options, the pend helper, completion map, subscription, and internal pend table;
-- process pending-capable stream and datagram flows through owned out-of-band queues from their first indication;
+- finalize and implement the pending APIs and completion channel;
+- process pending-capable TCP flows out of band from their first payload indication;
+- retain and reinject datagram payload while a decision is outstanding;
 - enforce queue, quota, timeout, and cancellation rules; and
 - add fault, race, stress, and restart testing.
