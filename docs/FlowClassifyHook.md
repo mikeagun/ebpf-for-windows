@@ -125,8 +125,8 @@ datagram data-path value and ICMP-specific metadata are reserved and are not pro
 
 `BPF_MAP_TYPE_FLOW_MAP` is a new custom map type provided by `netebpfext` and backed by a hash map.
 
-Map creation requires a `uint64_t` key, the exact fixed metadata value size for the negotiated ABI, and a nonzero
-`max_entries`.
+Map creation requires a `uint64_t` key and the exact fixed metadata value size for the negotiated ABI. `max_entries`
+uses the semantics described below.
 
 #### Key
 
@@ -231,8 +231,8 @@ struct
 } flow_map SEC(".maps");
 ```
 
-The program selects `max_entries` based on the expected number of concurrently tracked flows. It bounds the aggregate
-number of active stream and datagram memberships in the map.
+The program sets `max_entries` to the desired aggregate limit on active stream and datagram memberships. A value of
+zero specifies no map-specific membership limit. Allocation and system resource limits still apply.
 
 #### Operations
 
@@ -355,7 +355,8 @@ A repeated track operation with the same normalized flags is idempotent. Any dif
 membership fail explicitly. Membership configuration is immutable for its lifetime.
 
 Tracking fails without creating a membership when the context is not an establishment event, the map has no applicable
-classifier or capacity, required protocol metadata is unavailable, or the arguments or flags are invalid.
+classifier, the configured membership limit is reached, resources cannot be allocated, required protocol metadata is
+unavailable, or the arguments or flags are invalid.
 
 ### Classification context
 
@@ -702,7 +703,8 @@ exactly-once completion principles in [Asynchronous Processing](AsyncProcessing.
 - eBPF programs cannot use standard map CRUD on flow maps.
 - Classifier attachments retain their maps and scope membership ownership.
 - Token-derived identity is copied or derived at enrollment; no raw token pointer is exposed or retained.
-- Map capacity, tracked-flow state, payload linearization, and pending retention are bounded and fail explicitly.
+- A nonzero `max_entries` bounds map membership. Allocation, system flow state, payload linearization, and pending
+  retention remain bounded and fail explicitly.
 - Pending payload and identity are disclosed only to the owning completion-map subscriber.
 
 ## Verifier, ABI, and versioning
@@ -727,7 +729,8 @@ exactly-once completion principles in [Asynchronous Processing](AsyncProcessing.
 
 - custom-map creation, lookup/enumeration, rejected mutation, and program-type association;
 - map-target program attach, map/link lifetime, and one-program-per-attach-type enforcement;
-- enrollment metadata, helper validation, idempotency, capacity, and unsupported direction flags;
+- enrollment metadata, helper validation, idempotency, unsupported direction flags, and nonzero or zero `max_entries`
+  behavior;
 - verifier acceptance of the context and actions and rejection of metadata or direct-payload writes;
 - verifier invalidation of payload pointers after `bpf_flow_classify_pull_data()`;
 - invalid-action handling, 64-bit payload lengths, action aggregation, and cleanup races.
@@ -741,7 +744,7 @@ exactly-once completion principles in [Asynchronous Processing](AsyncProcessing.
 - natural flow deletion, explicit context removal, link detach, and map deletion cleanup;
 - process/logon/admin identity validity and stability;
 - direction reporting and program-side filtering;
-- stress with many flows, high data rates, attach/detach churn, and map capacity;
+- stress with many flows, high data rates, attach/detach churn, and with or without a map-specific membership limit;
 - resource limits and failure behavior; and
 - observed on-wire behavior when `BLOCK` aborts a stream flow.
 
